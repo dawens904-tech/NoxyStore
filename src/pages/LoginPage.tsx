@@ -36,6 +36,7 @@ export function LoginPage() {
     if (error) toast.error(error.message);
   };
 
+  // Only listen to auth changes - don't re-navigate if already logged in
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (event === "SIGNED_IN" && session?.user) {

@@ -1,10 +1,10 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, RefreshCw, TrendingUp, Package, DollarSign, Users, Activity,
   Shield, Zap, BarChart3, Settings, LogOut, Home, List, Percent,
   Grid, UserPlus, Tag, Monitor, Smartphone, Tablet, BarChart2,
-  Eye, Save, X, Check, Plus, Trash2, Edit2
+  Eye, Save, X, Check, Plus, Trash2, Edit2, MessageSquare, Send
 } from "lucide-react";
 import { lootbarApi } from "@/lib/lootbar-api";
 import { useAuthStore } from "@/stores/authStore";
@@ -15,7 +15,7 @@ import { getAnalytics } from "@/lib/analytics";
 import { MOCK_GAMES, CATEGORIES } from "@/constants/mockData";
 import { toast } from "sonner";
 
-type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics";
+type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics" | "livechat";
 
 interface HomeSection {
   id: string;
@@ -71,6 +71,14 @@ export function AdminDashboardPage() {
   const [gameOverrides, setGameOverrides] = useState<Record<string, string>>({});
   const [isSavingCategories, setIsSavingCategories] = useState(false);
 
+  // Live chat
+  const [chatSessions, setChatSessions] = useState<Array<{ id: string; user_email: string; status: string; updated_at: string }>>([]);
+  const [activeChatSession, setActiveChatSession] = useState<string | null>(null);
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; sender: string; content: string; image_url?: string; created_at: string }>>([]);
+  const [chatInput, setChatInput] = useState("");
+  const [isSendingChat, setIsSendingChat] = useState(false);
+  const chatBottomRef = useRef<HTMLDivElement>(null);
+
   // Analytics
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [analyticsDays, setAnalyticsDays] = useState(7);
@@ -87,7 +95,25 @@ export function AdminDashboardPage() {
     loadSections();
     loadRoles();
     loadGameOverrides();
+    loadChatSessions();
   }, []);
+
+  // Poll chat sessions every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(loadChatSessions, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Poll active chat messages every 3 seconds
+  useEffect(() => {
+    if (!activeChatSession) return;
+    const interval = setInterval(() => loadChatMessages(activeChatSession), 3000);
+    return () => clearInterval(interval);
+  }, [activeChatSession]);
+
+  useEffect(() => {
+    chatBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   useEffect(() => {
     if (section === "analytics") loadAnalytics();
@@ -221,6 +247,72 @@ export function AdminDashboardPage() {
     loadGameOverrides();
   };
 
+  const loadChatSessions = async () => {
+    const { data } = await supabase
+      .from("chat_sessions")
+      .select("*")
+      .in("status", ["waiting", "live", "ai"])
+      .order("updated_at", { ascending: false });
+    if (data) setChatSessions(data);
+  };
+
+  const loadChatMessages = async (sessionId: string) => {
+    const { data } = await supabase
+      .from("chat_messages")
+      .select("*")
+      .eq("session_id", sessionId)
+      .order("created_at", { ascending: true });
+    if (data) setChatMessages(data);
+  };
+
+  const joinChatSession = async (sessionId: string) => {
+    setActiveChatSession(sessionId);
+    await supabase.from("chat_sessions").update({
+      status: "live",
+      admin_email: user?.email,
+      admin_joined_at: new Date().toISOString(),
+    }).eq("id", sessionId);
+    await loadChatMessages(sessionId);
+    // Send admin joined message
+    await supabase.from("chat_messages").insert({
+      session_id: sessionId,
+      sender: "admin",
+      content: "A support agent has joined the chat. How can I help you?",
+    });
+    await loadChatMessages(sessionId);
+    toast.success("Joined chat session");
+  };
+
+  const sendAdminMessage = async () => {
+    if (!chatInput.trim() || !activeChatSession || isSendingChat) return;
+    setIsSendingChat(true);
+    const text = chatInput.trim();
+    setChatInput("");
+    await supabase.from("chat_messages").insert({
+      session_id: activeChatSession,
+      sender: "admin",
+      content: text,
+    });
+    await loadChatMessages(activeChatSession);
+    setIsSendingChat(false);
+  };
+
+  const closeChatSession = async (sessionId: string) => {
+    await supabase.from("chat_sessions").update({
+      status: "ai",
+      closed_at: new Date().toISOString(),
+    }).eq("id", sessionId);
+    await supabase.from("chat_messages").insert({
+      session_id: sessionId,
+      sender: "ai",
+      content: "The support agent has closed this chat. AI support is now available. Is there anything else I can help you with?",
+    });
+    setActiveChatSession(null);
+    setChatMessages([]);
+    loadChatSessions();
+    toast.success("Chat closed — AI support restored");
+  };
+
   const loadAnalytics = async () => {
     setIsLoadingAnalytics(true);
     try {
@@ -234,9 +326,10 @@ export function AdminDashboardPage() {
   const successOrders = orders.filter((o) => o.state === 2).length;
   const pendingOrders = orders.filter((o) => o.state === 1).length;
 
-  const sidebarItems: { key: AdminSection; icon: typeof BarChart3; label: string }[] = [
+  const sidebarItems: { key: AdminSection; icon: typeof BarChart3; label: string; badge?: number }[] = [
     { key: "dashboard", icon: BarChart3, label: "Dashboard" },
     { key: "orders", icon: Package, label: "Orders" },
+    { key: "livechat", icon: MessageSquare, label: "Live Chat", badge: chatSessions.filter(s => s.status === "waiting").length },
     { key: "markup", icon: Percent, label: "Markup / Pricing" },
     { key: "sections", icon: Grid, label: "Home Sections" },
     { key: "roles", icon: UserPlus, label: "Roles & Invite" },
@@ -289,6 +382,9 @@ export function AdminDashboardPage() {
               >
                 <item.icon size={17} />
                 {item.label}
+                {item.badge && item.badge > 0 ? (
+                  <span className="ml-auto bg-red-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">{item.badge}</span>
+                ) : null}
               </button>
             ))}
           </nav>
@@ -778,6 +874,145 @@ export function AdminDashboardPage() {
                   </table>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* ── LIVE CHAT ── */}
+          {section === "livechat" && (
+            <div className="space-y-4 max-w-5xl">
+              <h1 className="text-2xl font-black text-white">Live Chat Management</h1>
+              <p className="text-gray-400 text-sm">Manage user support sessions. Join a session to chat directly — AI is disabled while you're active. Close when done to restore AI.</p>
+
+              <div className="flex gap-4">
+                {/* Session list */}
+                <div className="w-72 flex-shrink-0 space-y-2">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-white text-sm">Sessions</h3>
+                    <button onClick={loadChatSessions} className="text-gray-400 hover:text-white"><RefreshCw size={14} /></button>
+                  </div>
+                  {chatSessions.length === 0 ? (
+                    <div className="bg-[#1a1a1a] border border-white/10 rounded-xl p-6 text-center">
+                      <MessageSquare size={24} className="text-gray-600 mx-auto mb-2" />
+                      <p className="text-gray-500 text-xs">No active sessions</p>
+                    </div>
+                  ) : (
+                    chatSessions.map((session) => (
+                      <button
+                        key={session.id}
+                        onClick={() => {
+                          setSection("livechat");
+                          if (activeChatSession !== session.id) joinChatSession(session.id);
+                          else setActiveChatSession(session.id);
+                        }}
+                        className={`w-full text-left p-3 rounded-xl border transition-all ${
+                          activeChatSession === session.id
+                            ? "border-yellow-400/50 bg-yellow-400/10"
+                            : session.status === "waiting"
+                            ? "border-orange-400/50 bg-orange-400/5"
+                            : "border-white/10 bg-[#1a1a1a]"
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs font-bold text-white truncate">{session.user_email || "Guest"}</span>
+                          <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded-full ${
+                            session.status === "waiting" ? "bg-orange-500/30 text-orange-400" :
+                            session.status === "live" ? "bg-green-500/30 text-green-400" :
+                            "bg-gray-500/30 text-gray-400"
+                          }`}>
+                            {session.status === "waiting" ? "WAITING" : session.status === "live" ? "LIVE" : "AI"}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-gray-500">{session.id.slice(0, 20)}...</p>
+                        <p className="text-[10px] text-gray-600 mt-1">{new Date(session.updated_at).toLocaleTimeString()}</p>
+                      </button>
+                    ))
+                  )}
+                </div>
+
+                {/* Chat panel */}
+                {activeChatSession ? (
+                  <div className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-2xl flex flex-col" style={{ height: "600px" }}>
+                    {/* Chat header */}
+                    <div className="flex items-center justify-between px-4 py-3 border-b border-white/10">
+                      <div>
+                        <p className="text-sm font-bold text-white">
+                          {chatSessions.find(s => s.id === activeChatSession)?.user_email || "Unknown User"}
+                        </p>
+                        <p className="text-[10px] text-gray-500 font-mono">{activeChatSession}</p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => closeChatSession(activeChatSession)}
+                          className="bg-red-500/20 text-red-400 border border-red-500/30 rounded-xl px-3 py-1.5 text-xs font-semibold hover:bg-red-500/30 transition-colors"
+                        >
+                          Close Chat
+                        </button>
+                        <button onClick={() => { setActiveChatSession(null); setChatMessages([]); }} className="text-gray-500 hover:text-white">
+                          <X size={16} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Messages */}
+                    <div className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
+                      {chatMessages.map((msg) => (
+                        <div key={msg.id} className={`flex ${msg.sender === "admin" ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[70%] px-3 py-2 rounded-2xl text-sm ${
+                            msg.sender === "admin"
+                              ? "bg-yellow-400 text-black"
+                              : msg.sender === "ai"
+                              ? "bg-blue-500/20 text-blue-300 border border-blue-500/30"
+                              : "bg-white/10 text-white"
+                          }`}>
+                            {msg.image_url ? (
+                              <img src={msg.image_url} alt="attachment" className="rounded-xl max-w-full" />
+                            ) : (
+                              msg.content
+                            )}
+                            <p className={`text-[10px] mt-1 ${
+                              msg.sender === "admin" ? "text-black/50" : "text-gray-500"
+                            }`}>
+                              {msg.sender === "admin" ? "You" : msg.sender === "ai" ? "AI" : "User"} · {new Date(msg.created_at).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                      <div ref={chatBottomRef} />
+                    </div>
+
+                    {/* Input */}
+                    <div className="px-4 py-3 border-t border-white/10">
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={chatInput}
+                          onChange={(e) => setChatInput(e.target.value)}
+                          onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && (e.preventDefault(), sendAdminMessage())}
+                          placeholder="Type a reply..."
+                          className="flex-1 bg-white/5 border border-white/10 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-yellow-400 placeholder-gray-600"
+                        />
+                        <button
+                          onClick={sendAdminMessage}
+                          disabled={!chatInput.trim() || isSendingChat}
+                          className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
+                            chatInput.trim() ? "bg-yellow-400 hover:bg-yellow-300" : "bg-white/10"
+                          }`}
+                        >
+                          <Send size={16} className={chatInput.trim() ? "text-black" : "text-gray-600"} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex-1 bg-[#1a1a1a] border border-white/10 rounded-2xl flex items-center justify-center">
+                    <div className="text-center">
+                      <MessageSquare size={48} className="text-gray-700 mx-auto mb-3" />
+                      <p className="text-gray-500 font-semibold">Select a session to chat</p>
+                      <p className="text-gray-600 text-xs mt-1">Click a session from the left to join</p>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

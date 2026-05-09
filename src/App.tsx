@@ -18,6 +18,8 @@ import { AiSupportPage } from "@/pages/AiSupportPage";
 import { VipServicePage } from "@/pages/VipServicePage";
 import { BalancePage } from "@/pages/BalancePage";
 import { PasskeyPage } from "@/pages/PasskeyPage";
+import { FeedbackPage } from "@/pages/FeedbackPage";
+import { AboutPage } from "@/pages/AboutPage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, mapSupabaseUser } from "@/stores/authStore";
 import { trackEvent } from "@/lib/analytics";
@@ -36,7 +38,8 @@ function AuthInitializer() {
           .eq("email", session.user.email)
           .single();
         const role = roleData?.role || "user";
-        login(mapSupabaseUser(session.user, role));
+        const authUser = mapSupabaseUser(session.user, role);
+        login(authUser);
         useAuthStore.getState().syncOrdersFromDB(session.user.email!);
       }
       if (mounted) setLoading(false);
@@ -51,9 +54,12 @@ function AuthInitializer() {
           .eq("email", session.user.email)
           .single();
         const role = roleData?.role || "user";
-        login(mapSupabaseUser(session.user, role));
+        const authUser = mapSupabaseUser(session.user, role);
+        login(authUser);
+        useAuthStore.getState().syncOrdersFromDB(session.user.email!);
         setLoading(false);
       } else if (event === "SIGNED_OUT") {
+        useAuthStore.getState().logout();
         setLoading(false);
       } else if (event === "TOKEN_REFRESHED" && session?.user) {
         login(mapSupabaseUser(session.user));
@@ -93,6 +99,9 @@ function App() {
           {/* Balance & Passkey */}
           <Route path="/balance" element={<BalancePage />} />
           <Route path="/passkeys" element={<PasskeyPage />} />
+          {/* Feedback & About */}
+          <Route path="/feedback" element={<FeedbackPage />} />
+          <Route path="/about" element={<AboutPage />} />
           {/* Secure admin only */}
           <Route path="/secure-dashboard-92x2011" element={<AdminDashboardPage />} />
           <Route path="/cart" element={<CartPage />} />
