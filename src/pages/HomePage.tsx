@@ -11,6 +11,7 @@ import { FloatingChat } from "@/components/features/FloatingChat";
 import { lootbarApi } from "@/lib/lootbar-api";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { LootbarGame } from "@/types";
+import { Wallet, Star, Gift, Key, Gamepad2 } from "lucide-react";
 import { BANNER_IMAGES } from "@/constants/mockData";
 import { supabase } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
@@ -129,31 +130,37 @@ export function HomePage() {
           {/* Desktop Hero */}
           <DesktopHeroBanner />
 
-          {/* Desktop Category Icons */}
-          <div className="flex items-center justify-center gap-10 py-2">
-            {[
-              { label: t("topUp"), icon: "💰", color: "bg-orange-500", filter: "Top Up" },
-              { label: t("gameCoins"), icon: "⭐", color: "bg-yellow-500", filter: "Game Coins" },
-              { label: t("giftCard"), icon: "🎁", color: "bg-pink-500", filter: "Gift Card" },
-              { label: t("gameKeys"), icon: "🔑", color: "bg-purple-600", filter: "Game Keys", hot: true },
-              { label: t("gameItems"), icon: "🎮", color: "bg-sky-500", filter: "Game Items" },
-            ].map((cat) => (
-              <button
-                key={cat.label}
-                onClick={() => navigate(`/categories?filter=${encodeURIComponent(cat.filter)}`)}
-                className="flex flex-col items-center gap-2 group"
-              >
-                <div className="relative">
-                  <div className={`w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center text-2xl shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all`}>
-                    {cat.icon}
-                  </div>
-                  {cat.hot && (
-                    <span className="absolute -top-1.5 -right-1 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">HOT</span>
-                  )}
-                </div>
-                <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900">{cat.label}</span>
-              </button>
-            ))}
+         {/* Desktop Category Icons */}
+<div className="flex items-center justify-center gap-10 py-2">
+  {[
+    { label: t("topUp"), icon: <Wallet size={26} />, color: "bg-orange-500", filter: "Top Up" },
+    { label: t("gameCoins"), icon: <Star size={26} />, color: "bg-yellow-500", filter: "Game Coins" },
+    { label: t("giftCard"), icon: <Gift size={26} />, color: "bg-pink-500", filter: "Gift Card" },
+    { label: t("gameKeys"), icon: <Key size={26} />, color: "bg-purple-600", filter: "Game Keys", hot: true },
+    { label: t("gameItems"), icon: <Gamepad2 size={26} />, color: "bg-sky-500", filter: "Game Items" },
+  ].map((cat) => (
+    <button
+      key={cat.label}
+      onClick={() => navigate(`/categories?filter=${encodeURIComponent(cat.filter)}`)}
+      className="flex flex-col items-center gap-2 group"
+    >
+      <div className="relative">
+        <div className={`w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center text-white shadow-md group-hover:shadow-lg group-hover:scale-105 transition-all`}>
+          {cat.icon}
+        </div>
+
+        {cat.hot && (
+          <span className="absolute -top-1.5 -right-1 bg-orange-500 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full">
+            HOT
+          </span>
+        )}
+      </div>
+
+      <span className="text-sm font-semibold text-gray-700 group-hover:text-gray-900">
+        {cat.label}
+      </span>
+    </button>
+  ))}
 
             {/* 24/7 support button */}
             <button className="flex flex-col items-center gap-2 ml-8">
