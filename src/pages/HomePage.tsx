@@ -174,13 +174,13 @@ export function HomePage() {
     <button
       key={cat.label}
       onClick={() =>
-        navigate(/categories?filter=${encodeURIComponent(cat.filter)})
+        navigate(`/categories?filter=${encodeURIComponent(cat.filter)}`)
       }
       className="flex flex-col items-center gap-2 group"
     >
       <div className="relative">
         <div
-          className={w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center text-white shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl}
+          className={`w-14 h-14 rounded-2xl ${cat.color} flex items-center justify-center text-white shadow-md transition-all duration-300 group-hover:scale-110 group-hover:shadow-xl`}
         >
           {cat.icon}
         </div>
