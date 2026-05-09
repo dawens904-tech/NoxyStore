@@ -1,3 +1,4 @@
+
 /**
  * VIP Service Chat Page — live chat with admin, AI when admin not available
  * Admin joins from email notification link, closes chat when done
