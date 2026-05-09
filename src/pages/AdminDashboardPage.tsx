@@ -16,7 +16,7 @@ import { getAnalytics } from "@/lib/analytics";
 import { MOCK_GAMES, CATEGORIES } from "@/constants/mockData";
 import { toast } from "sonner";
 
-type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics" | "livechat" | "coupons" | "products";
+type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics" | "livechat" | "coupons" | "products" | "banners";
 
 interface HomeSection {
   id: string;
@@ -75,6 +75,13 @@ export function AdminDashboardPage() {
   const [gameOverrides, setGameOverrides] = useState<Record<string, string>>({});
   const [isSavingCategories, setIsSavingCategories] = useState(false);
 
+  // Banners state
+  const [banners, setBanners] = useState<Array<{ id: string; title: string; subtitle: string; image_url: string; link: string; sort_order: number; is_active: boolean }>>([]);
+  const [editingBanner, setEditingBanner] = useState<{ id?: string; title: string; subtitle: string; image_url: string; link: string; sort_order: number } | null>(null);
+  const [bannerUploadFile, setBannerUploadFile] = useState<File | null>(null);
+  const [bannerUploadPreview, setBannerUploadPreview] = useState("");
+  const [isSavingBanner, setIsSavingBanner] = useState(false);
+
   // Coupons admin
   const [adminCoupons, setAdminCoupons] = useState<Array<{ id: string; code: string; type: string; value: number; max_uses: number; used_count: number; is_active: boolean; created_at: string }>>([]);
   const [newCouponCode, setNewCouponCode] = useState("");
@@ -115,6 +122,7 @@ export function AdminDashboardPage() {
     loadChatSessions();
     loadAdminCoupons();
     loadGamesForProducts();
+    loadBanners();
   }, []);
 
   // Poll chat sessions every 5 seconds
@@ -266,6 +274,71 @@ export function AdminDashboardPage() {
     loadGameOverrides();
   };
 
+  const loadBanners = async () => {
+    const { data } = await supabase.from("home_banners").select("*").order("sort_order");
+    if (data) setBanners(data);
+  };
+
+  const saveBanner = async () => {
+    if (!editingBanner?.title || (!editingBanner?.image_url && !bannerUploadFile)) {
+      toast.error("Title and image are required");
+      return;
+    }
+    setIsSavingBanner(true);
+    let imageUrl = editingBanner.image_url;
+
+    // Upload file if provided
+    if (bannerUploadFile) {
+      const ext = bannerUploadFile.name.split(".").pop();
+      const path = `banner_${Date.now()}.${ext}`;
+      const { data: uploaded, error: uploadErr } = await supabase.storage
+        .from("banners")
+        .upload(path, bannerUploadFile, { upsert: true, contentType: bannerUploadFile.type });
+      if (uploadErr) { toast.error("Upload failed: " + uploadErr.message); setIsSavingBanner(false); return; }
+      const { data: urlData } = supabase.storage.from("banners").getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
+    if (editingBanner.id) {
+      // Update
+      await supabase.from("home_banners").update({
+        title: editingBanner.title,
+        subtitle: editingBanner.subtitle,
+        image_url: imageUrl,
+        link: editingBanner.link || "/",
+        sort_order: editingBanner.sort_order,
+        updated_at: new Date().toISOString(),
+      }).eq("id", editingBanner.id);
+    } else {
+      // Create
+      await supabase.from("home_banners").insert({
+        title: editingBanner.title,
+        subtitle: editingBanner.subtitle,
+        image_url: imageUrl,
+        link: editingBanner.link || "/",
+        sort_order: editingBanner.sort_order || banners.length + 1,
+        is_active: true,
+      });
+    }
+    toast.success(editingBanner.id ? "Banner updated!" : "Banner created!");
+    setEditingBanner(null);
+    setBannerUploadFile(null);
+    setBannerUploadPreview("");
+    setIsSavingBanner(false);
+    loadBanners();
+  };
+
+  const deleteBanner = async (id: string) => {
+    await supabase.from("home_banners").delete().eq("id", id);
+    toast.success("Banner deleted");
+    loadBanners();
+  };
+
+  const toggleBannerActive = async (id: string, current: boolean) => {
+    await supabase.from("home_banners").update({ is_active: !current }).eq("id", id);
+    loadBanners();
+  };
+
   const loadAdminCoupons = async () => {
     const { data } = await supabase.from("admin_redeem_codes").select("*").order("created_at", { ascending: false });
     if (data) setAdminCoupons(data);
@@ -402,6 +475,7 @@ export function AdminDashboardPage() {
     { key: "livechat", icon: MessageSquare, label: "Live Chat", badge: chatSessions.filter(s => s.status === "waiting").length },
     { key: "markup", icon: Percent, label: "Markup / Pricing" },
     { key: "coupons", icon: Gift, label: "Coupon Codes" },
+    { key: "banners" as AdminSection, icon: Image, label: "Home Banners" },
     { key: "products", icon: Grid, label: "Product Management" },
     { key: "sections", icon: List, label: "Home Sections" },
     { key: "roles", icon: UserPlus, label: "Roles & Invite" },
@@ -1380,7 +1454,186 @@ export function AdminDashboardPage() {
             </div>
           )}
 
-          {/* ── API STATUS ── */}
+          {/* ── BANNERS ── */}
+          {section === "banners" && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-black text-white">Home Banners</h1>
+                  <p className="text-gray-400 text-sm mt-1">Upload and manage the banner images shown on the home page hero section.</p>
+                </div>
+                <button
+                  onClick={() => {
+                    setEditingBanner({ title: "", subtitle: "", image_url: "", link: "/", sort_order: banners.length + 1 });
+                    setBannerUploadFile(null);
+                    setBannerUploadPreview("");
+                  }}
+                  className="flex items-center gap-2 bg-yellow-400 text-black font-bold px-5 py-2.5 rounded-xl hover:bg-yellow-300"
+                >
+                  <Plus size={16} /> Add Banner
+                </button>
+              </div>
+
+              {/* Banner list */}
+              <div className="space-y-4">
+                {banners.map((banner) => (
+                  <div key={banner.id} className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden">
+                    <div className="flex gap-4 p-4">
+                      <img
+                        src={banner.image_url}
+                        alt={banner.title}
+                        className="w-40 h-24 object-cover rounded-xl flex-shrink-0 bg-gray-800"
+                        onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=160&h=96&fit=crop"; }}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-white font-bold text-sm">{banner.title}</p>
+                        <p className="text-gray-400 text-xs mt-0.5">{banner.subtitle}</p>
+                        <p className="text-gray-600 text-xs mt-1 font-mono truncate">{banner.image_url}</p>
+                        <p className="text-gray-600 text-xs">Order: {banner.sort_order} · Link: {banner.link}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 flex-shrink-0">
+                        <button
+                          onClick={() => toggleBannerActive(banner.id, banner.is_active)}
+                          className={`text-xs font-semibold px-3 py-1.5 rounded-lg ${banner.is_active ? "bg-green-900/40 text-green-400" : "bg-gray-800 text-gray-500"}`}
+                        >
+                          {banner.is_active ? "Active" : "Hidden"}
+                        </button>
+                        <div className="flex gap-1">
+                          <button
+                            onClick={() => {
+                              setEditingBanner({ id: banner.id, title: banner.title, subtitle: banner.subtitle, image_url: banner.image_url, link: banner.link, sort_order: banner.sort_order });
+                              setBannerUploadFile(null);
+                              setBannerUploadPreview("");
+                            }}
+                            className="p-2 text-gray-400 hover:text-white bg-white/5 rounded-lg"
+                          >
+                            <Edit2 size={14} />
+                          </button>
+                          <button onClick={() => deleteBanner(banner.id)} className="p-2 text-red-500 hover:text-red-400 bg-white/5 rounded-lg">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {banners.length === 0 && (
+                  <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-12 text-center">
+                    <Image size={48} className="text-gray-600 mx-auto mb-4" />
+                    <p className="text-gray-400">No banners yet. Add your first banner.</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Edit / Create form */}
+              {editingBanner !== null && (
+                <div className="bg-[#1a1a1a] border border-yellow-400/30 rounded-2xl p-6">
+                  <h3 className="font-bold text-white mb-4">{editingBanner.id ? "Edit Banner" : "Create New Banner"}</h3>
+                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div className="col-span-2">
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Banner Image</label>
+                      {/* Upload or URL */}
+                      <div className="flex gap-3 mb-2">
+                        <label className="flex items-center gap-2 cursor-pointer bg-white/10 hover:bg-white/15 text-white font-semibold px-4 py-2.5 rounded-xl text-sm transition-colors">
+                          <Upload size={14} />
+                          {bannerUploadFile ? bannerUploadFile.name : "Upload Image"}
+                          <input
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const f = e.target.files?.[0];
+                              if (!f) return;
+                              setBannerUploadFile(f);
+                              const reader = new FileReader();
+                              reader.onload = (ev) => setBannerUploadPreview(ev.target?.result as string);
+                              reader.readAsDataURL(f);
+                            }}
+                          />
+                        </label>
+                        <span className="text-gray-500 self-center text-sm">or paste URL below</span>
+                      </div>
+                      {(bannerUploadPreview || editingBanner.image_url) && (
+                        <img
+                          src={bannerUploadPreview || editingBanner.image_url}
+                          alt="preview"
+                          className="w-full h-40 object-cover rounded-xl mb-2 bg-gray-800"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=200&fit=crop"; }}
+                        />
+                      )}
+                      {!bannerUploadFile && (
+                        <input
+                          type="text"
+                          value={editingBanner.image_url}
+                          onChange={(e) => setEditingBanner({ ...editingBanner, image_url: e.target.value })}
+                          placeholder="https://example.com/banner.jpg"
+                          className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                        />
+                      )}
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Title</label>
+                      <input
+                        type="text"
+                        value={editingBanner.title}
+                        onChange={(e) => setEditingBanner({ ...editingBanner, title: e.target.value })}
+                        placeholder="e.g. New: Exclusive Deals"
+                        className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Subtitle</label>
+                      <input
+                        type="text"
+                        value={editingBanner.subtitle}
+                        onChange={(e) => setEditingBanner({ ...editingBanner, subtitle: e.target.value })}
+                        placeholder="e.g. Coupon code: SAVE10"
+                        className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Link (click destination)</label>
+                      <input
+                        type="text"
+                        value={editingBanner.link}
+                        onChange={(e) => setEditingBanner({ ...editingBanner, link: e.target.value })}
+                        placeholder="e.g. /games or /categories?filter=Top Up"
+                        className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Sort Order</label>
+                      <input
+                        type="number"
+                        value={editingBanner.sort_order}
+                        onChange={(e) => setEditingBanner({ ...editingBanner, sort_order: parseInt(e.target.value) || 1 })}
+                        className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex gap-3">
+                    <button
+                      onClick={saveBanner}
+                      disabled={isSavingBanner}
+                      className="flex items-center gap-2 bg-yellow-400 text-black font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
+                    >
+                      {isSavingBanner ? <RefreshCw size={14} className="animate-spin" /> : <Save size={14} />}
+                      {editingBanner.id ? "Save Changes" : "Create Banner"}
+                    </button>
+                    <button
+                      onClick={() => { setEditingBanner(null); setBannerUploadFile(null); setBannerUploadPreview(""); }}
+                      className="bg-white/10 text-white font-semibold px-6 py-3 rounded-xl"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ── API STATUS ── */
           {section === "api" && (
             <div className="space-y-6 max-w-3xl">
               <h1 className="text-2xl font-black text-white">API Status</h1>

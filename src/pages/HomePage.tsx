@@ -34,40 +34,46 @@ interface HomeSection {
 }
 
 // Desktop Hero Banner
-function DesktopHeroBanner() {
+function DesktopHeroBanner({ banners }: { banners: typeof BANNER_IMAGES }) {
+  const navigate = useNavigate();
   const [current, setCurrent] = useState(0);
   const [imgErrors, setImgErrors] = useState<Record<number, boolean>>({});
 
+  const items = banners.length > 0 ? banners : BANNER_IMAGES;
+
   useEffect(() => {
-    const timer = setInterval(() => setCurrent((c) => (c + 1) % BANNER_IMAGES.length), 4000);
+    const timer = setInterval(() => setCurrent((c) => (c + 1) % items.length), 4000);
     return () => clearInterval(timer);
-  }, []);
+  }, [items.length]);
 
   return (
     <div className="relative w-full h-80 overflow-hidden bg-gray-900 rounded-2xl mx-auto">
       {/* Prev/Next arrows */}
       <button
-        onClick={() => setCurrent((c) => (c - 1 + BANNER_IMAGES.length) % BANNER_IMAGES.length)}
+        onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
         className="absolute left-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
       </button>
       <button
-        onClick={() => setCurrent((c) => (c + 1) % BANNER_IMAGES.length)}
+        onClick={() => setCurrent((c) => (c + 1) % items.length)}
         className="absolute right-3 top-1/2 -translate-y-1/2 z-20 w-9 h-9 bg-black/50 rounded-full flex items-center justify-center text-white hover:bg-black/70"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
       </button>
 
-      {BANNER_IMAGES.map((banner, idx) => {
-        const src = imgErrors[banner.id] ? banner.fallback : banner.image;
+      {items.map((banner, idx) => {
+        const src = imgErrors[(banner as any).id || idx] ? ((banner as any).fallback || banner.image_url || banner.image) : ((banner as any).image_url || (banner as any).image);
         return (
-          <div key={banner.id} className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? "opacity-100" : "opacity-0"}`}>
+          <div key={(banner as any).id || idx} className={`absolute inset-0 transition-opacity duration-700 ${idx === current ? "opacity-100" : "opacity-0"}`}
+            onClick={() => (banner as any).link && navigate((banner as any).link)}
+            style={{ cursor: (banner as any).link && (banner as any).link !== "/" ? "pointer" : "default" }}
+          >
             <img
               src={src}
               alt={banner.title}
               className="w-full h-full object-cover"
-              onError={() => setImgErrors((p) => ({ ...p, [banner.id]: true }))}
+              onError={() => setImgErrors((p) => ({ ...p, [(banner as any).id || idx]: true }))}
             />
             <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/20 to-transparent" />
             <div className="absolute left-10 bottom-10 text-white">
@@ -80,7 +86,7 @@ function DesktopHeroBanner() {
 
       {/* Dots */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-10">
-        {BANNER_IMAGES.map((_, idx) => (
+        {items.map((_, idx) => (
           <button
             key={idx}
             onClick={() => setCurrent(idx)}
@@ -99,6 +105,7 @@ export function HomePage() {
   const [games, setGames] = useState<LootbarGame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<HomeSection[]>([]);
+  const [dynamicBanners, setDynamicBanners] = useState<Array<{ id: string; title: string; subtitle: string; image_url: string; link: string; sort_order: number }>>([]);
 
   useEffect(() => {
     trackEvent("page_view", { page: "/" });
@@ -109,6 +116,9 @@ export function HomePage() {
     // Load home sections from DB
     supabase.from("home_sections").select("*").eq("is_active", true).order("sort_order")
       .then(({ data }) => { if (data) setSections(data as HomeSection[]); });
+    // Load banners from DB
+    supabase.from("home_banners").select("*").eq("is_active", true).order("sort_order")
+      .then(({ data }) => { if (data) setDynamicBanners(data); });
   }, []);
 
   // Build section game lists from DB config
@@ -137,7 +147,7 @@ export function HomePage() {
       <div className="hidden lg:block">
         <div className="max-w-[1280px] mx-auto px-6 py-6 space-y-8">
           {/* Desktop Hero */}
-          <DesktopHeroBanner />
+          <DesktopHeroBanner banners={dynamicBanners} />
 
          {/* Desktop Category Icons */}
 <div className="flex items-center justify-center gap-10 py-2">
@@ -431,4 +441,4 @@ export function HomePage() {
     </div>
   );
 }
-hello please read page change-homePage-BannerPhoto and make change.
+
