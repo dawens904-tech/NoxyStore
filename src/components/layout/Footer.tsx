@@ -165,3 +165,4 @@ function DesktopFooter() {
     </footer>
   );
 }
+The Footer.tsx currently has a default export but some files import it as a named export `{ Footer }`. Please audit all import statements and unify to use the same export style (either all default or all named) so there are no mismatch errors.
