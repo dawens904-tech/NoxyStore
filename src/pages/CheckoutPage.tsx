@@ -37,8 +37,27 @@ export function CheckoutPage() {
   const [selectedPayment, setSelectedPayment] = useState("visa");
   const [couponCode, setCouponCode] = useState("");
   const [couponDiscount, setCouponDiscount] = useState(0);
+  const [appliedCouponId, setAppliedCouponId] = useState<string | null>(null);
   const [isLoadingCoupon, setIsLoadingCoupon] = useState(false);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
+
+  // Auto-apply pending coupon from coupons page
+  useEffect(() => {
+    const pending = sessionStorage.getItem("pending_coupon");
+    if (pending) {
+      const coupon = JSON.parse(pending);
+      if (coupon.type === "percent") {
+        const discount = Math.min(
+          basePrice * (coupon.discount_value / 100),
+          coupon.max_discount || Infinity
+        );
+        setCouponDiscount(discount);
+        setCouponCode(coupon.code);
+        setAppliedCouponId(coupon.id);
+      }
+      sessionStorage.removeItem("pending_coupon");
+    }
+  }, []);
 
   if (!state?.sku) {
     return (
@@ -61,12 +80,25 @@ export function CheckoutPage() {
   const handleRedeemCoupon = async () => {
     if (!couponCode.trim()) return;
     setIsLoadingCoupon(true);
-    await new Promise((r) => setTimeout(r, 800));
-    if (couponCode.toUpperCase() === "NOXYSTORE" || couponCode.toUpperCase() === "SAVE5") {
-      setCouponDiscount(basePrice * 0.05);
-      toast.success("Coupon applied! 5% discount");
+    // Check user coupons in DB
+    const { data: userCoupons } = await (await import("@/lib/supabase")).supabase
+      .from("user_coupons")
+      .select("*")
+      .eq("user_email", user?.email)
+      .eq("is_used", false)
+      .gt("expires_at", new Date().toISOString());
+
+    const matched = userCoupons?.find((c: any) => c.code === couponCode.trim().toUpperCase());
+    if (matched) {
+      const discount = Math.min(
+        basePrice * (matched.discount_value / 100),
+        matched.max_discount || Infinity
+      );
+      setCouponDiscount(discount);
+      setAppliedCouponId(matched.id);
+      (await import("sonner")).toast.success(`Coupon applied! ${matched.discount_value}% discount`);
     } else {
-      toast.error("Invalid coupon code");
+      (await import("sonner")).toast.error("Invalid or expired coupon code");
     }
     setIsLoadingCoupon(false);
   };

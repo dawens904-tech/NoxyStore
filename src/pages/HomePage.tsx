@@ -21,6 +21,8 @@ import {
 import { BANNER_IMAGES } from "@/constants/mockData";
 import { supabase } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
+import { NewUserCouponModal } from "@/components/features/NewUserCouponModal";
+import { useAuthStore } from "@/stores/authStore";
 
 interface HomeSection {
   id: string;
@@ -93,6 +95,7 @@ function DesktopHeroBanner() {
 export function HomePage() {
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { isAuthenticated } = useAuthStore();
   const [games, setGames] = useState<LootbarGame[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<HomeSection[]>([]);
@@ -329,6 +332,9 @@ export function HomePage() {
           </footer>
         </div>
       </div>
+
+      {/* New User Coupon Modal */}
+      <NewUserCouponModal isAuthenticated={isAuthenticated} />
 
       {/* ── Mobile Layout ── */}
       <div className="lg:hidden pb-20">

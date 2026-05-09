@@ -20,6 +20,8 @@ import { BalancePage } from "@/pages/BalancePage";
 import { PasskeyPage } from "@/pages/PasskeyPage";
 import { FeedbackPage } from "@/pages/FeedbackPage";
 import { AboutPage } from "@/pages/AboutPage";
+import { CouponsPage } from "@/pages/CouponsPage";
+import { InvitePage } from "@/pages/InvitePage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, mapSupabaseUser } from "@/stores/authStore";
 import { trackEvent } from "@/lib/analytics";
@@ -102,6 +104,9 @@ function App() {
           {/* Feedback & About */}
           <Route path="/feedback" element={<FeedbackPage />} />
           <Route path="/about" element={<AboutPage />} />
+          {/* Coupons & Invite */}
+          <Route path="/coupons" element={<CouponsPage />} />
+          <Route path="/invite" element={<InvitePage />} />
           {/* Secure admin only */}
           <Route path="/secure-dashboard-92x2011" element={<AdminDashboardPage />} />
           <Route path="/cart" element={<CartPage />} />

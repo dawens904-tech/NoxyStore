@@ -4,7 +4,8 @@ import {
   ArrowLeft, RefreshCw, TrendingUp, Package, DollarSign, Users, Activity,
   Shield, Zap, BarChart3, Settings, LogOut, Home, List, Percent,
   Grid, UserPlus, Tag, Monitor, Smartphone, Tablet, BarChart2,
-  Eye, Save, X, Check, Plus, Trash2, Edit2, MessageSquare, Send
+  Eye, Save, X, Check, Plus, Trash2, Edit2, MessageSquare, Send,
+  Globe, Star, Clock, Gift, Image, Upload
 } from "lucide-react";
 import { lootbarApi } from "@/lib/lootbar-api";
 import { useAuthStore } from "@/stores/authStore";
@@ -15,7 +16,7 @@ import { getAnalytics } from "@/lib/analytics";
 import { MOCK_GAMES, CATEGORIES } from "@/constants/mockData";
 import { toast } from "sonner";
 
-type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics" | "livechat";
+type AdminSection = "dashboard" | "orders" | "api" | "markup" | "sections" | "roles" | "categories" | "analytics" | "livechat" | "coupons" | "products";
 
 interface HomeSection {
   id: string;
@@ -37,10 +38,13 @@ interface UserRole {
 interface AnalyticsData {
   totalVisits: number;
   uniqueSessions: number;
+  uniqueLoggedInUsers: number;
   deviceCounts: Record<string, number>;
   topPages: { page: string; count: number }[];
-  topGames: { gameId: string; count: number }[];
-  dailyData: { date: string; count: number }[];
+  topGames: { gameId: string; count: number; uniqueUsers: number }[];
+  dailyData: { date: string; count: number; loggedInUsers: number }[];
+  eventTypeCounts: Record<string, number>;
+  hourlyActivity: number[];
 }
 
 export function AdminDashboardPage() {
@@ -71,6 +75,19 @@ export function AdminDashboardPage() {
   const [gameOverrides, setGameOverrides] = useState<Record<string, string>>({});
   const [isSavingCategories, setIsSavingCategories] = useState(false);
 
+  // Coupons admin
+  const [adminCoupons, setAdminCoupons] = useState<Array<{ id: string; code: string; type: string; value: number; max_uses: number; used_count: number; is_active: boolean; created_at: string }>>([]);
+  const [newCouponCode, setNewCouponCode] = useState("");
+  const [newCouponType, setNewCouponType] = useState("coupon");
+  const [newCouponValue, setNewCouponValue] = useState("");
+  const [newCouponMaxUses, setNewCouponMaxUses] = useState("100");
+  const [isSavingCoupon, setIsSavingCoupon] = useState(false);
+
+  // Products overrides
+  const [allGamesForProducts, setAllGamesForProducts] = useState<Array<{ game_id: string; game_name: string; game_image: string; category: string }>>([]);
+  const [productSearchQuery, setProductSearchQuery] = useState("");
+  const [editingProduct, setEditingProduct] = useState<{ game_id: string; custom_price: string; category_override: string; is_featured: boolean; is_hidden: boolean } | null>(null);
+
   // Live chat
   const [chatSessions, setChatSessions] = useState<Array<{ id: string; user_email: string; status: string; updated_at: string }>>([]);
   const [activeChatSession, setActiveChatSession] = useState<string | null>(null);
@@ -96,6 +113,8 @@ export function AdminDashboardPage() {
     loadRoles();
     loadGameOverrides();
     loadChatSessions();
+    loadAdminCoupons();
+    loadGamesForProducts();
   }, []);
 
   // Poll chat sessions every 5 seconds
@@ -247,6 +266,57 @@ export function AdminDashboardPage() {
     loadGameOverrides();
   };
 
+  const loadAdminCoupons = async () => {
+    const { data } = await supabase.from("admin_redeem_codes").select("*").order("created_at", { ascending: false });
+    if (data) setAdminCoupons(data);
+  };
+
+  const createAdminCoupon = async () => {
+    if (!newCouponCode.trim() || !newCouponValue) { toast.error("Fill all fields"); return; }
+    setIsSavingCoupon(true);
+    const { error } = await supabase.from("admin_redeem_codes").insert({
+      code: newCouponCode.trim().toUpperCase(),
+      type: newCouponType,
+      value: parseFloat(newCouponValue),
+      max_uses: parseInt(newCouponMaxUses) || 100,
+      is_active: true,
+      created_by: user?.email,
+    });
+    setIsSavingCoupon(false);
+    if (error) { toast.error("Failed to create coupon: " + error.message); return; }
+    toast.success("Coupon code created!");
+    setNewCouponCode(""); setNewCouponValue(""); setNewCouponMaxUses("100");
+    loadAdminCoupons();
+  };
+
+  const toggleCouponActive = async (id: string, current: boolean) => {
+    await supabase.from("admin_redeem_codes").update({ is_active: !current }).eq("id", id);
+    toast.success(`Coupon ${!current ? "activated" : "deactivated"}`);
+    loadAdminCoupons();
+  };
+
+  const deleteCoupon = async (id: string) => {
+    await supabase.from("admin_redeem_codes").delete().eq("id", id);
+    toast.success("Coupon deleted");
+    loadAdminCoupons();
+  };
+
+  const loadGamesForProducts = async () => {
+    const { data } = await supabase.from("games_cache").select("game_id, game_name, game_image, category").order("game_name");
+    if (data) setAllGamesForProducts(data);
+    else setAllGamesForProducts(MOCK_GAMES.map(g => ({ game_id: g.game_id, game_name: g.game_name, game_image: g.game_image || "", category: g.category || "Top Up" })));
+  };
+
+  const saveProductOverride = async (gameId: string, updates: { custom_price?: number | null; category_override?: string; is_featured?: boolean; is_hidden?: boolean; sort_order?: number }) => {
+    await supabase.from("game_overrides").upsert({
+      game_id: gameId,
+      ...updates,
+      updated_at: new Date().toISOString(),
+    });
+    toast.success("Product updated!");
+    setEditingProduct(null);
+  };
+
   const loadChatSessions = async () => {
     const { data } = await supabase
       .from("chat_sessions")
@@ -331,7 +401,9 @@ export function AdminDashboardPage() {
     { key: "orders", icon: Package, label: "Orders" },
     { key: "livechat", icon: MessageSquare, label: "Live Chat", badge: chatSessions.filter(s => s.status === "waiting").length },
     { key: "markup", icon: Percent, label: "Markup / Pricing" },
-    { key: "sections", icon: Grid, label: "Home Sections" },
+    { key: "coupons", icon: Gift, label: "Coupon Codes" },
+    { key: "products", icon: Grid, label: "Product Management" },
+    { key: "sections", icon: List, label: "Home Sections" },
     { key: "roles", icon: UserPlus, label: "Roles & Invite" },
     { key: "categories", icon: Tag, label: "Game Categories" },
     { key: "analytics", icon: BarChart2, label: "Analytics" },
@@ -762,6 +834,10 @@ export function AdminDashboardPage() {
                       { icon: Users, label: "Unique Sessions", value: String(analyticsData.uniqueSessions), color: "text-purple-400", bg: "bg-purple-400/10", border: "border-purple-400/20" },
                       { icon: Monitor, label: "Desktop", value: String(analyticsData.deviceCounts.desktop || 0), color: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" },
                       { icon: Smartphone, label: "Mobile", value: String(analyticsData.deviceCounts.mobile || 0), color: "text-orange-400", bg: "bg-orange-400/10", border: "border-orange-400/20" },
+                      { icon: Users, label: "Logged-in Users", value: String(analyticsData.uniqueLoggedInUsers), color: "text-yellow-400", bg: "bg-yellow-400/10", border: "border-yellow-400/20" },
+                      { icon: Globe, label: "Tablet", value: String(analyticsData.deviceCounts.tablet || 0), color: "text-cyan-400", bg: "bg-cyan-400/10", border: "border-cyan-400/20" },
+                      { icon: Eye, label: "Game Views", value: String(analyticsData.topGames.reduce((s, g) => s + g.count, 0)), color: "text-pink-400", bg: "bg-pink-400/10", border: "border-pink-400/20" },
+                      { icon: Star, label: "Page Views", value: String(analyticsData.topPages.reduce((s, p) => s + p.count, 0)), color: "text-indigo-400", bg: "bg-indigo-400/10", border: "border-indigo-400/20" },
                     ].map((s) => (
                       <div key={s.label} className={`bg-[#1a1a1a] border ${s.border} rounded-2xl p-5`}>
                         <div className={`w-10 h-10 ${s.bg} rounded-xl flex items-center justify-center mb-3`}>
@@ -818,12 +894,70 @@ export function AdminDashboardPage() {
                           return (
                             <div key={g.gameId} className="flex items-center justify-between">
                               <span className="text-sm text-gray-300 truncate flex-1">{game?.game_name || g.gameId}</span>
-                              <span className="text-sm font-bold text-yellow-400 ml-3">{g.count} views</span>
+                              <div className="flex items-center gap-3">
+                                <span className="text-xs text-gray-500">{g.uniqueUsers} users</span>
+                                <span className="text-sm font-bold text-yellow-400 ml-1">{g.count} views</span>
+                              </div>
                             </div>
                           );
                         })}
                         {analyticsData.topGames.length === 0 && <p className="text-gray-500 text-sm">No game view data yet</p>}
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Event Types + Hourly Heatmap */}
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                    {/* Event types */}
+                    <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+                      <h3 className="font-bold text-white mb-4">Event Types</h3>
+                      <div className="space-y-2">
+                        {Object.entries(analyticsData.eventTypeCounts)
+                          .sort((a, b) => b[1] - a[1])
+                          .map(([type, count]) => {
+                            const maxCount = Math.max(...Object.values(analyticsData.eventTypeCounts), 1);
+                            return (
+                              <div key={type}>
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="text-xs text-gray-400 font-mono capitalize">{type.replace(/_/g, " ")}</span>
+                                  <span className="text-xs font-bold text-white">{count}</span>
+                                </div>
+                                <div className="h-1.5 bg-white/10 rounded-full overflow-hidden">
+                                  <div
+                                    className="h-full bg-yellow-400 rounded-full"
+                                    style={{ width: `${(count / maxCount) * 100}%` }}
+                                  />
+                                </div>
+                              </div>
+                            );
+                          })}
+                        {Object.keys(analyticsData.eventTypeCounts).length === 0 && <p className="text-gray-500 text-sm">No events tracked yet</p>}
+                      </div>
+                    </div>
+
+                    {/* Hourly heatmap */}
+                    <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+                      <h3 className="font-bold text-white mb-4">Hourly Activity (UTC)</h3>
+                      <div className="grid grid-cols-12 gap-1">
+                        {analyticsData.hourlyActivity.map((count, hour) => {
+                          const maxHour = Math.max(...analyticsData.hourlyActivity, 1);
+                          const intensity = count / maxHour;
+                          return (
+                            <div key={hour} className="flex flex-col items-center gap-1">
+                              <div
+                                title={`${hour}:00 — ${count} events`}
+                                className="w-full rounded"
+                                style={{
+                                  height: "32px",
+                                  backgroundColor: `rgba(250, 204, 21, ${Math.max(0.1, intensity)})`,
+                                }}
+                              />
+                              <span className="text-[8px] text-gray-600">{hour}</span>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <p className="text-xs text-gray-600 mt-2">Hours 0-23 UTC · Darker = more activity</p>
                     </div>
                   </div>
                 </>
@@ -1012,6 +1146,236 @@ export function AdminDashboardPage() {
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* ── COUPONS ── */}
+          {section === "coupons" && (
+            <div className="space-y-6 max-w-3xl">
+              <h1 className="text-2xl font-black text-white">Coupon Codes</h1>
+              <p className="text-gray-400 text-sm">Create redeem codes for users. Codes can be percent discounts, balance credits, or free orders.</p>
+
+              <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
+                <h3 className="font-bold text-white mb-4">Create New Redeem Code</h3>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Code</label>
+                    <input
+                      type="text"
+                      value={newCouponCode}
+                      onChange={(e) => setNewCouponCode(e.target.value.toUpperCase())}
+                      placeholder="e.g. SAVE20"
+                      className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400 font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Type</label>
+                    <select
+                      value={newCouponType}
+                      onChange={(e) => setNewCouponType(e.target.value)}
+                      className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                    >
+                      <option value="coupon">% Coupon Discount</option>
+                      <option value="balance">$ Balance Credit</option>
+                      <option value="free_order">Free Order</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">
+                      {newCouponType === "coupon" ? "Discount (%)" : "Value ($)"}
+                    </label>
+                    <input
+                      type="number"
+                      value={newCouponValue}
+                      onChange={(e) => setNewCouponValue(e.target.value)}
+                      placeholder={newCouponType === "coupon" ? "10" : "5.00"}
+                      className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Max Uses</label>
+                    <input
+                      type="number"
+                      value={newCouponMaxUses}
+                      onChange={(e) => setNewCouponMaxUses(e.target.value)}
+                      className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400"
+                    />
+                  </div>
+                </div>
+                <button
+                  onClick={createAdminCoupon}
+                  disabled={isSavingCoupon}
+                  className="flex items-center gap-2 bg-yellow-400 text-black font-bold px-6 py-3 rounded-xl hover:bg-yellow-300 transition-colors"
+                >
+                  {isSavingCoupon ? <RefreshCw size={14} className="animate-spin" /> : <Plus size={14} />}
+                  Create Code
+                </button>
+              </div>
+
+              <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden">
+                <div className="px-5 py-4 border-b border-white/10">
+                  <h3 className="font-bold text-white">Active Codes ({adminCoupons.length})</h3>
+                </div>
+                {adminCoupons.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8 text-sm">No coupon codes yet</p>
+                ) : (
+                  <div className="divide-y divide-white/5">
+                    {adminCoupons.map((coupon) => (
+                      <div key={coupon.id} className="px-5 py-4 flex items-center gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="text-sm font-black text-yellow-400 font-mono">{coupon.code}</p>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                              coupon.type === "coupon" ? "bg-orange-500/20 text-orange-400" :
+                              coupon.type === "balance" ? "bg-green-500/20 text-green-400" :
+                              "bg-blue-500/20 text-blue-400"
+                            }`}>{coupon.type}</span>
+                          </div>
+                          <p className="text-xs text-gray-500 mt-0.5">
+                            Value: {coupon.type === "coupon" ? `${coupon.value}%` : `$${coupon.value}`} · Uses: {coupon.used_count}/{coupon.max_uses}
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <button
+                            onClick={() => toggleCouponActive(coupon.id, coupon.is_active)}
+                            className={`text-xs font-semibold px-3 py-1.5 rounded-lg ${coupon.is_active ? "bg-green-900/40 text-green-400" : "bg-gray-800 text-gray-500"}`}
+                          >
+                            {coupon.is_active ? "Active" : "Paused"}
+                          </button>
+                          <button onClick={() => deleteCoupon(coupon.id)} className="p-1.5 text-red-500 hover:text-red-400">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ── PRODUCTS ── */}
+          {section === "products" && (
+            <div className="space-y-6 max-w-4xl">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h1 className="text-2xl font-black text-white">Product Management</h1>
+                  <p className="text-gray-400 text-sm mt-1">Modify game names, categories, custom prices, and visibility.</p>
+                </div>
+                <button onClick={loadGamesForProducts} className="p-2 text-gray-400 hover:text-white">
+                  <RefreshCw size={16} />
+                </button>
+              </div>
+
+              {/* Search */}
+              <input
+                type="text"
+                value={productSearchQuery}
+                onChange={(e) => setProductSearchQuery(e.target.value)}
+                placeholder="Search games..."
+                className="w-full bg-[#1a1a1a] border border-white/10 text-white rounded-xl px-4 py-3 text-sm outline-none focus:border-yellow-400 placeholder-gray-600"
+              />
+
+              <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl overflow-hidden">
+                <div className="divide-y divide-white/5">
+                  {(productSearchQuery
+                    ? allGamesForProducts.filter(g => g.game_name.toLowerCase().includes(productSearchQuery.toLowerCase()))
+                    : allGamesForProducts
+                  ).slice(0, 50).map((game) => (
+                    <div key={game.game_id}>
+                      <div className="px-5 py-4 flex items-center gap-4">
+                        <img
+                          src={game.game_image}
+                          alt={game.game_name}
+                          className="w-12 h-12 rounded-xl object-cover flex-shrink-0"
+                          onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=48&h=48&fit=crop"; }}
+                        />
+                        <div className="flex-1">
+                          <p className="text-sm font-bold text-white">{game.game_name}</p>
+                          <p className="text-xs text-gray-500">ID: {game.game_id} · {game.category}</p>
+                        </div>
+                        <button
+                          onClick={() => setEditingProduct(
+                            editingProduct === game.game_id ? null :
+                            { game_id: game.game_id, custom_price: "", category_override: game.category || "Top Up", is_featured: false, is_hidden: false }
+                          )}
+                          className="flex items-center gap-1.5 bg-white/10 hover:bg-white/15 text-white text-xs font-semibold px-3 py-2 rounded-xl transition-colors"
+                        >
+                          <Edit2 size={12} /> Edit
+                        </button>
+                      </div>
+
+                      {editingProduct?.game_id === game.game_id && (
+                        <div className="px-5 pb-4 bg-white/3 border-t border-white/5">
+                          <div className="grid grid-cols-2 gap-3 mt-3">
+                            <div>
+                              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Custom Price ($ override)</label>
+                              <input
+                                type="number"
+                                value={editingProduct.custom_price}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, custom_price: e.target.value })}
+                                placeholder="Leave empty = use Lootbar price"
+                                className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-yellow-400"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-1 block">Category Override</label>
+                              <select
+                                value={editingProduct.category_override}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, category_override: e.target.value })}
+                                className="w-full bg-[#0f0f0f] border border-white/20 text-white rounded-xl px-4 py-2.5 text-sm outline-none focus:border-yellow-400"
+                              >
+                                {CATEGORIES.filter(c => c !== "All").map(cat => (
+                                  <option key={cat} value={cat}>{cat}</option>
+                                ))}
+                              </select>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4 mt-3">
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editingProduct.is_featured}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, is_featured: e.target.checked })}
+                                className="w-4 h-4 rounded accent-yellow-400"
+                              />
+                              <span className="text-sm text-gray-300">Featured</span>
+                            </label>
+                            <label className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={editingProduct.is_hidden}
+                                onChange={(e) => setEditingProduct({ ...editingProduct, is_hidden: e.target.checked })}
+                                className="w-4 h-4 rounded accent-red-400"
+                              />
+                              <span className="text-sm text-gray-300">Hide from store</span>
+                            </label>
+                          </div>
+                          <div className="flex gap-3 mt-4">
+                            <button
+                              onClick={() => saveProductOverride(game.game_id, {
+                                custom_price: editingProduct.custom_price ? parseFloat(editingProduct.custom_price) : null,
+                                category_override: editingProduct.category_override,
+                                is_featured: editingProduct.is_featured,
+                                is_hidden: editingProduct.is_hidden,
+                              })}
+                              className="bg-yellow-400 text-black font-bold px-5 py-2.5 rounded-xl hover:bg-yellow-300 flex items-center gap-2 text-sm"
+                            >
+                              <Save size={14} /> Save Changes
+                            </button>
+                            <button
+                              onClick={() => setEditingProduct(null)}
+                              className="bg-white/10 text-white font-semibold px-5 py-2.5 rounded-xl text-sm"
+                            >
+                              Cancel
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           )}

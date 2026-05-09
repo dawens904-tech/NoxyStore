@@ -375,18 +375,19 @@ export function AccountPage() {
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               {[
                 { key: "buyHistory" as DesktopSection, icon: ShoppingBag, label: t("buyHistory") },
-                { key: "coupon" as DesktopSection, icon: Tag, label: t("coupons"), badge: "1397" },
+                { key: "coupon" as DesktopSection, icon: Tag, label: t("coupons"), badge: "1397", path: "/coupons" },
                 { key: "settings" as DesktopSection, icon: Settings, label: t("settings") },
                 { key: "helpCenter" as DesktopSection, icon: HelpCircle, label: t("helpCenter") },
                 { key: "feedback" as DesktopSection, icon: MessageSquare, label: "Feedback" },
-                { key: "invite" as DesktopSection, icon: Gift, label: t("inviteForCoupons"), dot: true },
-                { key: "earn" as DesktopSection, icon: DollarSign, label: t("affiliateProgram"), highlight: true },
+                { key: "invite" as DesktopSection, icon: Gift, label: t("inviteForCoupons"), dot: true, path: "/invite" },
+                { key: "earn" as DesktopSection, icon: DollarSign, label: t("affiliateProgram"), highlight: true, path: "/invite" },
               ].map((item) => (
                 <button
                   key={item.key}
                   onClick={() => {
                     if (item.key === "feedback") { navigate("/feedback"); return; }
                     if (item.key === "helpCenter") { navigate("/support"); return; }
+                    if ((item as any).path) { navigate((item as any).path); return; }
                     setDesktopSection(item.key);
                   }}
                   className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
@@ -586,8 +587,8 @@ export function AccountPage() {
                 { icon: HelpCircle, label: t("helpCenter"), path: "/support" },
                 { icon: MessageCircle, label: "Live Chat Support", sub: "Get instant help", highlight: true, path: "/support/vip" },
                 { icon: MessageSquare, label: "Feedback", sub: "Report issues or suggestions", path: "/feedback" },
-                { icon: Gift, label: t("inviteForCoupons"), sub: "Unlock rich coupon rewards", highlight2: true, path: null },
-                { icon: DollarSign, label: t("affiliateProgram"), sub: "Earn up to 10% money", highlight2: true, path: null },
+                { icon: Gift, label: t("inviteForCoupons"), sub: "Unlock rich coupon rewards", highlight2: true, path: "/invite" },
+                { icon: DollarSign, label: t("affiliateProgram"), sub: "Earn up to 10% money", highlight2: true, path: "/invite" },
                 { icon: User, label: t("aboutUs"), path: "/about" },
               ].map((item, idx) => (
                 <button
