@@ -425,4 +425,4 @@ export function HomePage() {
     </div>
   );
 }
-after you login remove the top message 🎁 Exclusive For New Registered Users! Sign up to get Coupons and Update DesktopHeader to show the logged-in user's avatar and nickname dropdown (with links to account, orders, logout) instead of the Sign In button when the user is authenticated via Google OAuth or any provider.
+

@@ -41,16 +41,18 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
     <>
       <LanguageCurrencyModal isOpen={showLangModal} onClose={() => setShowLangModal(false)} />
 
-      {/* Top announcement banner */}
-      <div className="bg-[#fff9e6] border-b border-yellow-100 py-2 px-4 text-center text-sm">
-        <span className="text-gray-700">🎁 {t("exclusiveForNewUsers")} </span>
-        <button
-          onClick={() => navigate("/login")}
-          className="text-yellow-600 font-semibold hover:text-yellow-700 underline"
-        >
-          {t("signupForCoupons")}
-        </button>
-      </div>
+      {/* Top announcement banner — only shown to guests */}
+      {!isAuthenticated && (
+        <div className="bg-[#fff9e6] border-b border-yellow-100 py-2 px-4 text-center text-sm">
+          <span className="text-gray-700">🎁 {t("exclusiveForNewUsers")} </span>
+          <button
+            onClick={() => navigate("/login")}
+            className="text-yellow-600 font-semibold hover:text-yellow-700 underline"
+          >
+            {t("signupForCoupons")}
+          </button>
+        </div>
+      )}
 
       {/* Main nav bar */}
       <header className="bg-[#0a0a0a] sticky top-0 z-50 shadow-lg">
