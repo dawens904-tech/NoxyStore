@@ -405,22 +405,6 @@ export function HomePage() {
             </button>
           )}
         </div>
-
-        <div className="mt-6 mx-3 bg-gradient-to-br from-gray-900 to-gray-800 rounded-2xl p-5 text-white">
-          <h3 className="font-bold text-base mb-3">{t("whyChooseUs")}</h3>
-          <div className="grid grid-cols-2 gap-3">
-            {[
-              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>, label: t("fast"), desc: "3-5 min top-up" },
-              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>, label: t("safe"), desc: "Verified reseller" },
-              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>, label: t("bestPrice"), desc: "Up to 30% off" },
-              { icon: <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className="w-5 h-5"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1a2 2 0 0 1-2-2v-3a2 2 0 0 1 2-2h3zM3 19a2 2 0 0 0 2 2h1a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2H3z"/></svg>, label: t("support247"), desc: "Always online" },
-            ].map((item) => (
-              <div key={item.label} className="flex items-start gap-2">
-                <span className="text-yellow-400 mt-0.5">{item.icon}</span>
-                <div>
-                  <p className="text-xs font-bold">{item.label}</p>
-                  <p className="text-[10px] text-gray-400">{item.desc}</p>
-                </div>
               </div>
             ))}
           </div>
