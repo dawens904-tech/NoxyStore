@@ -1,8 +1,42 @@
-
 import { Link, useLocation } from 'react-router-dom';
 import { Shield, Headphones, CreditCard } from 'lucide-react';
 import { MobileFooter } from './MobileFooter';
 import TrustpilotReviews from '@/components/features/TrustpilotReviews';
+
+// Carousel bileşeni
+const logos = [
+  "/img/pay.png",
+  "/img/googlepay.png",
+  "/img/klarna.png",
+  "/img/paysafecard.png",
+  "/img/paynow.png",
+  "/img/qris.png",
+  "/img/dana.png",
+  "/img/gcash.png",
+  "/img/tng.png",
+  "/img/fpx.png",
+  "/img/familymart.png",
+  "/img/lawson.png",
+  "/img/secoma.png",
+  "/img/btc.png",
+  "/img/eth.png"
+];
+
+function Carousel() {
+  return (
+    <div className="overflow-hidden w-full py-4 bg-white">
+      <div className="flex animate-scroll gap-10">
+        {logos.concat(logos).map((logo, i) => (
+          <img
+            key={i}
+            src={logo}
+            className="h-10 w-auto object-contain opacity-90 hover:opacity-100 transition"
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
 
 export function Footer() {
   const location = useLocation();
@@ -73,22 +107,15 @@ function DesktopFooter() {
         </div>
       </div>
 
+      {/* Payment Methods Carousel */}
+      <div className="border-y">
+        <Carousel />
+      </div>
+
       {/* Main Footer Content */}
       <div className="container mx-auto px-6 py-12">
-        {/* Payment Methods */}
-        <div className="flex flex-wrap items-center justify-center gap-4 py-8 border-y">
-          <img src="https://cdn.worldvectorlogo.com/logos/visa-2.svg" alt="Visa" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/otuili.png" alt="Mastercard" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/wes6op.jpeg" alt="JCB" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/pqnaqa.jpeg" alt="Amex" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/509hhb.jpeg" alt="Discover" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/6o4ob0.png" alt="PayPal" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/z36scq.png" alt="Apple Pay" className="h-6 opacity-60" />
-          <img src="https://files.catbox.moe/rbu95l.png" alt="Google Pay" className="h-6 opacity-60" />
-        </div>
-
         {/* Footer Links */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8 mt-12">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
             <h3 className="font-bold mb-4">Site Navigation</h3>
             <ul className="space-y-2 text-sm text-muted-foreground">
@@ -155,7 +182,7 @@ function DesktopFooter() {
               </a>
             </div>
           </div>
-        </div> {/* Closing tag for the div that starts on line 75, which wraps Social section */}
+        </div>
 
         {/* Copyright */}
         <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
