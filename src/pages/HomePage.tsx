@@ -483,4 +483,5 @@ export function HomePage() {
     </div>
   );
 }
+create a layout where one section takes 3 fractions (3fr) in a row Inside that section, make 3 rows, and in each row place 3 items, each taking equal space (3fr total per row).
 
