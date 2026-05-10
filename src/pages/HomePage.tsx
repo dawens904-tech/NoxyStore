@@ -372,15 +372,18 @@ export function HomePage() {
             </button>
           </div>
           <div className="grid grid-cols-3 gap-3">
-            {isLoading ? <GameCardSkeleton count={6} /> : hotGames.map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+            {isLoading ? <GameCardSkeleton count={3} /> : hotGames.slice(0, 3).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
           </div>
         </div>
 
         {discountGames.length > 0 && (
           <div className="mt-6 px-3">
-            <h2 className="section-title mb-3">{t("discount")} Deals</h2>
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="section-title">{t("discount")} Deals</h2>
+              <button onClick={() => navigate("/categories")} className="flex items-center gap-1 text-xs text-gray-500 font-medium">All <ChevronRight size={12} /></button>
+            </div>
             <div className="grid grid-cols-3 gap-3">
-              {discountGames.map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+              {discountGames.slice(0, 3).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
             </div>
           </div>
         )}
@@ -392,11 +395,9 @@ export function HomePage() {
               <h2 className="section-title">New Games</h2>
               <button onClick={() => navigate("/categories")} className="flex items-center gap-1 text-xs text-gray-500 font-medium">All <ChevronRight size={12} /></button>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {newGames.map((game) => (
-                <div key={game.game_id} className="flex-shrink-0 w-28">
-                  <GameCard game={game} size="sm" />
-                </div>
+            <div className="grid grid-cols-3 gap-3">
+              {newGames.slice(0, 3).map((game) => (
+                <GameCard key={game.game_id} game={game} size="sm" />
               ))}
             </div>
           </div>
@@ -409,11 +410,9 @@ export function HomePage() {
               <h2 className="section-title">Trending Gift Cards</h2>
               <button onClick={() => navigate("/categories?filter=Gift+Card")} className="flex items-center gap-1 text-xs text-gray-500 font-medium">All <ChevronRight size={12} /></button>
             </div>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {giftCardGames.map((game) => (
-                <div key={game.game_id} className="flex-shrink-0 w-28">
-                  <GameCard game={game} size="sm" />
-                </div>
+            <div className="grid grid-cols-3 gap-3">
+              {giftCardGames.slice(0, 3).map((game) => (
+                <GameCard key={game.game_id} game={game} size="sm" />
               ))}
             </div>
           </div>
@@ -450,4 +449,4 @@ export function HomePage() {
     </div>
   );
 }
-make all section in mobile 3fr 1 row and chak section gen 3 no carousel look:https://files.catbox.moe/ktnh5k.jpeg.
+
