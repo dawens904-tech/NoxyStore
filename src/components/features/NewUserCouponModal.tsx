@@ -162,3 +162,4 @@ export function NewUserCouponModal({ isAuthenticated }: NewUserCouponModalProps)
     </div>
   );
 }
+make its more small in center in mobile.
