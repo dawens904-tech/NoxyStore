@@ -450,3 +450,4 @@ export function HomePage() {
     </div>
   );
 }
+make all section in mobile 3fr 1 row and chak section gen 3 no carousel look:https://files.catbox.moe/ktnh5k.jpeg.
