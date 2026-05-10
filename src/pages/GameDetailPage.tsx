@@ -686,4 +686,3 @@ export function GameDetailPage() {
     </>
   );
 }
-update GameDetailPage to fetch real server regions from Lootbar API SKU attributes (e.g. Malaysia/Singapore, Brazil, USA&Latam tabs) and render region tab selector just like the Lootbar screenshot, grouping SKUs by region with tab buttons at the top.
