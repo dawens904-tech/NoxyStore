@@ -150,4 +150,3 @@ export function VerifyPlayerPage() {
     </div>
   );
 }
-Fix VerifyPlayerPage so that the Server Region field shows a proper bottom-sheet dropdown picker with regions fetched from the SKU's attribute list (America, Asia, Europe, TW/HK/MO etc.), matching the Order Information modal design shown in the reference photos.
