@@ -285,32 +285,6 @@ export function HomePage() {
             );
           })}
 
-          {/* All Games Grid */}
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-black text-gray-900">{t("allGames")}</h2>
-              <button onClick={() => navigate("/games")} className="text-sm text-gray-500 hover:text-gray-700 font-medium">
-                {t("viewAll")} ({games.length}) →
-              </button>
-            </div>
-            <div className="grid grid-cols-4 lg:grid-cols-7 gap-4">
-              {isLoading
-                ? Array.from({ length: 14 }).map((_, i) => (
-                    <div key={i} className="shimmer rounded-2xl aspect-square" />
-                  ))
-                : games.slice(0, 14).map((game) => (
-                    <GameCard key={game.game_id} game={game} size="sm" />
-                  ))}
-            </div>
-            {games.length > 14 && (
-              <button
-                onClick={() => navigate("/games")}
-                className="w-full mt-4 py-3 text-sm font-semibold text-gray-600 bg-white rounded-2xl border border-gray-200 hover:bg-gray-50"
-              >
-                View more ({games.length - 14} more games) ↓
-              </button>
-            )}
-          </div>
 
           {/* Desktop Footer */}
           <Footer />
@@ -394,3 +368,5 @@ export function HomePage() {
     </div>
   );
 }
+
+add more section new game,trending gift card and fix real product fetch ladan yo and gift card section only havw gift card product.
