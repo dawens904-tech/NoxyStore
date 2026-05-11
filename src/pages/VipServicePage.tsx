@@ -44,6 +44,9 @@ export function VipServicePage() {
 
   // Admin mode — if ?adminToken=xyz is in URL, this is admin joining
   const isAdmin = searchParams.get("adminToken") === "admin-join";
+  const [isAgentMode, setIsAgentMode] = useState(false);
+  const [showEndChatModal, setShowEndChatModal] = useState(false);
+  const [showLeaveModal, setShowLeaveModal] = useState(false);
 
   useEffect(() => {
     // Initial welcome message
@@ -118,8 +121,8 @@ export function VipServicePage() {
       updated_at: new Date().toISOString(),
     });
 
-    // AI reply — only when session is in 'ai' mode (no human agent yet)
-    if (!isAdmin && sessionStatus === "ai" && (text.trim() || imageUrl)) {
+    // AI reply — only when NOT in agent mode and session is 'ai'
+    if (!isAdmin && sessionStatus === "ai" && !isAgentMode && (text.trim() || imageUrl)) {
       const history = messages
         .filter((m) => !m.id.startsWith("welcome"))
         .map((m) => ({ role: m.sender === "user" ? "user" : "assistant", content: m.content || "[image]"}));
@@ -185,22 +188,66 @@ export function VipServicePage() {
 
   const confirmContactPlatform = async () => {
     setShowContactModal(false);
-    setSessionStatus("waiting");
+    setIsAgentMode(true);
+    setSessionStatus("live");
     await supabase.from("chat_sessions").upsert({
       id: sessionId,
       user_email: user?.email,
-      status: "waiting",
+      status: "live",
       updated_at: new Date().toISOString(),
     });
-    // In real setup, send email to admin
+    // Insert connecting message
     await supabase.from("chat_messages").insert({
       session_id: sessionId,
       user_email: user?.email,
       sender: "ai",
-      content: "A VIP support agent has been requested. Please wait while we connect you. Average response time: 2-5 minutes.",
+      content: "Connecting you to a VIP support agent...",
+    });
+    // Agent AI greets — edge function called once as agent persona
+    const history = messages
+      .filter((m) => !m.id.startsWith("welcome"))
+      .map((m) => ({ role: m.sender === "user" ? "user" : "assistant", content: m.content || "[image]" }));
+    supabase.functions.invoke("ai-support", {
+      body: {
+        messages: history,
+        userEmail: user?.email,
+        sessionId,
+        agentMode: true,
+      },
+    }).then(({ data: aiData }) => {
+      if (aiData?.reply) {
+        const agentMsg: ChatMessage = {
+          id: `agent_${Date.now()}`,
+          sender: "admin",
+          content: aiData.reply,
+          created_at: new Date().toISOString(),
+        };
+        setMessages((prev) => [...prev, agentMsg]);
+      }
     });
     loadNewMessages();
-    toast.success("VIP agent requested. We will connect you shortly.");
+    toast.success("VIP Agent connected.");
+  };
+
+  const handleEndChat = async () => {
+    setShowEndChatModal(false);
+    setIsAgentMode(false);
+    setSessionStatus("ai");
+    await supabase.from("chat_sessions").upsert({
+      id: sessionId,
+      user_email: user?.email,
+      status: "closed",
+      closed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    });
+    const closedMsg: ChatMessage = {
+      id: `closed_${Date.now()}`,
+      sender: "ai",
+      content: "This chat session has ended. Thank you for contacting NoxyStore VIP Support. If you need further assistance, feel free to start a new chat.",
+      created_at: new Date().toISOString(),
+    };
+    setMessages((prev) => [...prev, closedMsg]);
+    toast.success("Chat ended. You can start a new session anytime.");
   };
 
   const formatTime = (iso: string) => {
@@ -212,7 +259,13 @@ export function VipServicePage() {
       {/* Header */}
       <div className="bg-white sticky top-0 z-40 border-b border-gray-100">
         <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate("/support")} className="p-1">
+          <button
+            onClick={() => {
+              if (isAgentMode) { setShowLeaveModal(true); }
+              else { navigate("/support"); }
+            }}
+            className="p-1"
+          >
             <ArrowLeft size={20} className="text-gray-700" />
           </button>
           <div className="w-9 h-9 rounded-full overflow-hidden flex-shrink-0 bg-amber-100">
@@ -230,6 +283,14 @@ export function VipServicePage() {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {isAgentMode && (
+              <button
+                onClick={() => setShowEndChatModal(true)}
+                className="text-xs font-bold text-red-500 border border-red-200 bg-red-50 px-2.5 py-1 rounded-full hover:bg-red-100 transition-colors"
+              >
+                End Chat
+              </button>
+            )}
             <button className="p-1"><ThumbsUp size={18} className="text-gray-500" /></button>
             <span className="text-gray-300">|</span>
             <button className="p-1"><ThumbsDown size={18} className="text-gray-500" /></button>
@@ -405,6 +466,60 @@ export function VipServicePage() {
         </div>
       )}
 
+      {/* End Chat Confirmation Modal */}
+      {showEndChatModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-gray-900 text-lg mb-2 text-center">End this chat?</h3>
+            <p className="text-gray-500 text-sm text-center mb-6">The VIP agent session will be closed and AI support will be re-enabled. You can start a new session anytime.</p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowEndChatModal(false)}
+                className="flex-1 border border-gray-300 rounded-2xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Continue Chat
+              </button>
+              <button
+                onClick={handleEndChat}
+                className="flex-1 bg-red-500 rounded-2xl py-3 font-bold text-white hover:bg-red-600 transition-colors"
+              >
+                End Chat
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Leave Page Confirmation Modal */}
+      {showLeaveModal && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
+          <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
+            <h3 className="font-bold text-gray-900 text-lg mb-2 text-center">Leave this chat?</h3>
+            <p className="text-gray-500 text-sm text-center mb-6">A VIP agent is currently connected. Would you like to end the session before leaving?</p>
+            <div className="space-y-3">
+              <button
+                onClick={() => setShowLeaveModal(false)}
+                className="w-full border border-gray-300 rounded-2xl py-3 font-semibold text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Continue Chat
+              </button>
+              <button
+                onClick={async () => { setShowLeaveModal(false); await handleEndChat(); navigate("/support"); }}
+                className="w-full bg-red-500 rounded-2xl py-3 font-bold text-white hover:bg-red-600 transition-colors"
+              >
+                End &amp; Leave
+              </button>
+              <button
+                onClick={() => { setShowLeaveModal(false); navigate("/support"); }}
+                className="w-full text-sm text-gray-400 hover:text-gray-600 py-2"
+              >
+                Leave without ending
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Chat History Modal */}
       {showHistoryModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
@@ -435,4 +550,4 @@ export function VipServicePage() {
     </div>
   );
 }
-fix when you ask for agent connect or ai cant help you its call agent ai when agent ai here disable edg call and when agent close chat enable and before user left the chat ask if they want to end chat or kontinye ekri if end edg enable and agent auto close.
+
