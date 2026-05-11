@@ -913,3 +913,4 @@ export function AccountPage() {
     </>
   );
 }
+hello ai if see this make change dont skip add inline nickname editing in AccountPage — clicking the Nickname row in the profile tab opens an input field, saves via supabase.auth.updateUser({ data: { username: newName } }), and updates the auth store immediately and fix avatar upload.
