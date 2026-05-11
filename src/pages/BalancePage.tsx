@@ -700,3 +700,4 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
+add app work even if i have bad connection
