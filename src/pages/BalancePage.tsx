@@ -1,6 +1,9 @@
 /**
  * Balance Page — Top Up / Withdraw / Cash Flow tabs
  * Mobile: full-screen with back arrow | Desktop: sidebar + content panel (matches AccountPage style)
+ *
+ * NOTE: TabContent, DesktopLayout, MobileLayout are defined OUTSIDE BalancePage
+ * to prevent React from remounting them on every render (causes white screen on iOS Safari).
  */
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
@@ -55,9 +58,7 @@ const PAYMENT_METHODS = [
   {
     id: "paypal",
     label: "PayPal",
-    icon: (
-      <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" alt="PayPal" className="h-6" />
-    ),
+    icon: <img src="https://upload.wikimedia.org/wikipedia/commons/a/a4/Paypal_2014_logo.png" alt="PayPal" className="h-6" />,
   },
   {
     id: "crypto",
@@ -72,50 +73,62 @@ const PAYMENT_METHODS = [
   },
 ];
 
-export function BalancePage() {
-  const navigate = useNavigate();
-  const { user } = useAuthStore();
-  const [activeTab, setActiveTab] = useState<BalanceTab>("topup");
-  const [topupAmount, setTopupAmount] = useState("50.00");
-  const [withdrawAmount, setWithdrawAmount] = useState("");
-  const [selectedPayment, setSelectedPayment] = useState("visa");
-  const [selectedWithdrawMethod, setSelectedWithdrawMethod] = useState("ewallet");
-  const [bankCards, setBankCards] = useState<BankCard[]>([]);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [showAddCard, setShowAddCard] = useState(false);
-  const [cashflowFilter, setCashflowFilter] = useState("All");
-  const balance = user?.balance || 0;
+const WITHDRAW_METHODS = [
+  { id: "ewallet", label: "e-Wallet", powered: "Payoneer" },
+  { id: "bank_payoneer", label: "Bank Transfer", powered: "Payoneer" },
+  { id: "bank_airwallex", label: "Bank Transfer", powered: "Airwallex" },
+];
 
-  useEffect(() => {
-    if (!user?.email) return;
-    supabase.from("user_bank_cards").select("*").eq("user_email", user.email).then(({ data }) => {
-      if (data) setBankCards(data);
-    });
-    supabase.from("wallet_transactions").select("*").eq("user_email", user.email)
-      .order("created_at", { ascending: false }).limit(50)
-      .then(({ data }) => { if (data) setTransactions(data); });
-  }, [user?.email]);
+const PRESETS = ["50.00", "90.00", "150.00"];
 
+function getCardLogo(type: string) {
+  if (type === "visa") return <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />;
+  if (type === "mastercard") return <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/MasterCard_Logo.svg" alt="MC" className="h-5" />;
+  return <CreditCard size={16} className="text-gray-600" />;
+}
+
+// ─── Tab Content (outside BalancePage to prevent remount) ─────────────────────
+interface TabContentProps {
+  activeTab: BalanceTab;
+  topupAmount: string;
+  setTopupAmount: (v: string) => void;
+  withdrawAmount: string;
+  setWithdrawAmount: (v: string) => void;
+  selectedPayment: string;
+  setSelectedPayment: (v: string) => void;
+  selectedWithdrawMethod: string;
+  setSelectedWithdrawMethod: (v: string) => void;
+  bankCards: BankCard[];
+  transactions: Transaction[];
+  cashflowFilter: string;
+  setCashflowFilter: (v: string) => void;
+  balance: number;
+  onAddCard: () => void;
+}
+
+function TabContent({
+  activeTab,
+  topupAmount,
+  setTopupAmount,
+  withdrawAmount,
+  setWithdrawAmount,
+  selectedPayment,
+  setSelectedPayment,
+  selectedWithdrawMethod,
+  setSelectedWithdrawMethod,
+  bankCards,
+  transactions,
+  cashflowFilter,
+  setCashflowFilter,
+  balance,
+  onAddCard,
+}: TabContentProps) {
   const processingFee = parseFloat(topupAmount || "0") * 0.035 + 0.15;
   const totalAmount = parseFloat(topupAmount || "0") + processingFee;
-  const PRESETS = ["50.00", "90.00", "150.00"];
 
-  const WITHDRAW_METHODS = [
-    { id: "ewallet", label: "e-Wallet", powered: "Payoneer" },
-    { id: "bank_payoneer", label: "Bank Transfer", powered: "Payoneer" },
-    { id: "bank_airwallex", label: "Bank Transfer", powered: "Airwallex" },
-  ];
-
-  const getCardLogo = (type: string) => {
-    if (type === "visa") return <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />;
-    if (type === "mastercard") return <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/MasterCard_Logo.svg" alt="MC" className="h-5" />;
-    return <CreditCard size={16} className="text-gray-600" />;
-  };
-
-  // ─── Shared Tab Content ───────────────────────────────────────────────────
-  const TabContent = () => (
+  return (
     <div>
-      {/* TOP UP TAB */}
+      {/* TOP UP */}
       {activeTab === "topup" && (
         <div className="space-y-5">
           <div>
@@ -180,7 +193,7 @@ export function BalancePage() {
               </div>
             ) : (
               <button
-                onClick={() => setShowAddCard(true)}
+                onClick={onAddCard}
                 className="w-full border border-dashed border-gray-300 rounded-xl py-4 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 <Plus size={18} />
@@ -206,14 +219,13 @@ export function BalancePage() {
         </div>
       )}
 
-      {/* WITHDRAW TAB */}
+      {/* WITHDRAW */}
       {activeTab === "withdraw" && (
         <div className="space-y-5">
           <div>
             <p className="text-sm text-gray-500 mb-1">Withdrawable Amount</p>
             <p className="text-3xl font-black text-gray-900">${balance.toFixed(2)}</p>
           </div>
-
           <div>
             <h3 className="font-bold text-gray-900 mb-3">Amount</h3>
             <div className="border border-gray-300 rounded-xl px-4 py-3 flex items-center gap-2">
@@ -227,7 +239,6 @@ export function BalancePage() {
               />
             </div>
           </div>
-
           <div>
             <h3 className="font-bold text-gray-900 mb-3">Method</h3>
             <div className="space-y-2">
@@ -256,7 +267,6 @@ export function BalancePage() {
               ))}
             </div>
           </div>
-
           <div>
             <h3 className="font-bold text-gray-900 mb-3">Account</h3>
             <button
@@ -267,7 +277,6 @@ export function BalancePage() {
               <span className="font-semibold">Add A Payoneer Account</span>
             </button>
           </div>
-
           <button
             disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
             onClick={() => toast.info("Withdrawal request submitted. Processing takes 3-5 business days.")}
@@ -282,7 +291,7 @@ export function BalancePage() {
         </div>
       )}
 
-      {/* CASH FLOW TAB */}
+      {/* CASH FLOW */}
       {activeTab === "cashflow" && (
         <div>
           <div className="mb-4">
@@ -296,7 +305,6 @@ export function BalancePage() {
               ))}
             </select>
           </div>
-
           {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
               <div className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
@@ -330,177 +338,218 @@ export function BalancePage() {
       )}
     </div>
   );
+}
 
-  // ─── Desktop Layout ───────────────────────────────────────────────────────
-  const DesktopLayout = () => (
-    <div className="hidden lg:block min-h-screen bg-[#f5f5f5]">
-      <DesktopHeader />
-      <div className="max-w-[1280px] mx-auto px-6 py-3">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <button onClick={() => navigate("/")} className="hover:text-gray-700">Home</button>
-          <ChevronRight size={14} />
-          <button onClick={() => navigate("/account")} className="hover:text-gray-700">Account</button>
-          <ChevronRight size={14} />
-          <span className="text-gray-800 font-medium">Balance</span>
-        </div>
-      </div>
-      <div className="max-w-[1280px] mx-auto px-6 pb-12">
-        <div className="flex gap-6">
-          {/* Sidebar */}
-          <div className="w-72 flex-shrink-0">
-            <div className="bg-white rounded-2xl shadow-sm p-5 mb-4">
-              <div className="flex items-center gap-3">
-                <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
-                  {user?.nickname?.[0]?.toUpperCase()}
-                </div>
-                <div>
-                  <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
-                  <p className="text-xs text-gray-400 truncate max-w-[140px]">{user?.email}</p>
-                </div>
-              </div>
-              <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
-                <div>
-                  <p className="text-lg font-black text-gray-900">${balance.toFixed(2)}</p>
-                  <p className="text-xs text-gray-400">Balance</p>
-                </div>
-                <div className="h-8 w-px bg-gray-200" />
-                <div>
-                  <p className="text-lg font-black text-gray-900">{user?.points ?? 0}</p>
-                  <p className="text-xs text-gray-400">Points</p>
-                </div>
-              </div>
-            </div>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              {[
-                { label: "Account Settings", path: "/account", active: false },
-                { label: "Buy History", path: "/account", active: false },
-                { label: "Coupons", path: "/coupons", active: false },
-                { label: "Balance", path: "/balance", active: true },
-                { label: "Invite Friends", path: "/invite", active: false },
-                { label: "Affiliate Program", path: "/affiliate", active: false, highlight: true },
-              ].map((item) => (
-                <button
-                  key={item.label}
-                  onClick={() => navigate(item.path)}
-                  className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
-                    item.active
-                      ? "bg-yellow-50 text-yellow-700 border-l-4 border-l-yellow-400"
-                      : item.highlight
-                      ? "text-yellow-500 hover:bg-yellow-50"
-                      : "text-gray-700 hover:bg-gray-50"
-                  }`}
-                >
-                  {item.label}
-                  <ChevronRight size={14} className="text-gray-400" />
-                </button>
-              ))}
-            </div>
-          </div>
+// ─── Main Export ──────────────────────────────────────────────────────────────
+export function BalancePage() {
+  const navigate = useNavigate();
+  const { user } = useAuthStore();
+  const [activeTab, setActiveTab] = useState<BalanceTab>("topup");
+  const [topupAmount, setTopupAmount] = useState("50.00");
+  const [withdrawAmount, setWithdrawAmount] = useState("");
+  const [selectedPayment, setSelectedPayment] = useState("visa");
+  const [selectedWithdrawMethod, setSelectedWithdrawMethod] = useState("ewallet");
+  const [bankCards, setBankCards] = useState<BankCard[]>([]);
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [showAddCard, setShowAddCard] = useState(false);
+  const [cashflowFilter, setCashflowFilter] = useState("All");
+  const balance = user?.balance || 0;
 
-          {/* Content */}
-          <div className="flex-1">
-            {/* Balance Hero */}
-            <div className="bg-gradient-to-r from-yellow-400 to-amber-400 rounded-2xl p-6 mb-6 flex items-center justify-between shadow-sm">
-              <div>
-                <p className="text-sm font-semibold text-yellow-900 opacity-75">Current Balance</p>
-                <p className="text-5xl font-black text-black mt-1">
-                  <span className="text-3xl">$</span>{balance.toFixed(2)}
-                </p>
-              </div>
-              <div className="w-24 h-24 opacity-70">
-                <svg viewBox="0 0 100 100" fill="none">
-                  <rect x="10" y="20" width="80" height="60" rx="8" fill="rgba(0,0,0,0.15)" stroke="rgba(0,0,0,0.2)" strokeWidth="2"/>
-                  <rect x="10" y="30" width="80" height="15" fill="rgba(0,0,0,0.1)"/>
-                  <circle cx="75" cy="65" r="10" fill="rgba(255,255,255,0.4)"/>
-                  <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                  <path d="M20 62 L35 62" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-                </svg>
-              </div>
-            </div>
+  useEffect(() => {
+    if (!user?.email) return;
+    supabase.from("user_bank_cards").select("*").eq("user_email", user.email).then(({ data }) => {
+      if (data) setBankCards(data);
+    });
+    supabase.from("wallet_transactions").select("*").eq("user_email", user.email)
+      .order("created_at", { ascending: false }).limit(50)
+      .then(({ data }) => { if (data) setTransactions(data); });
+  }, [user?.email]);
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
-              {/* Tabs */}
-              <div className="flex border-b border-gray-200">
-                {([["topup", "Top Up"], ["withdraw", "Withdraw"], ["cashflow", "Cash Flow"]] as [BalanceTab, string][]).map(([tab, label]) => (
-                  <button
-                    key={tab}
-                    onClick={() => setActiveTab(tab)}
-                    className={`flex-1 py-4 text-sm font-semibold border-b-2 transition-colors ${
-                      activeTab === tab ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
-              <div className="p-8">
-                <TabContent />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+  const tabProps: TabContentProps = {
+    activeTab,
+    topupAmount,
+    setTopupAmount,
+    withdrawAmount,
+    setWithdrawAmount,
+    selectedPayment,
+    setSelectedPayment,
+    selectedWithdrawMethod,
+    setSelectedWithdrawMethod,
+    bankCards,
+    transactions,
+    cashflowFilter,
+    setCashflowFilter,
+    balance,
+    onAddCard: () => setShowAddCard(true),
+  };
 
-  // ─── Mobile Layout ────────────────────────────────────────────────────────
-  const MobileLayout = () => (
-    <div className="lg:hidden min-h-screen bg-white">
-      <div className="bg-[#0a0a0a] sticky top-0 z-40">
-        <div className="flex items-center gap-3 px-4 py-3">
-          <button onClick={() => navigate(-1)} className="text-white"><ArrowLeft size={20} /></button>
-          <span className="text-white font-bold flex-1 text-center">Balance</span>
-          <div className="w-8" />
-        </div>
-      </div>
-
-      <div className="bg-gradient-to-r from-yellow-50 to-amber-100 px-4 py-5 flex items-center justify-between">
-        <div>
-          <p className="text-sm font-semibold text-gray-600">Balance</p>
-          <p className="text-4xl font-black text-gray-900 mt-1">
-            <span className="text-2xl">$</span>{balance.toFixed(2)}
-          </p>
-        </div>
-        <div className="w-20 h-20 opacity-80">
-          <svg viewBox="0 0 100 100" fill="none">
-            <rect x="10" y="20" width="80" height="60" rx="8" fill="#FFD200" stroke="#F0A000" strokeWidth="2"/>
-            <rect x="10" y="30" width="80" height="15" fill="#F0A000"/>
-            <circle cx="75" cy="65" r="10" fill="#FFE066"/>
-            <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-            <path d="M20 62 L35 62" stroke="white" strokeWidth="3" strokeLinecap="round"/>
-          </svg>
-        </div>
-      </div>
-
-      <div className="flex border-b border-gray-200">
-        {([["topup", "Top Up"], ["withdraw", "Withdraw"], ["cashflow", "Cash Flow"]] as [BalanceTab, string][]).map(([tab, label]) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
-              activeTab === tab ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-500"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
-
-      <div className="px-4 py-5 pb-24">
-        <TabContent />
-      </div>
-      <BottomNav />
-    </div>
-  );
+  const TABS: [BalanceTab, string][] = [
+    ["topup", "Top Up"],
+    ["withdraw", "Withdraw"],
+    ["cashflow", "Cash Flow"],
+  ];
 
   return (
     <>
-      <DesktopLayout />
-      <MobileLayout />
+      {/* ── Desktop ── */}
+      <div className="hidden lg:block min-h-screen bg-[#f5f5f5]">
+        <DesktopHeader />
+        <div className="max-w-[1280px] mx-auto px-6 py-3">
+          <div className="flex items-center gap-2 text-sm text-gray-500">
+            <button onClick={() => navigate("/")} className="hover:text-gray-700">Home</button>
+            <ChevronRight size={14} />
+            <button onClick={() => navigate("/account")} className="hover:text-gray-700">Account</button>
+            <ChevronRight size={14} />
+            <span className="text-gray-800 font-medium">Balance</span>
+          </div>
+        </div>
+        <div className="max-w-[1280px] mx-auto px-6 pb-12">
+          <div className="flex gap-6">
+            {/* Sidebar */}
+            <div className="w-72 flex-shrink-0">
+              <div className="bg-white rounded-2xl shadow-sm p-5 mb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
+                    {user?.nickname?.[0]?.toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
+                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{user?.email}</p>
+                  </div>
+                </div>
+                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
+                  <div>
+                    <p className="text-lg font-black text-gray-900">${balance.toFixed(2)}</p>
+                    <p className="text-xs text-gray-400">Balance</p>
+                  </div>
+                  <div className="h-8 w-px bg-gray-200" />
+                  <div>
+                    <p className="text-lg font-black text-gray-900">{user?.points ?? 0}</p>
+                    <p className="text-xs text-gray-400">Points</p>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                {[
+                  { label: "Account Settings", path: "/account", active: false },
+                  { label: "Buy History", path: "/account", active: false },
+                  { label: "Coupons", path: "/coupons", active: false },
+                  { label: "Balance", path: "/balance", active: true },
+                  { label: "Invite Friends", path: "/invite", active: false },
+                  { label: "Affiliate Program", path: "/affiliate", active: false, highlight: true },
+                ].map((item) => (
+                  <button
+                    key={item.label}
+                    onClick={() => navigate(item.path)}
+                    className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
+                      item.active
+                        ? "bg-yellow-50 text-yellow-700 border-l-4 border-l-yellow-400"
+                        : item.highlight
+                        ? "text-yellow-500 hover:bg-yellow-50"
+                        : "text-gray-700 hover:bg-gray-50"
+                    }`}
+                  >
+                    {item.label}
+                    <ChevronRight size={14} className="text-gray-400" />
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="flex-1">
+              <div className="bg-gradient-to-r from-yellow-400 to-amber-400 rounded-2xl p-6 mb-6 flex items-center justify-between shadow-sm">
+                <div>
+                  <p className="text-sm font-semibold text-yellow-900 opacity-75">Current Balance</p>
+                  <p className="text-5xl font-black text-black mt-1">
+                    <span className="text-3xl">$</span>{balance.toFixed(2)}
+                  </p>
+                </div>
+                <div className="w-24 h-24 opacity-70">
+                  <svg viewBox="0 0 100 100" fill="none">
+                    <rect x="10" y="20" width="80" height="60" rx="8" fill="rgba(0,0,0,0.15)" stroke="rgba(0,0,0,0.2)" strokeWidth="2"/>
+                    <rect x="10" y="30" width="80" height="15" fill="rgba(0,0,0,0.1)"/>
+                    <circle cx="75" cy="65" r="10" fill="rgba(255,255,255,0.4)"/>
+                    <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                    <path d="M20 62 L35 62" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+                  </svg>
+                </div>
+              </div>
+              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                <div className="flex border-b border-gray-200">
+                  {TABS.map(([tab, label]) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`flex-1 py-4 text-sm font-semibold border-b-2 transition-colors ${
+                        activeTab === tab ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-500 hover:text-gray-700"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+                <div className="p-8">
+                  <TabContent {...tabProps} />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ── Mobile ── */}
+      <div className="lg:hidden bg-white" style={{ minHeight: "100dvh" }}>
+        <div className="bg-[#0a0a0a] sticky top-0 z-40">
+          <div className="flex items-center gap-3 px-4 py-3" style={{ paddingTop: "calc(0.75rem + env(safe-area-inset-top))" }}>
+            <button onClick={() => navigate(-1)} className="text-white"><ArrowLeft size={20} /></button>
+            <span className="text-white font-bold flex-1 text-center">Balance</span>
+            <div className="w-8" />
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-r from-yellow-50 to-amber-100 px-4 py-5 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-semibold text-gray-600">Balance</p>
+            <p className="text-4xl font-black text-gray-900 mt-1">
+              <span className="text-2xl">$</span>{balance.toFixed(2)}
+            </p>
+          </div>
+          <div className="w-20 h-20 opacity-80">
+            <svg viewBox="0 0 100 100" fill="none">
+              <rect x="10" y="20" width="80" height="60" rx="8" fill="#FFD200" stroke="#F0A000" strokeWidth="2"/>
+              <rect x="10" y="30" width="80" height="15" fill="#F0A000"/>
+              <circle cx="75" cy="65" r="10" fill="#FFE066"/>
+              <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+              <path d="M20 62 L35 62" stroke="white" strokeWidth="3" strokeLinecap="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div className="flex border-b border-gray-200">
+          {TABS.map(([tab, label]) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${
+                activeTab === tab ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-500"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+
+        <div className="px-4 py-5" style={{ paddingBottom: "calc(6rem + env(safe-area-inset-bottom))" }}>
+          <TabContent {...tabProps} />
+        </div>
+        <BottomNav />
+      </div>
+
       {showAddCard && (
         <AddBankCardModal
           onClose={() => setShowAddCard(false)}
-          onSave={(card) => { setBankCards([...bankCards, card]); setShowAddCard(false); }}
+          onSave={(card) => { setBankCards((prev) => [...prev, card]); setShowAddCard(false); }}
           userEmail={user?.email || ""}
           userId={user?.id || ""}
         />
@@ -509,6 +558,7 @@ export function BalancePage() {
   );
 }
 
+// ─── Add Bank Card Modal ──────────────────────────────────────────────────────
 function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
   onClose: () => void;
   onSave: (card: BankCard) => void;
@@ -529,14 +579,12 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     return "visa";
   };
 
-  const formatCardNumber = (val: string) => {
-    return val.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim().slice(0, 19);
-  };
+  const formatCardNumber = (val: string) =>
+    val.replace(/\D/g, "").replace(/(.{4})/g, "$1 ").trim().slice(0, 19);
 
   const formatExpiry = (val: string) => {
     const v = val.replace(/\D/g, "");
-    if (v.length >= 2) return v.slice(0, 2) + "/" + v.slice(2, 4);
-    return v;
+    return v.length >= 2 ? v.slice(0, 2) + "/" + v.slice(2, 4) : v;
   };
 
   const handleSave = async () => {
@@ -652,4 +700,3 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
-

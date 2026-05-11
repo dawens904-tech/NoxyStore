@@ -483,4 +483,4 @@ export function HomePage() {
     </div>
   );
 }
-when i in mobile app iphone i see white screen can check again also balance page.
+

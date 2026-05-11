@@ -51,6 +51,13 @@
   }
   html {
     scroll-behavior: smooth;
+    /* iOS Safari: prevent white flash on rubber-band scroll */
+    background-color: #f8f8f8;
+    -webkit-overflow-scrolling: touch;
+  }
+  /* iOS safe area support */
+  .bottom-nav {
+    padding-bottom: max(env(safe-area-inset-bottom), 0.5rem);
   }
 }
 
