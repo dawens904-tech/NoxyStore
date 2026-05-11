@@ -483,3 +483,4 @@ export function HomePage() {
     </div>
   );
 }
+check for white screen error try enter to the app
