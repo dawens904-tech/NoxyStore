@@ -11,7 +11,7 @@ import { ArrowLeft, Plus, X, CreditCard, Check, ChevronRight } from "lucide-reac
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { useAuthStore } from "@/stores/authStore";
-import { supabase } from "@/lib/supabase";
+import { supabase, retryQuery } from "@/lib/supabase";
 import { toast } from "sonner";
 
 type BalanceTab = "topup" | "withdraw" | "cashflow";
@@ -357,12 +357,46 @@ export function BalancePage() {
 
   useEffect(() => {
     if (!user?.email) return;
-    supabase.from("user_bank_cards").select("*").eq("user_email", user.email).then(({ data }) => {
-      if (data) setBankCards(data);
+    const cacheKey = `balance_data_${user.email}`;
+
+    // 1. Load stale data from localStorage immediately (instant display)
+    try {
+      const cached = localStorage.getItem(cacheKey);
+      if (cached) {
+        const { cards, txs } = JSON.parse(cached);
+        if (cards) setBankCards(cards);
+        if (txs) setTransactions(txs);
+      }
+    } catch (_) {}
+
+    // 2. Fetch fresh data with retry backoff
+    retryQuery(() =>
+      supabase.from("user_bank_cards").select("*").eq("user_email", user.email!)
+    ).then(({ data }) => {
+      if (data) {
+        setBankCards(data);
+        // Update cache
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          const prev = cached ? JSON.parse(cached) : {};
+          localStorage.setItem(cacheKey, JSON.stringify({ ...prev, cards: data }));
+        } catch (_) {}
+      }
     });
-    supabase.from("wallet_transactions").select("*").eq("user_email", user.email)
-      .order("created_at", { ascending: false }).limit(50)
-      .then(({ data }) => { if (data) setTransactions(data); });
+
+    retryQuery(() =>
+      supabase.from("wallet_transactions").select("*").eq("user_email", user.email!)
+        .order("created_at", { ascending: false }).limit(50)
+    ).then(({ data }) => {
+      if (data) {
+        setTransactions(data);
+        try {
+          const cached = localStorage.getItem(cacheKey);
+          const prev = cached ? JSON.parse(cached) : {};
+          localStorage.setItem(cacheKey, JSON.stringify({ ...prev, txs: data }));
+        } catch (_) {}
+      }
+    });
   }, [user?.email]);
 
   const tabProps: TabContentProps = {
@@ -700,4 +734,4 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
-add app work even if i have bad connection
+
