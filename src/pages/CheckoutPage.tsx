@@ -943,6 +943,4 @@ export function CheckoutPage() {
     </>
   );
 }
-
-
-
+fix logo display yo bien pran tout image lan bien format and add gpay for android apple pay for ios show only
