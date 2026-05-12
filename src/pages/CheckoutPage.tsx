@@ -851,4 +851,4 @@ export function CheckoutPage() {
     </>
   );
 }
-
+fix when you click modify in desktop its show a modal Order Information to re enter udid and top anle payment select and payment detail lan tro kole an header lan also fix payment detail all tings kare no border redeem button separe and kare like the photo.
