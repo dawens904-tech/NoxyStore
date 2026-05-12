@@ -336,7 +336,7 @@ export function CheckoutPage() {
   // ─── Right Panel: Payment Details (FIXED - NO SCROLL) ───────────────────
   const PaymentDetailsPanel = () => (
     <div className="w-[360px] flex-shrink-0">
-      <div className="sticky top-[60px] bg-white border border-gray-200">
+      <div className="sticky top-[86px] bg-white border border-gray-200">
         <div className="px-5 pt-5 pb-3 border-b border-gray-200">
           <h3 className="text-base font-bold text-gray-900">Payment Details</h3>
         </div>
@@ -526,13 +526,9 @@ export function CheckoutPage() {
         <DesktopHeader />
       </div>
 
-      <div className="flex w-full pt-[80px] max-w-[1200px] mx-auto gap-6 px-6 py-8 items-start">
+      <div className="flex w-full pt-[80px] max-w-[1200px] mx-auto gap-6 px-6 py-6 items-start">
         {/* LEFT: Scrollable content */}
         <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 80px)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-gray-500 hover:text-gray-700 mb-4 text-sm font-medium">
-            <ArrowLeft size={16} /> Back
-          </button>
-
           {/* Product Card - NO BORDER RADIUS (square corners) */}
           <div className="bg-white border border-gray-200 mb-3">
             <div className="px-6 py-5 flex items-start gap-4">
@@ -924,4 +920,4 @@ export function CheckoutPage() {
     </>
   );
 }
-payment detail must be same position at product display lan and remove back button an anyen fix position.
+
