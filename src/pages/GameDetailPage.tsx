@@ -137,7 +137,8 @@ export function GameDetailPage() {
     }
 
     const finalSku = { ...selectedSku, price: applyMarkup(selectedSku.price || 0) };
-    if (extraInfoFields.length > 0 && Object.keys(extraInfoValues).length === 0) {
+    // Always go through VerifyPlayerPage when the SKU has required extra_info fields
+    if (extraInfoFields.length > 0) {
       navigate("/verify-player", { state: { sku: finalSku, game, quantity } });
     } else {
       navigate("/checkout", { state: { sku: finalSku, game, quantity, extraInfo: extraInfoValues } });
@@ -780,4 +781,3 @@ export function GameDetailPage() {
     </>
   );
 }
-fix this real gonto verify pkayer page and make it clear add footer mobile.
