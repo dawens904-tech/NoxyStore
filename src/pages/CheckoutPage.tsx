@@ -336,8 +336,8 @@ export function CheckoutPage() {
   // ─── Right Panel: Payment Details (FIXED - NO SCROLL) ───────────────────
   const PaymentDetailsPanel = () => (
     <div className="w-[360px] flex-shrink-0">
-      <div className="sticky top-[86px] bg-white border border-gray-200">
-        <div className="px-5 pt-5 pb-3 border-b border-gray-200">
+      <div className="sticky top-[100px] bg-white border border-gray-200">
+        <div className="px-5 pt-6 pb-3 border-b border-gray-200">
           <h3 className="text-base font-bold text-gray-900">Payment Details</h3>
         </div>
 
@@ -526,7 +526,7 @@ export function CheckoutPage() {
         <DesktopHeader />
       </div>
 
-      <div className="flex w-full pt-[80px] max-w-[1200px] mx-auto gap-6 px-6 py-6 items-start">
+      <div className="flex w-full pt-[100px] max-w-[1200px] mx-auto gap-6 px-6 pb-6 items-start">
         {/* LEFT: Scrollable content */}
         <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 80px)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
           {/* Product Card - NO BORDER RADIUS (square corners) */}
@@ -920,4 +920,4 @@ export function CheckoutPage() {
     </>
   );
 }
-add space antre header lan li tro kole vinn fm paka li product card and payment detail name kite ti space anle.
+
