@@ -1,7 +1,24 @@
 import { useState, useEffect, useCallback } from "react";
-import { BANNER_IMAGES } from "@/constants/mockData";
 import { supabase } from "@/lib/supabase";
 import { useNavigate } from "react-router-dom";
+
+// Fallback static banners if DB returns nothing
+const FALLBACK_BANNERS = [
+  {
+    id: "f1",
+    title: "Top Up Instantly",
+    subtitle: "Fast · Safe · 24/7",
+    image_url: "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=350&fit=crop&sig=1",
+    link: "/categories",
+  },
+  {
+    id: "f2",
+    title: "Best Game Prices",
+    subtitle: "Up to 30% OFF",
+    image_url: "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=800&h=350&fit=crop&sig=2",
+    link: "/categories",
+  },
+];
 
 interface DBBanner {
   id: string;
@@ -18,17 +35,17 @@ export function HeroBanner() {
   const [imgErrors, setImgErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    supabase.from("home_banners").select("*").eq("is_active", true).order("sort_order")
-      .then(({ data }) => { if (data && data.length > 0) setBanners(data as DBBanner[]); });
+    supabase
+      .from("home_banners")
+      .select("id, title, subtitle, image_url, link")
+      .eq("is_active", true)
+      .order("sort_order")
+      .then(({ data }) => {
+        if (data && data.length > 0) setBanners(data as DBBanner[]);
+      });
   }, []);
 
-  const items = banners.length > 0 ? banners : BANNER_IMAGES.map((b, i) => ({
-    id: String(i),
-    title: b.title,
-    subtitle: b.subtitle,
-    image_url: (b as any).fallback || (b as any).image || "",
-    link: "/",
-  }));
+  const items = banners.length > 0 ? banners : FALLBACK_BANNERS;
 
   const next = useCallback(() => {
     setCurrent((c) => (c + 1) % items.length);
@@ -42,7 +59,11 @@ export function HeroBanner() {
   return (
     <div className="relative mx-3 rounded-2xl overflow-hidden h-44 bg-gray-900">
       {items.map((banner, idx) => {
-        const src = imgErrors[banner.id] ? "https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/logo/hero-banner-3.jpg" : banner.image_url;
+        const hasError = imgErrors[banner.id];
+        const src = hasError
+          ? `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=800&h=350&fit=crop&sig=${banner.id}`
+          : banner.image_url;
+
         return (
           <div
             key={banner.id}
@@ -56,17 +77,17 @@ export function HeroBanner() {
               className="w-full h-full object-cover"
               onError={() => setImgErrors((p) => ({ ...p, [banner.id]: true }))}
             />
-            <div className="absolute inset-0 bg-gradient-to-r from-black/60 via-transparent to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-r from-black/65 via-black/20 to-transparent" />
             <div className="absolute bottom-4 left-4 text-white">
-              <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider">{banner.subtitle}</p>
-              <h3 className="text-base font-bold mt-0.5">{banner.title}</h3>
+              <p className="text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-0.5">{banner.subtitle}</p>
+              <h3 className="text-base font-bold leading-snug">{banner.title}</h3>
             </div>
           </div>
         );
       })}
 
-      {/* Dots */}
-      <div className="absolute bottom-3 right-4 flex gap-1.5 items-center">
+      {/* Navigation dots */}
+      <div className="absolute bottom-3 right-4 flex gap-1.5 items-center z-10">
         {items.map((_, idx) => (
           <button
             key={idx}
@@ -76,6 +97,22 @@ export function HeroBanner() {
           />
         ))}
       </div>
+
+      {/* Swipe indicators (prev/next) */}
+      <button
+        onClick={() => setCurrent((c) => (c - 1 + items.length) % items.length)}
+        className="absolute left-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 rounded-full flex items-center justify-center z-10"
+        aria-label="Previous"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M15 18l-6-6 6-6" /></svg>
+      </button>
+      <button
+        onClick={() => setCurrent((c) => (c + 1) % items.length)}
+        className="absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 bg-black/40 rounded-full flex items-center justify-center z-10"
+        aria-label="Next"
+      >
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5"><path d="M9 18l6-6-6-6" /></svg>
+      </button>
     </div>
   );
 }

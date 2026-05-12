@@ -1,5 +1,5 @@
 // GameCard component — supports sm, md, lg sizes + desktop
-// Real data from games_cache: rating, sold_count, is_hot, discount
+// Real data from games_cache: rating, sold_count, is_hot, discount, min_price
 import { Star, Flame } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import type { LootbarGame } from "@/types";
@@ -13,7 +13,6 @@ const PLACEHOLDER = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w
 
 function formatSoldCount(sold: string | undefined | null): string {
   if (!sold) return "";
-  // Already formatted like "100k+ Sold" or "10k+ Sold"
   if (sold.toLowerCase().includes("sold")) return sold;
   return `${sold} Sold`;
 }
@@ -25,6 +24,7 @@ export function GameCard({ game, size = "md" }: GameCardProps) {
   const soldText = formatSoldCount(game.sold_count);
   const hasDiscount = game.discount && game.discount > 0;
   const isHot = game.is_hot ?? false;
+  const minPrice = game.min_price;
 
   const handleClick = () => navigate(`/game/${game.game_id}`);
 
@@ -53,7 +53,7 @@ export function GameCard({ game, size = "md" }: GameCardProps) {
               <Flame size={8} />HOT
             </div>
           )}
-          {/* Dark gradient overlay for text legibility */}
+          {/* Dark gradient overlay */}
           <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent" />
         </div>
         <div className="mt-1.5 px-0.5">
@@ -67,6 +67,12 @@ export function GameCard({ game, size = "md" }: GameCardProps) {
               <span className="text-[10px] text-gray-400 truncate">{soldText}</span>
             )}
           </div>
+          {/* Price pill */}
+          {minPrice != null && minPrice > 0 && (
+            <div className="mt-1">
+              <span className="text-[11px] font-black text-orange-500">From ${minPrice.toFixed(2)}</span>
+            </div>
+          )}
         </div>
       </button>
     );
@@ -102,10 +108,13 @@ export function GameCard({ game, size = "md" }: GameCardProps) {
       <div className="flex-1 text-left min-w-0">
         <h3 className="text-sm font-bold text-gray-900 truncate">{game.game_name}</h3>
         <p className="text-xs text-gray-500 mt-0.5">{game.category || "Top Up"}</p>
-        <div className="flex items-center gap-1.5 mt-1">
+        <div className="flex items-center gap-1.5 mt-1 flex-wrap">
           <Star size={11} fill="#FFD200" stroke="none" />
           <span className="text-xs font-semibold text-gray-700">{rating.toFixed(1)}</span>
           {soldText && <span className="text-xs text-gray-400">· {soldText}</span>}
+          {minPrice != null && minPrice > 0 && (
+            <span className="text-xs font-black text-orange-500">· From ${minPrice.toFixed(2)}</span>
+          )}
         </div>
       </div>
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#9CA3AF" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">

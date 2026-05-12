@@ -57,6 +57,7 @@ type CacheRow = {
   sold_count: string | null;
   is_hot: boolean | null;
   discount: number | null;
+  min_price: number | null;
 };
 
 let _cacheMap: Map<string, CacheRow> | null = null;
@@ -69,7 +70,7 @@ async function getGamesCache(): Promise<Map<string, CacheRow>> {
   try {
     const { data } = await supabase
       .from("games_cache")
-      .select("game_id, game_name, game_image, category, rating, sold_count, is_hot, discount");
+      .select("game_id, game_name, game_image, category, rating, sold_count, is_hot, discount, min_price");
     if (data && data.length > 0) {
       _cacheMap = new Map(data.map((r: CacheRow) => [r.game_id, r]));
       _cacheLoadedAt = now;
@@ -84,18 +85,18 @@ async function getGamesCache(): Promise<Map<string, CacheRow>> {
   return _cacheMap;
 }
 
-function mergeWithCache(g: { game_id: string; game_name: string; game_image?: string; category?: string; rating?: number; sold_count?: string; is_hot?: boolean; discount?: number }, cache: Map<string, CacheRow>): LootbarGame {
+function mergeWithCache(g: { game_id: string; game_name: string; game_image?: string; category?: string; rating?: number; sold_count?: string; is_hot?: boolean; discount?: number; min_price?: number | null }, cache: Map<string, CacheRow>): LootbarGame {
   const row = cache.get(g.game_id);
   return {
     game_id: g.game_id,
     game_name: row?.game_name || g.game_name,
-    // Always prefer real game_image from DB cache; fall back to API image; never use Unsplash
     game_image: (row?.game_image && row.game_image.trim()) ? row.game_image : (g.game_image || ""),
     category: row?.category || g.category || "Top Up",
     rating: row?.rating ?? g.rating ?? 5.0,
     sold_count: row?.sold_count || g.sold_count || "1k+ Sold",
     is_hot: row?.is_hot ?? g.is_hot ?? false,
     discount: row?.discount ?? g.discount ?? 0,
+    min_price: row?.min_price ?? g.min_price ?? null,
   };
 }
 
@@ -129,6 +130,7 @@ export const lootbarApi = {
           sold_count: row.sold_count || "1k+ Sold",
           is_hot: row.is_hot ?? false,
           discount: row.discount ?? 0,
+          min_price: row.min_price ?? null,
         }));
       }
       await new Promise((r) => setTimeout(r, 300));
