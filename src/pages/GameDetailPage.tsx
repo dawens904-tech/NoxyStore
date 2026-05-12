@@ -781,3 +781,4 @@ export function GameDetailPage() {
     </>
   );
 }
+add store header an dwe appear and fixed all must clear price 
