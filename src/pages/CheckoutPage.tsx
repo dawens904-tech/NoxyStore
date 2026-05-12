@@ -16,7 +16,7 @@ type CheckoutState = "review" | "processing" | "success" | "failed";
 
 // ─── Payment Logo Placeholder Components (replace src with real logos) ──────
 const VisaLogo = () => <img src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.19.31%20PM%20(4).jpeg" alt="Visa" className="h-5 w-auto object-contain" />;
-const MastercardLogo = () => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/2/2a/Mastercard-logo.svg/200px-Mastercard-logo.svg.png" alt="Mastercard" className="h-5 w-auto object-contain" />;
+const MastercardLogo = () => <img src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.25.03%20PM.jpeg" alt="Mastercard" className="h-5 w-auto object-contain" />;
 const JCBLogo = () => <img src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.19.31%20PM%20(2).jpeg" alt="JCB" className="h-5 w-auto object-contain" />;
 const AmexLogo = () => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/fa/American_Express_logo_%282018%29.svg/200px-American_Express_logo_%282018%29.svg.png" alt="Amex" className="h-5 w-auto object-contain" />;
 const DiscoverLogo = () => <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/57/Discover_Card_logo.svg/200px-Discover_Card_logo.svg.png" alt="Discover" className="h-5 w-auto object-contain" />;
