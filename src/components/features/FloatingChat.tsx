@@ -67,3 +67,4 @@ export function FloatingChat() {
     </div>
   );
 }
+fix MessageSquare is not defined
