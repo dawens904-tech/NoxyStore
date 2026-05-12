@@ -167,20 +167,20 @@ export function CheckoutPage() {
     {
       id: "visa_mc",
       label: "VISA / Mastercard",
-      logos: [VisaLogo, MastercardLogo],
+      logos: [VisaLogo],
       fee: 0,
       tag: "Last used",
       subCards: savedCards.length > 0
         ? savedCards.map((c, i) => ({ masked: `${c.card_type?.toUpperCase() || "Visa"} **** **** **** ${c.card_number_masked?.slice(-4) || "0000"}`, tag: c.is_default ? "Default" : undefined }))
         : [{ masked: "Add an account for payment" }],
     },
-    { id: "jcb_group", label: "JCB / AmEx / Discover / Diners", logos: [JCBLogo, AmexLogo, DiscoverLogo, DinersLogo], fee: -0.01 },
+    { id: "jcb_group", label: "JCB / AmEx / Discover / Diners", logos: [JCBLogo], fee: -0.01 },
     { id: "cashapp", label: "Cash App", logos: [CashAppLogo], fee: 0.14 },
-    { id: "visa_mir", label: "VISA / Mastercard / МИР", logos: [VisaLogo, MastercardLogo, MirLogo], fee: 0.01 },
+    { id: "visa_mir", label: "VISA / Mastercard / МИР", logos: [MirLogo], fee: 0.01 },
     {
       id: "crypto",
       label: "Bitcoin / Ethereum / SOL and more",
-      logos: [BitcoinLogo, EthLogo, SolLogo, UsdtLogo, TronLogo],
+      logos: [BitcoinLogo],
       fee: -0.57,
       isCrypto: true,
     },
@@ -920,4 +920,4 @@ export function CheckoutPage() {
     </>
   );
 }
-duplicate logo card image fixed 1 logo for chak mwen gen images ki gen 3 logo type pou chak.
+
