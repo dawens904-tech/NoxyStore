@@ -717,3 +717,4 @@ export function GameDetailPage() {
     </>
   );
 }
+add footer in this page and also add real price fetch and fix upload image for product.
