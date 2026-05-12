@@ -3,7 +3,7 @@ import { useNavigate, useLocation, Link } from "react-router-dom";
 import {
   BarChart3, Package, MessageSquare, Percent, Gift, Image,
   Grid, List, UserPlus, Tag, BarChart2, Zap, Shield,
-  Home, LogOut, Plus, Moon, Sun, ChevronLeft
+  Home, LogOut, Plus, Moon, Sun, ChevronLeft, Users
 } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/lib/supabase";
@@ -62,6 +62,7 @@ export function AdminLayout({ children, title }: AdminLayoutProps) {
     { key: "categories", path: "/admin/categories", icon: Tag, label: "Game Categories" },
     { key: "analytics", path: "/admin/analytics", icon: BarChart2, label: "Analytics" },
     { key: "api", path: "/admin/api-status", icon: Zap, label: "API Status" },
+    { key: "group-chat", path: "/admin/group-chat", icon: Users, label: "Group Chat" },
   ];
 
   const isActive = (path: string) => {

@@ -3,7 +3,7 @@
  * Stable layout (only messages scroll) · WhatsApp-style bubbles
  * Profile modal on avatar tap · Long-press context menu (react/reply/copy/edit/report)
  * Real voice recording · Anti-spam (6× same word → 24h ban, 2× → permanent)
- * Admin gold crown badge · Pinned welcome message
+ * Admin gold crown badge · Pinned welcome message · Read receipts
  */
 import { useState, useEffect, useRef, useCallback, TouchEvent } from "react";
 import { useNavigate } from "react-router-dom";
@@ -22,7 +22,7 @@ const PRESENCE_HEARTBEAT = 15000;
 const BUCKET = "chat-images";
 const SESSION_ID = "group-chat-main";
 const MAX_VOICE_SECONDS = 60;
-const SPAM_WORD_THRESHOLD = 6; // same word ≥ 6 times → spam
+const SPAM_WORD_THRESHOLD = 6;
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 interface ChatMessage {
@@ -34,6 +34,12 @@ interface ChatMessage {
   image_url?: string;
   is_read: boolean;
   created_at: string;
+}
+
+interface ReadReceipt {
+  user_id: string;
+  sender: string;
+  last_message_id: string;
 }
 
 interface ContextMenuState {
@@ -82,7 +88,7 @@ async function getBanInfo(userEmail: string): Promise<{ banned: boolean; permane
 }
 
 async function applySpamBan(userEmail: string, userId: string, banCount: number) {
-  const permanent = banCount >= 1; // second ban is permanent
+  const permanent = banCount >= 1;
   const until = permanent ? undefined : Date.now() + 24 * 60 * 60 * 1000;
   await supabase.from("analytics_events").insert({
     event_type: "spam_ban",
@@ -228,6 +234,29 @@ function UserAvatar({ name, size = 9 }: { name: string; size?: number }) {
   );
 }
 
+// ─── Read Receipts Row ─────────────────────────────────────────────────────
+function ReadReceiptsRow({ readers }: { readers: ReadReceipt[] }) {
+  if (readers.length === 0) return null;
+  const shown = readers.slice(0, 5);
+  const extra = readers.length - shown.length;
+  return (
+    <div className="flex items-center gap-0.5 mt-0.5 justify-end pr-1">
+      {shown.map((r) => (
+        <div key={r.user_id} title={r.sender} className="w-4 h-4 rounded-full overflow-hidden border border-white ring-1 ring-yellow-300 flex-shrink-0">
+          <img
+            src={`https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(r.sender)}&backgroundColor=fef3c7`}
+            alt={r.sender}
+            className="w-full h-full"
+          />
+        </div>
+      ))}
+      {extra > 0 && (
+        <span className="text-[8px] text-gray-400 ml-0.5">+{extra}</span>
+      )}
+    </div>
+  );
+}
+
 // ─── Message Bubble ────────────────────────────────────────────────────────
 const LONG_PRESS_DELAY = 500;
 
@@ -236,11 +265,12 @@ interface BubbleProps {
   isOwn: boolean;
   isAdmin: boolean;
   replyTo?: ChatMessage | null;
+  readers: ReadReceipt[];
   onLongPress: (msg: ChatMessage, x: number, y: number) => void;
   onAvatarClick: (msg: ChatMessage) => void;
 }
 
-function MessageBubble({ msg, isOwn, isAdmin, replyTo, onLongPress, onAvatarClick }: BubbleProps) {
+function MessageBubble({ msg, isOwn, isAdmin, replyTo, readers, onLongPress, onAvatarClick }: BubbleProps) {
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isVoice = msg.image_url?.includes("/voice/") || msg.content === "__voice__";
   const isImage = msg.image_url && !isVoice;
@@ -257,7 +287,6 @@ function MessageBubble({ msg, isOwn, isAdmin, replyTo, onLongPress, onAvatarClic
 
   const BubbleContent = () => (
     <div className={`max-w-[72vw] lg:max-w-[360px] ${isOwn ? "items-end" : "items-start"} flex flex-col`}>
-      {/* Reply preview */}
       {replyTo && (
         <div className={`mb-1 px-2 py-1 border-l-4 border-yellow-400 bg-black/5 text-[10px] text-gray-500 max-w-full ${isOwn ? "rounded-tl-lg rounded-tr-sm" : "rounded-tr-lg rounded-tl-sm"}`}>
           <span className="font-semibold">{replyTo.sender}: </span>
@@ -282,6 +311,7 @@ function MessageBubble({ msg, isOwn, isAdmin, replyTo, onLongPress, onAvatarClic
         </div>
       )}
       <span className="text-[9px] text-gray-400 mt-0.5 px-1">{time}</span>
+      {isOwn && readers.length > 0 && <ReadReceiptsRow readers={readers} />}
     </div>
   );
 
@@ -365,7 +395,6 @@ function ContextMenu({
         style={{ left, top }}
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Emoji reactions */}
         <div className="flex items-center justify-around px-3 py-2 border-b border-gray-100">
           {EMOJIS.map((e) => (
             <button key={e} onClick={() => { onReact(e); onClose(); }} className="text-xl hover:scale-125 transition-transform">
@@ -436,18 +465,12 @@ export function GroupChatPage() {
   const [onlineCount, setOnlineCount] = useState(1);
   const [adminEmails, setAdminEmails] = useState<Set<string>>(new Set());
   const [banned, setBanned] = useState<{ permanent: boolean; until?: number } | null>(null);
+  const [readReceipts, setReadReceipts] = useState<Record<string, ReadReceipt[]>>({});
 
-  // Image
   const [imagePreview, setImagePreview] = useState<{ file: File; url: string } | null>(null);
-
-  // Reply & edit
   const [replyTo, setReplyTo] = useState<ChatMessage | null>(null);
   const [editingId, setEditingId] = useState<string | null>(null);
-
-  // Context menu
   const [contextMenu, setContextMenu] = useState<(ContextMenuState & { msg: ChatMessage }) | null>(null);
-
-  // Profile modal
   const [profileModal, setProfileModal] = useState<ProfileModalState | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -459,7 +482,7 @@ export function GroupChatPage() {
 
   const displayName = user?.username || user?.email?.split("@")[0] || "Guest";
 
-  // ─── Init ────────────────────────────────────────────────────────────────
+  // ─── Fetch helpers ────────────────────────────────────────────────────────
   const fetchAdmins = useCallback(async () => {
     const { data } = await supabase.from("user_roles").select("email").in("role", ["admin", "superadmin"]).eq("is_active", true);
     if (data) setAdminEmails(new Set(data.map((r: any) => r.email)));
@@ -498,6 +521,54 @@ export function GroupChatPage() {
     if (info.banned) setBanned({ permanent: info.permanent, until: info.until });
   }, [user]);
 
+  // ─── Read tracking ─────────────────────────────────────────────────────────
+  const markRead = useCallback(async (lastMessageId: string) => {
+    if (!user?.id || !user?.email) return;
+    await supabase.from("analytics_events").insert({
+      event_type: "group_chat_read",
+      page: "/support/group",
+      user_id: user.id,
+      session_id: `read_${user.id}`,
+      game_id: lastMessageId,
+      extra_data: { sender: displayName, ts: Date.now() },
+    });
+  }, [user, displayName]);
+
+  const fetchReadReceipts = useCallback(async (msgs: ChatMessage[]) => {
+    if (msgs.length === 0) return;
+    const since = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+    const { data } = await supabase
+      .from("analytics_events")
+      .select("user_id, game_id, extra_data")
+      .eq("event_type", "group_chat_read")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false });
+
+    if (!data) return;
+
+    // Map user → their last read message id
+    const latestByUser: Record<string, { msgId: string; sender: string }> = {};
+    for (const row of data) {
+      const uid = row.user_id as string;
+      if (!latestByUser[uid]) {
+        latestByUser[uid] = {
+          msgId: row.game_id as string,
+          sender: (row.extra_data as any)?.sender || "User",
+        };
+      }
+    }
+
+    // Build receipts map: messageId → list of readers
+    const receiptsMap: Record<string, ReadReceipt[]> = {};
+    for (const [uid, info] of Object.entries(latestByUser)) {
+      if (uid === user?.id) continue; // skip self
+      const msgId = info.msgId;
+      if (!receiptsMap[msgId]) receiptsMap[msgId] = [];
+      receiptsMap[msgId].push({ user_id: uid, sender: info.sender, last_message_id: msgId });
+    }
+    setReadReceipts(receiptsMap);
+  }, [user]);
+
   useEffect(() => {
     fetchAdmins();
     fetchMessages();
@@ -505,7 +576,10 @@ export function GroupChatPage() {
     checkBan();
     if (isAuthenticated) updatePresence();
 
-    pollerRef.current = setInterval(() => { fetchMessages(); fetchOnlineCount(); }, POLL_INTERVAL);
+    pollerRef.current = setInterval(async () => {
+      await fetchMessages();
+      fetchOnlineCount();
+    }, POLL_INTERVAL);
     if (isAuthenticated) presenceRef.current = setInterval(updatePresence, PRESENCE_HEARTBEAT);
 
     return () => {
@@ -514,8 +588,14 @@ export function GroupChatPage() {
     };
   }, [fetchMessages, fetchAdmins, fetchOnlineCount, updatePresence, isAuthenticated, checkBan]);
 
+  // Scroll to bottom & mark read when messages update
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (messages.length > 0 && user?.id) {
+      const lastId = messages[messages.length - 1].id;
+      markRead(lastId);
+      fetchReadReceipts(messages);
+    }
   }, [messages]);
 
   // ─── File upload ──────────────────────────────────────────────────────────
@@ -545,10 +625,8 @@ export function GroupChatPage() {
     const imageUrl = opts?.imageUrl;
     if (!content && !imageUrl) return;
 
-    // Spam check
     if (content && isSpam(content)) {
       toast.error("Spam detected! Your account has been temporarily banned.");
-      // Count existing bans
       const { data: bans } = await supabase.from("analytics_events").select("id").eq("event_type", "spam_ban").eq("user_email", user!.email!);
       const banCount = bans?.length || 0;
       await applySpamBan(user!.email!, user!.id!, banCount);
@@ -558,7 +636,6 @@ export function GroupChatPage() {
 
     setSending(true);
 
-    // Edit existing message
     if (editingId && !imageUrl) {
       const { error } = await supabase.from("chat_messages").update({ content }).eq("id", editingId).eq("user_email", user!.email);
       if (!error) { setEditingId(null); setText(""); await fetchMessages(); }
@@ -620,7 +697,6 @@ export function GroupChatPage() {
   };
 
   const handleReact = async (emoji: string, msg: ChatMessage) => {
-    // Append emoji as a reply message
     await supabase.from("chat_messages").insert({
       session_id: SESSION_ID,
       user_email: user!.email,
@@ -653,7 +729,7 @@ export function GroupChatPage() {
 
   return (
     <div className="flex flex-col bg-gray-50" style={{ height: "100dvh" }}>
-      {/* ─── HEADER (fixed) ─────────────────────────────────────────────── */}
+      {/* ─── HEADER ─────────────────────────────────────────────────────── */}
       <div className="flex items-center gap-3 px-4 py-3 bg-white border-b border-gray-200 flex-shrink-0 z-40">
         <button onClick={() => navigate(-1)} className="text-gray-700 p-1 -ml-1"><ArrowLeft size={20} /></button>
         <div className="w-10 h-10 bg-yellow-400 rounded-full flex items-center justify-center flex-shrink-0">
@@ -694,6 +770,7 @@ export function GroupChatPage() {
                 isOwn={isOwnMsg(msg)}
                 isAdmin={isAdminMsg(msg)}
                 replyTo={replyTo?.id === msg.id ? null : null}
+                readers={readReceipts[msg.id] || []}
                 onLongPress={(m, x, y) => setContextMenu({ msgId: m.id, x, y, msg: m })}
                 onAvatarClick={(m) => setProfileModal({ name: m.sender, email: m.user_email || "", avatarSeed: m.sender })}
               />
@@ -772,7 +849,7 @@ export function GroupChatPage() {
         </div>
       )}
 
-      {/* ─── INPUT BAR (fixed at bottom) ─────────────────────────────────── */}
+      {/* ─── INPUT BAR ───────────────────────────────────────────────────── */}
       {!imagePreview && !voice.audioBlob && !voice.recording && (
         <div
           className="px-3 py-2 bg-white border-t border-gray-200 flex items-center gap-2 flex-shrink-0"
@@ -854,4 +931,3 @@ export function GroupChatPage() {
     </div>
   );
 }
-hello ai if see this please make change Add an admin-only panel in AdminGroupChatPage that shows all group chat messages with delete, pin, and user mute/ban controls, fetching from chat_messages where session_id = 'group-chat-main' Show a small checkmark or avatar of users who have read each message in GroupChatPage.tsx by tracking last_read timestamps in analytics_events and displaying tiny avatars below the last message each user has seen. 

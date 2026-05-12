@@ -42,6 +42,7 @@ import { AdminRolesPage } from "@/pages/admin/AdminRolesPage";
 import { AdminCategoriesPage } from "@/pages/admin/AdminCategoriesPage";
 import { AdminAnalyticsPage } from "@/pages/admin/AdminAnalyticsPage";
 import { AdminApiStatusPage } from "@/pages/admin/AdminApiStatusPage";
+import { AdminGroupChatPage } from "@/pages/admin/AdminGroupChatPage";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore, mapSupabaseUser } from "@/stores/authStore";
 import { trackEvent } from "@/lib/analytics";
@@ -199,6 +200,7 @@ function App() {
           <Route path="/admin/categories" element={<AdminCategoriesPage />} />
           <Route path="/admin/analytics" element={<AdminAnalyticsPage />} />
           <Route path="/admin/api-status" element={<AdminApiStatusPage />} />
+          <Route path="/admin/group-chat" element={<AdminGroupChatPage />} />
 
           {/* Legacy admin route redirect compatibility */}
           <Route path="/secure-dashboard-92x2011" element={<AdminDashboardPage />} />
