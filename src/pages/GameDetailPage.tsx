@@ -781,4 +781,3 @@ export function GameDetailPage() {
   );
 }
 
-fix chatpopop and make better.
