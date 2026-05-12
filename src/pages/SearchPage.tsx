@@ -240,3 +240,4 @@ export function SearchPage() {
     </div>
   );
 }
+add real search and real visual search edg function chat real search no demo.
