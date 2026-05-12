@@ -780,4 +780,4 @@ export function GameDetailPage() {
     </>
   );
 }
-
+fix this real gonto verify pkayer page and make it clear add footer mobile.
