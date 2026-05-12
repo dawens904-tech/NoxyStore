@@ -14,54 +14,133 @@ import { toast } from "sonner";
 
 type CheckoutState = "review" | "processing" | "success" | "failed";
 
-// ─── Payment Photo Card Components (replace src with your real card images) ──
-// Card dimensions: ~64×40px (payment card aspect ratio ~1.6:1), square corners
 // Detect platform for Apple Pay / Google Pay
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const isAndroid = /Android/.test(navigator.userAgent);
 
-const PayCardImg = ({ src, alt }: { src: string; alt: string }) => (
-  <img
-    src={src}
-    alt={alt}
-    className="h-9 w-[54px] object-contain border border-gray-200 flex-shrink-0 bg-white p-0.5"
-    style={{ borderRadius: 0 }}
-    onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
-  />
-);
+// ─── Inline Logo Components (no borders, no backgrounds, raw logos) ─────────
 
-const VisaLogo = () => <PayCardImg src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.19.31%20PM%20(4).jpeg" alt="Visa" />;
-const JCBLogo = () => <PayCardImg src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.31.19%20PM.jpeg" alt="JCB" />;
-const CashAppLogo = () => <PayCardImg src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.19.31%20PM%20(1).jpeg" alt="Cash App" />;
-const BitcoinLogo = () => <PayCardImg src="https://uzxmmddivzqjhcnnrkns.supabase.co/storage/v1/object/public/hi/WhatsApp%20Image%202026-05-12%20at%201.19.31%20PM%20(2).jpeg" alt="Bitcoin" />;
-const PayPalLogo = () => <PayCardImg src="https://upload.wikimedia.org/wikipedia/commons/thumb/b/b5/PayPal.svg/200px-PayPal.svg.png" alt="PayPal" />;
-const PayLaterLogo = () => (
-  <div className="h-9 w-[54px] border border-blue-600 bg-blue-700 flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
-    <span className="text-white text-[9px] font-bold tracking-tight leading-tight text-center">Pay<br/>Later</span>
+const VisaMasterLogo = () => (
+  <div className="flex items-center gap-1.5">
+    <svg viewBox="0 0 48 16" className="h-4 w-auto" fill="none">
+      <path d="M17.5 2h-3.2L12 14h2.5l.4-1.5h2.4l.4 1.5H20L17.5 2zm-2.3 7.5l.8-3.5.8 3.5h-1.6z" fill="#1A1F71"/>
+      <circle cx="28" cy="8" r="6" fill="#EB001B"/>
+      <circle cx="32" cy="8" r="6" fill="#F79E1B" fillOpacity="0.8"/>
+      <path d="M30 3.5c1.2 1.3 2 3 2 5s-.8 3.7-2 5c-1.2-1.3-2-3-2-5s.8-3.7 2-5z" fill="#FF5F00"/>
+    </svg>
   </div>
 );
+
+const JCBAmexDiscoverDinersLogo = () => (
+  <div className="flex items-center gap-2">
+    {/* JCB */}
+    <svg viewBox="0 0 48 16" className="h-4 w-auto">
+      <rect width="48" height="16" rx="2" fill="#0066B3"/>
+      <path d="M8 4h6v8H8z" fill="#fff"/>
+      <text x="10" y="11" fontSize="6" fontWeight="bold" fill="#0066B3">JCB</text>
+    </svg>
+    {/* AmEx */}
+    <svg viewBox="0 0 48 16" className="h-4 w-auto">
+      <rect width="48" height="16" rx="2" fill="#016FD0"/>
+      <text x="6" y="11" fontSize="7" fontWeight="bold" fill="#fff">AMERICAN EXPRESS</text>
+    </svg>
+    {/* Discover */}
+    <svg viewBox="0 0 48 16" className="h-4 w-auto">
+      <rect width="48" height="16" rx="2" fill="#fff" stroke="#ccc" strokeWidth="0.5"/>
+      <text x="4" y="11" fontSize="8" fontWeight="bold" fill="#FF6000">DISCOVER</text>
+    </svg>
+    {/* Diners */}
+    <svg viewBox="0 0 48 16" className="h-4 w-auto">
+      <rect width="48" height="16" rx="8" fill="#004C99"/>
+      <circle cx="18" cy="8" r="5" fill="none" stroke="#fff" strokeWidth="1.5"/>
+      <text x="28" y="11" fontSize="7" fill="#fff">Diners Club</text>
+    </svg>
+  </div>
+);
+
+const PayPalLogo = () => (
+  <svg viewBox="0 0 80 20" className="h-5 w-auto">
+    <text x="0" y="15" fontSize="14" fontWeight="bold" fontFamily="Arial,sans-serif" fill="#003087">Pay</text>
+    <text x="28" y="15" fontSize="14" fontWeight="bold" fontFamily="Arial,sans-serif" fill="#009CDE">Pal</text>
+  </svg>
+);
+
+const PayLaterLogo = () => (
+  <div className="flex items-center gap-1.5">
+    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="#003087">
+      <path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.5 11.5h-7v-1h7v1zm0-2h-7v-1h7v1zm0-2h-7v-1h7v1z"/>
+    </svg>
+    <span className="text-sm font-semibold text-gray-800">Pay Later</span>
+  </div>
+);
+
+const CashAppLogo = () => (
+  <div className="flex items-center gap-1.5">
+    <div className="w-5 h-5 bg-[#00D632] rounded-md flex items-center justify-center">
+      <span className="text-white font-bold text-xs">$</span>
+    </div>
+    <span className="text-sm font-bold text-gray-900">Cash App</span>
+  </div>
+);
+
 const MirLogo = () => (
-  <div className="h-9 w-[54px] border border-green-700 bg-[#1a7f3c] flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
-    <span className="text-white text-[11px] font-bold tracking-tight">МИР</span>
+  <div className="flex items-center gap-1.5">
+    <div className="w-5 h-5 bg-[#1a7f3c] rounded-sm flex items-center justify-center">
+      <span className="text-white font-bold text-[10px]">МИР</span>
+    </div>
+    <span className="text-sm font-medium text-gray-700">МИР</span>
+  </div>
+);
+
+const CryptoLogo = () => (
+  <div className="flex items-center gap-1.5">
+    {/* Bitcoin */}
+    <div className="w-6 h-6 bg-[#F7931A] rounded-full flex items-center justify-center">
+      <span className="text-white font-bold text-xs">₿</span>
+    </div>
+    {/* Ethereum */}
+    <div className="w-6 h-6 bg-[#627EEA] rounded-full flex items-center justify-center">
+      <svg viewBox="0 0 10 16" className="h-3 w-2">
+        <path d="M5 0l5 8-5 3-5-3z" fill="#fff"/>
+        <path d="M5 11l5-3-5 8-5-8z" fill="#fff" opacity="0.6"/>
+      </svg>
+    </div>
+    {/* USDC */}
+    <div className="w-6 h-6 bg-[#2775CA] rounded-full flex items-center justify-center">
+      <span className="text-white font-bold text-[8px]">$</span>
+    </div>
+    {/* USDT */}
+    <div className="w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center">
+      <span className="text-white font-bold text-[8px]">T</span>
+    </div>
+    {/* PayPal USD */}
+    <div className="w-6 h-6 bg-[#003087] rounded-full flex items-center justify-center">
+      <span className="text-white font-bold text-[8px]">P</span>
+    </div>
+    <span className="text-sm font-medium text-gray-700 ml-1">and more</span>
   </div>
 );
 
 const ApplePayLogo = () => (
-  <div className="h-9 w-[54px] border border-gray-300 bg-black flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
-    <svg viewBox="0 0 60 26" className="h-5 w-auto" fill="white">
-      <path d="M11.5 3.5c.8-1 1.3-2.3 1.2-3.5-1.2.1-2.6.8-3.4 1.8C8.5 2.7 7.9 4 8 5.2c1.3.1 2.6-.6 3.5-1.7zm1.2 1.9c-1.9-.1-3.6 1.1-4.5 1.1-.9 0-2.3-1-3.8-1-2 0-3.8 1.2-4.8 3-2.1 3.6-.5 8.9 1.5 11.8 1 1.4 2.1 3 3.7 2.9 1.4-.1 2-1 3.7-1 1.7 0 2.2 1 3.7 1 1.6 0 2.6-1.4 3.6-2.9.4-.6.7-1.2 1-1.8-2.6-1-4.3-3.6-4.3-6.6 0-2.7 1.4-5.1 3.6-6.5-.8-1.3-2.1-2-3.4-2z"/>
-      <text x="20" y="19" fontSize="11" fontWeight="600" fontFamily="-apple-system,sans-serif">Pay</text>
+  <div className="flex items-center gap-1.5">
+    <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+      <path d="M17.7 9.7c-.1-1.5 1.2-2.2 1.3-2.3-1.4-2-3.5-1.7-4.3-1.7-1.8 0-3.6 1.1-4 2.2-.4 1-.1 2.4.7 3.8.6.8 1.3 1.8 2.3 1.8.9 0 1.3-.6 2.4-.6 1.1 0 1.4.6 2.3.6 1 0 1.6-.9 2.2-1.7.7-1 .9-2 .9-2-.1 0-1.8-.7-1.8-2.1zm-2.1-3.8c.7-.9 1.2-2.1 1.1-3.3-1 .1-2.2.7-2.9 1.5-.7.8-1.2 2-1 3.2 1.1.1 2.1-.5 2.8-1.4z"/>
     </svg>
+    <span className="text-sm font-semibold text-gray-800">Apple Pay</span>
   </div>
 );
 
 const GooglePayLogo = () => (
-  <div className="h-9 w-[54px] border border-gray-200 bg-white flex items-center justify-center flex-shrink-0" style={{ borderRadius: 0 }}>
-    <svg viewBox="0 0 60 24" className="h-5 w-auto">
-      <text x="2" y="18" fontSize="11" fontWeight="700" fontFamily="sans-serif">
-        <tspan fill="#4285F4">G</tspan><tspan fill="#EA4335">o</tspan><tspan fill="#4285F4">o</tspan><tspan fill="#34A853">g</tspan><tspan fill="#EA4335">l</tspan><tspan fill="#4285F4">e </tspan><tspan fill="#5F6368">Pay</tspan>
-      </text>
-    </svg>
+  <div className="flex items-center gap-1.5">
+    <span className="text-sm font-bold">
+      <span className="text-[#4285F4]">G</span>
+      <span className="text-[#EA4335]">o</span>
+      <span className="text-[#FBBC05]">o</span>
+      <span className="text-[#4285F4]">g</span>
+      <span className="text-[#34A853]">l</span>
+      <span className="text-[#EA4335]">e</span>
+      <span className="text-[#5F6368] ml-0.5">Pay</span>
+    </span>
   </div>
 );
 
@@ -101,7 +180,7 @@ const GiftIcon = () => (
 type PaymentMethod = {
   id: string;
   label: string;
-  logos: React.FC[];
+  renderLogo: () => React.ReactNode;
   fee: number;
   tag?: string;
   subCards?: Array<{ masked: string; tag?: string }>;
@@ -202,28 +281,30 @@ export function CheckoutPage() {
   const PAYMENT_METHODS: PaymentMethod[] = [
     {
       id: "visa_mc",
-      label: "VISA / Mastercard",
-      logos: [VisaLogo],
+      label: "",
+      renderLogo: () => <VisaMasterLogo />,
       fee: 0,
       tag: "Last used",
       subCards: savedCards.length > 0
         ? savedCards.map((c, i) => ({ masked: `${c.card_type?.toUpperCase() || "Visa"} **** **** **** ${c.card_number_masked?.slice(-4) || "0000"}`, tag: c.is_default ? "Default" : undefined }))
         : [{ masked: "Add an account for payment" }],
     },
-    { id: "jcb_group", label: "JCB / AmEx / Discover / Diners", logos: [JCBLogo], fee: -0.01 },
-    { id: "cashapp", label: "Cash App", logos: [CashAppLogo], fee: 0.14 },
-    { id: "visa_mir", label: "VISA / Mastercard / МИР", logos: [MirLogo], fee: 0.01 },
+    { id: "jcb_group", label: "", renderLogo: () => <JCBAmexDiscoverDinersLogo />, fee: -0.01 },
+    { id: "paypal", label: "", renderLogo: () => <PayPalLogo />, fee: 0.19 },
+    { id: "paylater", label: "", renderLogo: () => <PayLaterLogo />, fee: 0.19 },
+    { id: "cashapp", label: "", renderLogo: () => <CashAppLogo />, fee: 0.25 },
+    { id: "visa_mir", label: "", renderLogo: () => <MirLogo />, fee: 0.01 },
     {
       id: "crypto",
-      label: "Bitcoin / Ethereum / SOL and more",
-      logos: [BitcoinLogo],
+      label: "",
+      renderLogo: () => <CryptoLogo />,
       fee: -0.57,
       isCrypto: true,
     },
     {
       id: "balance",
       label: "My Balance",
-      logos: [],
+      renderLogo: () => null,
       fee: -0.70,
       isBalance: true,
     },
@@ -240,7 +321,6 @@ export function CheckoutPage() {
   const handleQuantityChange = (delta: number) => {
     const newQty = Math.max(1, quantity + delta);
     setQuantity(newQty);
-    // Recalculate coupon discount
     if (appliedCouponId && couponDiscount > 0) {
       const coupon = userCoupons.find(c => c.id === appliedCouponId);
       if (coupon) {
@@ -389,7 +469,7 @@ export function CheckoutPage() {
             </span>
           </div>
 
-          {/* Coupon code row — input + separate square Redeem button */}
+          {/* Coupon code row */}
           <div className="flex items-center border-b border-gray-200">
             <div className="flex items-center gap-2 flex-1 px-5 py-3">
               <CouponIcon />
@@ -410,7 +490,7 @@ export function CheckoutPage() {
             </button>
           </div>
 
-          {/* 5% OFF row — opens modal */}
+          {/* 5% OFF row */}
           <button
             onClick={() => setShowCouponModal(true)}
             className="flex items-center justify-between w-full px-5 py-3 hover:bg-gray-50 transition-colors"
@@ -467,14 +547,14 @@ export function CheckoutPage() {
             {isProcessingPayment ? "Processing..." : "Pay Now"}
           </button>
           {/* Accepted payment card strip */}
-          <div className="flex items-center justify-center gap-1.5 mt-3 flex-wrap">
-            <VisaLogo />
-            <JCBLogo />
+          <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
+            <VisaMasterLogo />
+            <JCBAmexDiscoverDinersLogo />
             <PayPalLogo />
             <PayLaterLogo />
             <CashAppLogo />
             <MirLogo />
-            <BitcoinLogo />
+            <CryptoLogo />
             {isIOS && <ApplePayLogo />}
             {isAndroid && <GooglePayLogo />}
           </div>
@@ -504,7 +584,7 @@ export function CheckoutPage() {
             <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-yellow-500" : "border-gray-300"}`}>
               {isSelected && <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />}
             </div>
-            {/* Logos */}
+            {/* Logo / Label */}
             <div className="flex items-center gap-1">
               {method.isBalance ? (
                 <div className="flex flex-col">
@@ -518,15 +598,11 @@ export function CheckoutPage() {
                     {isInsufficient && <button onClick={(e) => { e.stopPropagation(); navigate("/balance"); }} className="text-xs text-blue-500 font-medium">Go to top-up</button>}
                   </div>
                 </div>
-              ) : method.isCrypto ? (
-                <div className="flex items-center gap-1">
-                  {method.logos.map((Logo, i) => <Logo key={i} />)}
-                  <span className="text-sm font-medium text-gray-700 ml-1">and more</span>
-                </div>
               ) : (
-                <>
-                  {method.logos.map((Logo, i) => <Logo key={i} />)}
-                </>
+                <div className="flex items-center">
+                  {method.renderLogo()}
+                  {method.label && <span className="text-sm font-medium text-gray-700 ml-1">{method.label}</span>}
+                </div>
               )}
             </div>
           </div>
@@ -569,15 +645,13 @@ export function CheckoutPage() {
   // ─── Desktop Layout ────────────────────────────────────────────────────────
   const DesktopCheckout = () => (
     <div className="hidden lg:flex min-h-screen bg-[#f5f5f5]">
-      {/* Fixed Header */}
       <div className="fixed top-0 left-0 right-0 z-50">
         <DesktopHeader />
       </div>
 
       <div className="flex w-full pt-[100px] max-w-[1200px] mx-auto gap-6 px-6 pb-6 items-start">
-        {/* LEFT: Scrollable content */}
         <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 80px)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
-          {/* Product Card - NO BORDER RADIUS (square corners) */}
+          {/* Product Card */}
           <div className="bg-white border border-gray-200 mb-3">
             <div className="px-6 py-5 flex items-start gap-4">
               <img
@@ -591,7 +665,6 @@ export function CheckoutPage() {
                 <p className="text-gray-500 text-sm mt-0.5">{game.game_name}</p>
                 <p className="text-base font-bold text-gray-900 mt-1">USD ${basePrice.toFixed(2)}</p>
               </div>
-              {/* Quantity - square buttons */}
               <div className="flex items-center border border-gray-300">
                 <button 
                   onClick={() => handleQuantityChange(-1)}
@@ -625,7 +698,7 @@ export function CheckoutPage() {
             )}
           </div>
 
-          {/* Payment Method - NO BORDER RADIUS */}
+          {/* Payment Method */}
           <div className="bg-white border border-gray-200 mb-3">
             <div className="px-6 py-4 border-b border-gray-100">
               <h3 className="font-bold text-gray-900">Payment Method</h3>
@@ -644,7 +717,6 @@ export function CheckoutPage() {
           </div>
         </div>
 
-        {/* RIGHT: Fixed Payment Details - NO SCROLL */}
         <PaymentDetailsPanel />
       </div>
     </div>
@@ -659,7 +731,6 @@ export function CheckoutPage() {
         <div className="w-8" />
       </div>
 
-      {/* Product */}
       <div className="bg-white border-b border-gray-100 px-4 py-4">
         <div className="flex items-center gap-3">
           <img src={sku.image || game.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"} alt={sku.sku_name}
@@ -680,7 +751,6 @@ export function CheckoutPage() {
         )}
       </div>
 
-      {/* Payment details */}
       <div className="bg-white border-b border-gray-200 px-4 py-4 mt-2">
         <h3 className="font-bold text-gray-900 mb-3">Payment Details</h3>
         <div className="space-y-0">
@@ -705,14 +775,12 @@ export function CheckoutPage() {
         </div>
       </div>
 
-      {/* Payment methods mobile */}
       <div className="bg-white mt-2 px-4 py-4">
         <h3 className="font-bold text-gray-900 mb-3">Payment Method</h3>
         {PAYMENT_METHODS.map((method) => renderPaymentRow(method))}
         <button onClick={() => setShowTicketModal(true)} className="w-full text-center text-sm text-blue-500 font-medium py-3">Not the payment method you prefer? &gt;</button>
       </div>
 
-      {/* Fixed bottom */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-40">
         <div className="flex items-center justify-between mb-3">
           <div><span className="text-sm text-gray-500">Total Amount</span></div>
@@ -780,7 +848,6 @@ export function CheckoutPage() {
             </button>
             <button
               onClick={() => {
-                // Update extraInfo with modified values
                 Object.assign(extraInfo, modifyValues);
                 setShowModifyModal(false);
               }}
@@ -800,13 +867,11 @@ export function CheckoutPage() {
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40" onClick={() => setShowCouponModal(false)} />
       <div className="relative bg-white w-full max-w-lg mx-4 shadow-2xl">
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
           <h3 className="text-lg font-bold text-gray-900">Product Coupons</h3>
           <button onClick={() => setShowCouponModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b border-gray-200">
           <button onClick={() => setCouponTab("valid")} className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${couponTab === "valid" ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-400"}`}>
             Valid ({validCoupons.length})
@@ -816,7 +881,6 @@ export function CheckoutPage() {
           </button>
         </div>
 
-        {/* Redeem code input */}
         <div className="px-6 pt-4 pb-2">
           <div className="flex gap-2">
             <input
@@ -836,7 +900,6 @@ export function CheckoutPage() {
           </div>
         </div>
 
-        {/* Coupon list */}
         <div className="px-6 py-3 max-h-[320px] overflow-y-auto space-y-3">
           {(couponTab === "valid" ? validCoupons : invalidCoupons).length === 0 ? (
             <div className="text-center py-8 text-gray-400">
@@ -868,7 +931,6 @@ export function CheckoutPage() {
           )}
         </div>
 
-        {/* Footer */}
         <div className="px-6 py-4 border-t border-gray-200">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm text-gray-600">Discount Amount</span>
@@ -896,13 +958,11 @@ export function CheckoutPage() {
         </div>
 
         <div className="px-6 py-5 space-y-5">
-          {/* Info banner */}
           <div className="flex items-center gap-2 bg-yellow-50 border border-yellow-200 px-4 py-2.5">
             <svg viewBox="0 0 24 24" className="w-4 h-4 text-yellow-600 flex-shrink-0" fill="none" stroke="currentColor" strokeWidth="2"><path d="M3 15v4c0 1.1.9 2 2 2h14a2 2 0 002-2v-4M17 9l-5 5-5-5M12 12.8V2.5"/></svg>
             <span className="text-xs text-yellow-700">Submit your question or suggestion</span>
           </div>
 
-          {/* Classification */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Classification</label>
             <div className="relative">
@@ -920,7 +980,6 @@ export function CheckoutPage() {
             </div>
           </div>
 
-          {/* Question content */}
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Question content</label>
             <textarea
@@ -933,7 +992,6 @@ export function CheckoutPage() {
             <p className="text-xs text-gray-400 text-right mt-1">{ticketContent.length}/400</p>
           </div>
 
-          {/* Image upload placeholder */}
           <div>
             <div className="border-2 border-dashed border-gray-200 w-20 h-20 flex items-center justify-center cursor-pointer hover:border-yellow-400 transition-colors">
               <Plus size={20} className="text-gray-400" />
