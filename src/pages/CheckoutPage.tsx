@@ -924,4 +924,4 @@ export function CheckoutPage() {
     </>
   );
 }
-
+payment detail must be same position at product display lan and remove back button an anyen fix position.
