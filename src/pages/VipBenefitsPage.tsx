@@ -9,9 +9,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, X, ChevronDown, Info, ChevronRight,
-  Gift, Coins, Ticket, ShoppingBag, Crown, Zap,
-  Tag, TrendingUp, Star, Rocket, Lock, Check
+  Lock, Check, Star
 } from "lucide-react";
+import vip1bg from "@/assets/vip1-bg.jpg";
+import vip2bg from "@/assets/vip2-bg.jpg";
+import vip3bg from "@/assets/vip3-bg.jpg";
+import vip4bg from "@/assets/vip4-bg.jpg";
+import vip5bg from "@/assets/vip5-bg.jpg";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { supabase } from "@/lib/supabase";
@@ -42,18 +46,27 @@ function getPointsForNextLevel(points: number) {
   return 300;
 }
 
-// ─── Benefit Icons (lucide, no emojis) ────────────────────────────────────
-const BENEFIT_ICON_MAP: Record<string, React.ReactNode> = {
-  birthday:          <Gift size={24} />,
-  point_money:       <Coins size={24} />,
-  points_coupon:     <Ticket size={24} />,
-  points_item:       <ShoppingBag size={24} />,
-  vip_service:       <Crown size={24} />,
-  fast_delivery:     <Zap size={24} />,
-  higher_discount:   <Tag size={24} />,
-  more_points:       <TrendingUp size={24} />,
-  exclusive_service: <Star size={24} />,
-  priority_delivery: <Rocket size={24} />,
+// ─── VIP level background photos ──────────────────────────────────────────
+const VIP_BG_MAP: Record<number, string> = {
+  1: vip1bg,
+  2: vip2bg,
+  3: vip3bg,
+  4: vip4bg,
+  5: vip5bg,
+};
+
+// ─── Benefit placeholder photos (replace with real images when ready) ──────
+const BENEFIT_PHOTO_MAP: Record<string, string> = {
+  birthday:          "https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=160&h=120&fit=crop",
+  point_money:       "https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?w=160&h=120&fit=crop",
+  points_coupon:     "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=160&h=120&fit=crop",
+  points_item:       "https://images.unsplash.com/photo-1560419015-7c425b20b244?w=160&h=120&fit=crop",
+  vip_service:       "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=160&h=120&fit=crop",
+  fast_delivery:     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=160&h=120&fit=crop",
+  higher_discount:   "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=160&h=120&fit=crop",
+  more_points:       "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=160&h=120&fit=crop",
+  exclusive_service: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=160&h=120&fit=crop",
+  priority_delivery: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=160&h=120&fit=crop",
 };
 
 // ─── Benefits data — detailed V1-V5 descriptions ──────────────────────────
@@ -192,8 +205,16 @@ export function VipBenefitsPage() {
     const c = VIP_COLORS[level] || VIP_COLORS[1];
     const isActive = level === vipLevel;
     const isLocked = level > vipLevel;
+    const bgPhoto = VIP_BG_MAP[level];
     return (
-      <div className={`relative rounded-2xl p-5 min-w-[260px] border-2 transition-all ${isActive ? "border-yellow-400 shadow-lg" : "border-transparent"} ${c.card}`}>
+      <div className={`relative rounded-2xl p-5 min-w-[260px] border-2 transition-all overflow-hidden ${isActive ? "border-yellow-400 shadow-lg" : "border-transparent"} ${c.card}`}>
+        {/* VIP level background photo */}
+        {bgPhoto && (
+          <div className="absolute inset-0 pointer-events-none">
+            <img src={bgPhoto} alt="" className="w-full h-full object-cover opacity-25" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
+          </div>
+        )}
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
           <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10" />
           <div className="absolute -right-2 -top-2 w-16 h-16 rounded-full bg-white/10" />
@@ -256,22 +277,33 @@ export function VipBenefitsPage() {
   );
 
   // ─── Benefit card for mobile grid ──────────────────────────────────────────
-  const BenefitCard = ({ benefit, compact = false }: { benefit: typeof BENEFITS[0]; compact?: boolean }) => {
+  const BenefitCard = ({ benefit }: { benefit: typeof BENEFITS[0] }) => {
     const isLocked = benefit.vipMin > vipLevel;
+    const photo = BENEFIT_PHOTO_MAP[benefit.id];
     return (
       <button
         onClick={() => setBenefitModal({ benefit })}
-        className={`relative border rounded-xl p-4 flex items-center justify-between text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
+        className={`relative border rounded-xl overflow-hidden text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
       >
-        {isLocked && (
-          <div className="absolute top-2 left-2 bg-gray-200 text-gray-600 text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-            <Lock size={8} /> V{benefit.vipMin}
-          </div>
-        )}
-        <span className={`text-sm font-semibold ${isLocked ? "text-gray-400 mt-4" : "text-gray-800"}`}>{benefit.label}</span>
-        <span className={`ml-2 flex-shrink-0 ${isLocked ? "text-gray-300" : "text-gray-600"}`}>
-          {BENEFIT_ICON_MAP[benefit.id]}
-        </span>
+        {/* Benefit photo */}
+        <div className="relative h-24 w-full bg-gray-100 overflow-hidden">
+          <img
+            src={photo}
+            alt={benefit.label}
+            className={`w-full h-full object-cover ${isLocked ? "grayscale opacity-50" : ""}`}
+            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=160&h=100&fit=crop"; }}
+          />
+          {isLocked && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <div className="bg-black/50 text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
+                <Lock size={8} /> V{benefit.vipMin}
+              </div>
+            </div>
+          )}
+        </div>
+        <div className="px-3 py-2.5">
+          <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
+        </div>
       </button>
     );
   };
@@ -279,18 +311,29 @@ export function VipBenefitsPage() {
   // ─── Desktop benefit card (vertical) ──────────────────────────────────────
   const BenefitCardDesktop = ({ benefit }: { benefit: typeof BENEFITS[0] }) => {
     const isLocked = benefit.vipMin > vipLevel;
+    const photo = BENEFIT_PHOTO_MAP[benefit.id];
     return (
       <button
         onClick={() => setBenefitModal({ benefit })}
-        className={`relative border rounded-xl p-4 flex flex-col items-start gap-2 text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
+        className={`relative border rounded-xl overflow-hidden flex flex-col text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
       >
-        {isLocked && (
-          <div className="bg-gray-200 text-gray-600 text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-            <Lock size={8} /> V{benefit.vipMin}
-          </div>
-        )}
-        <span className={isLocked ? "text-gray-300" : "text-gray-600"}>{BENEFIT_ICON_MAP[benefit.id]}</span>
-        <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
+        {/* Benefit photo */}
+        <div className="relative h-20 w-full bg-gray-100 overflow-hidden">
+          <img
+            src={photo}
+            alt={benefit.label}
+            className={`w-full h-full object-cover ${isLocked ? "grayscale opacity-50" : ""}`}
+            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=160&h=80&fit=crop"; }}
+          />
+          {isLocked && (
+            <div className="absolute top-1.5 left-1.5 bg-black/50 text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
+              <Lock size={8} /> V{benefit.vipMin}
+            </div>
+          )}
+        </div>
+        <div className="px-3 py-2.5">
+          <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
+        </div>
       </button>
     );
   };
@@ -585,4 +628,3 @@ export function VipBenefitsPage() {
     </>
   );
 }
-please remove all BENEFIT_ICON_MAP add fake photo instead i will replace and chak v1 v2 gen color pa yo and photo pa yo.
