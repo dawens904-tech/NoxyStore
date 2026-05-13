@@ -448,28 +448,6 @@ export function HomePage() {
           </div>
         )}
 
-        {/* All Games list */}
-        <div className="mt-6 px-3">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="section-title">{t("allGames")}</h2>
-            <button onClick={() => navigate("/categories")} className="flex items-center gap-1 text-xs text-gray-500 font-medium">All <ChevronRight size={12} /></button>
-          </div>
-          <div className="space-y-2">
-            {isLoading
-              ? Array.from({ length: 4 }).map((_, i) => (
-                  <div key={i} className="flex items-center gap-3 bg-white rounded-2xl p-3">
-                    <div className="shimmer w-14 h-14 rounded-xl" />
-                    <div className="flex-1 space-y-2"><div className="shimmer h-4 w-2/3 rounded" /><div className="shimmer h-3 w-1/3 rounded" /></div>
-                  </div>
-                ))
-              : games.slice(0, 8).map((game) => <GameCard key={game.game_id} game={game} size="lg" />)}
-          </div>
-          {games.length > 8 && (
-            <button onClick={() => navigate("/categories")} className="w-full mt-3 py-3 text-sm font-semibold text-gray-600 bg-white rounded-2xl border border-gray-200">
-              {t("viewAll")} {games.length} Games
-            </button>
-          )}
-        </div>
 
         <MobileFooter />
         <FloatingChat />
