@@ -478,3 +478,4 @@ export function HomePage() {
     </div>
   );
 }
+on mobile popular section must be one line like desktop.
