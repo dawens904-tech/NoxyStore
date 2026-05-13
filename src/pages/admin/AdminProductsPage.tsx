@@ -217,3 +217,4 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
+please ai fix product saved real saved in all page when saved product ing its saved to home page and sll page.
