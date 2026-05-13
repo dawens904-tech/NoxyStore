@@ -310,6 +310,9 @@ export function GameDetailPage() {
   const totalPrice = selectedSku ? applyMarkup(selectedSku.price || 0) * quantity : 0;
   const totalSavings = selectedSku ? (selectedSku.discount_amount || 0) * quantity : 0;
 
+  // Determine if this product needs player verification (has extra_info fields)
+  const needsVerification = extraInfoFields.length > 0;
+
   const handleTopUpNow = () => {
     if (!selectedSku) { toast.error("Please select a package first"); return; }
     for (const field of extraInfoFields) {
@@ -319,10 +322,22 @@ export function GameDetailPage() {
       }
     }
     const finalSku = { ...selectedSku, price: applyMarkup(selectedSku.price || 0) };
-    if (extraInfoFields.length > 0) {
+    if (needsVerification) {
       navigate("/verify-player", { state: { sku: finalSku, game, quantity } });
     } else {
       navigate("/checkout", { state: { sku: finalSku, game, quantity, extraInfo: extraInfoValues } });
+    }
+  };
+
+  // Mobile: auto-navigate when SKU selected for products needing verification
+  const handleMobileSkuSelect = (sku: SkuItem) => {
+    setSelectedSku(sku);
+    setExtraInfoValues({});
+    // If product needs no verification, stay on page (user taps Top-up Now)
+    // If product needs verification, auto-navigate to verify page
+    if ((sku.extra_info || []).length > 0) {
+      const finalSku = { ...sku, price: applyMarkup(sku.price || 0) };
+      navigate("/verify-player", { state: { sku: finalSku, game, quantity } });
     }
   };
 
@@ -771,7 +786,7 @@ export function GameDetailPage() {
                 return (
                   <button
                     key={sku.sku_id}
-                    onClick={() => { setSelectedSku(sku); setExtraInfoValues({}); }}
+                    onClick={() => handleMobileSkuSelect(sku)}
                     className={`relative flex flex-col bg-white rounded-xl border-2 overflow-hidden text-left transition-all ${isSelected ? "border-yellow-400 shadow-md" : "border-gray-200"}`}
                   >
                     <div className="aspect-[4/3] bg-gradient-to-b from-blue-100 to-purple-100 relative">
@@ -810,9 +825,6 @@ export function GameDetailPage() {
 
       {/* Bottom CTA */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 pb-safe z-50" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
-        {selectedSku && extraInfoFields.length > 0 && (
-          <div className="mb-3 space-y-2"><ExtraInfoForm compact /></div>
-        )}
         <div className="flex items-center justify-between mb-2">
           <span className="text-sm font-medium text-gray-600">Quantity</span>
           <div className="flex items-center gap-2">
@@ -835,9 +847,12 @@ export function GameDetailPage() {
             disabled={!selectedSku}
             className={`px-8 py-3 rounded-2xl font-bold text-base transition-all ${selectedSku ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
           >
-            Top-up Now
+            {needsVerification ? "Continue" : "Top-up Now"}
           </button>
         </div>
+        {!selectedSku && (
+          <p className="text-center text-xs text-gray-400 mt-1.5">Select a package above to continue</p>
+        )}
       </div>
 
       <MobileFooter />
@@ -900,4 +915,4 @@ export function GameDetailPage() {
     </>
   );
 }
-for mobile when you select a product click continue auto send to verify page and some product dont need it and fix verify page for free fire api check.
+

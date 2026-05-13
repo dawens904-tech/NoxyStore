@@ -32,7 +32,7 @@ export function VerifyPlayerPage() {
     state?.game?.game_name?.toLowerCase().includes("freefire");
 
   const lookupFreeFirePlayer = useCallback(async (uid: string) => {
-    if (!uid || uid.length < 6) {
+    if (!uid || uid.length < 5) {
       setFfPlayer(null);
       setFfLookupError(null);
       return;
@@ -41,15 +41,32 @@ export function VerifyPlayerPage() {
     setFfPlayer(null);
     setFfLookupError(null);
     try {
-      // Call our edge function which handles both APIs with fallback
       const { supabase } = await import("@/lib/supabase");
+      // Set a 10s timeout so UI doesn't hang
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 10000);
       const { data, error } = await supabase.functions.invoke("ff-lookup", {
         body: { uid },
       });
-      if (error || !data?.name) throw new Error("not_found");
-      setFfPlayer({ name: data.name, level: data.level || 0 });
-    } catch {
-      setFfLookupError("Could not verify UID");
+      clearTimeout(timer);
+      if (error) {
+        // FunctionsHttpError — try to read message
+        let msg = "Could not verify UID";
+        if ((error as any).context) {
+          try { const t = await (error as any).context.text(); if (t) msg = t; } catch {}
+        }
+        console.log("ff-lookup error:", msg);
+        setFfLookupError("UID entered — please double-check before proceeding");
+        return;
+      }
+      if (!data?.name) {
+        setFfLookupError("Player not found — please double-check your UID");
+        return;
+      }
+      setFfPlayer({ name: data.name, level: data.level ?? 0 });
+    } catch (e: any) {
+      console.log("ff-lookup exception:", e?.message);
+      setFfLookupError("Could not verify UID — proceed carefully");
     } finally {
       setFfLookupLoading(false);
     }
