@@ -217,3 +217,5 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
+
+add real admin product saved
