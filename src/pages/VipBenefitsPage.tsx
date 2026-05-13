@@ -576,4 +576,4 @@ export function VipBenefitsPage() {
     </>
   );
 }
-
+please ai fix this Implement a daily login bonus system: on AuthInitializer login event, check if user has already claimed points today (via analytics_events with event_type='daily_login'), and if not, insert +2 points as a wallet_transaction and insert the daily_login event record to prevent duplicate claims.
