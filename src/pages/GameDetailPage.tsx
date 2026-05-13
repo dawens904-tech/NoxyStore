@@ -929,4 +929,4 @@ export function GameDetailPage() {
     </>
   );
 }
-
+when select a game on mobile dont auto go to verify player only if continue and fix verify player when i enter my free fire id its says UID entered — please double-check before proceeding fix auto call edg and give answer if no answer fallback to lootbar go checkout.
