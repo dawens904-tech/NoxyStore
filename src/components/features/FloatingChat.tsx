@@ -1,17 +1,14 @@
 /**
  * FloatingChat — opens the support page when clicked.
- * Features: slight tilt angle, dismissable, glow effect idle, pops alive on click.
+ * No dismiss button. Tilted right side of pages.
  */
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageSquare, X } from "lucide-react";
+import { MessageSquare } from "lucide-react";
 
 export function FloatingChat() {
   const navigate = useNavigate();
-  const [dismissed, setDismissed] = useState(false);
   const [clicked, setClicked] = useState(false);
-
-  if (dismissed) return null;
 
   const handleClick = () => {
     setClicked(true);
@@ -23,19 +20,9 @@ export function FloatingChat() {
 
   return (
     <div
-      className="fixed bottom-24 right-4 z-50 lg:bottom-8"
-      style={{ transform: "rotate(-12deg)" }}
+      className="fixed bottom-24 right-4 z-50 lg:bottom-8 lg:right-6"
+      style={{ transform: "rotate(18deg)" }}
     >
-      {/* Close button */}
-      <button
-        onClick={(e) => { e.stopPropagation(); setDismissed(true); }}
-        className="absolute -top-2 -left-2 w-5 h-5 bg-gray-800 text-white rounded-full flex items-center justify-center z-10 shadow-md hover:bg-gray-700 transition-colors"
-        style={{ transform: "rotate(12deg)" }}
-        aria-label="Dismiss chat button"
-      >
-        <X size={10} />
-      </button>
-
       {/* Main button */}
       <button
         onClick={handleClick}
@@ -52,7 +39,7 @@ export function FloatingChat() {
         <MessageSquare
           size={24}
           className="text-black"
-          style={{ transform: "rotate(12deg)" }}
+          style={{ transform: "rotate(-18deg)" }}
         />
 
         {/* Idle glow pulse ring */}
@@ -63,4 +50,3 @@ export function FloatingChat() {
     </div>
   );
 }
-remove x button an and fel paret pi anle nn page yo bo dwat 
