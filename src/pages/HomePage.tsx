@@ -363,16 +363,16 @@ export function HomePage() {
                   All ({gameKeyGames.length}) <ChevronRight size={12} />
                 </button>
               </div>
-              <div className="grid grid-cols-3 gap-2.5">
+              <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1 -mx-1 px-1">
                 {isLoading
-                  ? Array.from({length: keyRows * COLS}).map((_,i) => <div key={i} className="shimmer rounded-xl aspect-[3/4]" />)
-                  : gameKeyGames.slice(0, keyRows * COLS).map((game) => (
+                  ? Array.from({length: 4}).map((_,i) => <div key={i} className="shimmer flex-shrink-0 w-28 h-44 rounded-xl" />)
+                  : gameKeyGames.slice(0, 6).map((game) => (
                     <button key={game.game_id} onClick={() => navigate(`/game/${game.game_id}`)}
-                      className="flex flex-col bg-white rounded-xl overflow-hidden text-left hover:shadow-md transition-all">
-                      <div className="aspect-[3/4] bg-gray-200 relative overflow-hidden">
-                        <img src={game.game_image || `https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=267&fit=crop`} alt={game.game_name}
+                      className="flex-shrink-0 w-28 flex flex-col bg-white rounded-xl overflow-hidden text-left hover:shadow-md transition-all">
+                      <div className="h-32 bg-gray-200 relative overflow-hidden">
+                        <img src={game.game_image || `https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=200&fit=crop`} alt={game.game_name}
                           className="w-full h-full object-cover"
-                          onError={(e) => { (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=267&fit=crop`; }} />
+                          onError={(e) => { (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=200&fit=crop`; }} />
                         {(game.discount ?? 0) > 0 && <div className="absolute top-1.5 right-1.5 bg-orange-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">-{game.discount}%</div>}
                       </div>
                       <div className="p-2">
@@ -384,8 +384,8 @@ export function HomePage() {
                   ))}
                 {/* View All tile */}
                 <button onClick={() => navigate("/categories?filter=Game+Keys")}
-                  className="flex flex-col items-center justify-center bg-yellow-400/90 rounded-xl p-3 hover:bg-yellow-400 transition-colors text-center min-h-[140px]">
-                  <KeyRound size={28} className="text-black mb-2" />
+                  className="flex-shrink-0 w-28 flex flex-col items-center justify-center bg-yellow-400/90 rounded-xl p-3 hover:bg-yellow-400 transition-colors text-center h-44">
+                  <KeyRound size={24} className="text-black mb-2" />
                   <p className="font-black text-black text-[11px]">View All</p>
                   <p className="text-black/70 text-[10px] mt-0.5">({gameKeyGames.length})</p>
                 </button>
@@ -478,4 +478,3 @@ export function HomePage() {
     </div>
   );
 }
-on mobile popular section must be one line like desktop.
