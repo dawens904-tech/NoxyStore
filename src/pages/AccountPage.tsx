@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import {
   Settings, Globe, HelpCircle, MessageSquare, MessageCircle, Gift, DollarSign, User,
   ChevronRight, LogOut, LayoutDashboard, Package, Wallet, Tag, Users, Camera, ShoppingBag,
-  Key, X, Loader2, Check, ArrowLeft, ChevronDown, Plus
+  Key, X, Loader2, Check, ArrowLeft, ChevronDown, Plus, Star
 } from "lucide-react";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
@@ -29,6 +29,111 @@ const CLASSIFICATIONS = ["Payment issues","Top-up not received","Wrong UID/Serve
 
 function daysUntil(dateStr: string) {
   return Math.max(0, Math.ceil((new Date(dateStr).getTime() - Date.now()) / 86400000));
+}
+
+// ─── Passkey Modal (photo 11) ─────────────────────────────────────────────────
+function PasskeyModal({ onClose, onNavigate }: { onClose: () => void; onNavigate: () => void }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
+      <div className="absolute inset-0 bg-black/50" />
+      <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden z-10" onClick={e => e.stopPropagation()}>
+        <div className="absolute top-4 right-4">
+          <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full">
+            <X size={18} className="text-gray-700" />
+          </button>
+        </div>
+        <div className="px-8 pt-8 pb-3">
+          <h2 className="text-xl font-black text-gray-900 mb-2">Create a Passkey</h2>
+          <p className="text-sm text-gray-600 leading-relaxed mb-1">Create a Passkey for faster, safer login with Face ID, Fingerprint, or PIN.</p>
+          <button className="text-sm text-blue-600 font-semibold flex items-center gap-1 hover:underline mb-5">
+            Learn More <ChevronRight size={14} />
+          </button>
+        </div>
+        {/* Passkey illustration */}
+        <div className="px-8 pb-4 flex justify-center">
+          <div className="relative w-56 h-40 flex items-center justify-center">
+            <div className="w-20 h-24 border-4 border-gray-900 rounded-2xl flex items-center justify-center bg-white shadow-lg relative z-10">
+              <div className="flex flex-col items-center gap-1">
+                <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"><User size={16} className="text-gray-600" /></div>
+                <Key size={14} className="text-gray-700" />
+              </div>
+              <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-6 border-4 border-gray-900 border-b-0 rounded-t-full" />
+            </div>
+            <div className="absolute top-2 left-8 w-2.5 h-2.5 rounded-full bg-yellow-400" />
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-xl bg-teal-100 border-2 border-teal-300 flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-0.5">{[...Array(4)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-teal-500" />)}</div>
+            </div>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-xl bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full border-2 border-yellow-500 flex items-center justify-center"><div className="w-4 h-4 rounded-full border-2 border-yellow-500" /></div>
+            </div>
+            <div className="absolute bottom-0 right-4 w-12 h-12 rounded-xl bg-purple-100 border-2 border-purple-300 flex items-center justify-center">
+              <div className="grid grid-cols-3 gap-0.5">{[...Array(9)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-sm bg-purple-400" />)}</div>
+            </div>
+          </div>
+        </div>
+        <div className="px-6 pb-6">
+          <button onClick={onNavigate} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+            <User size={18} /> Create a Passkey
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── More Games section (conditional: 30s + search/buy) ──────────────────────
+function MoreGamesSection() {
+  const navigate = useNavigate();
+  const [games, setGames] = useState<any[]>([]);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const arrivedAt = (window as any).__arrivedAt || Date.now();
+    if (!(window as any).__arrivedAt) (window as any).__arrivedAt = arrivedAt;
+    const hasSearched = !!sessionStorage.getItem("has_searched");
+    const hasBought = !!sessionStorage.getItem("has_bought");
+    const timeSpent = Date.now() - arrivedAt;
+    if (timeSpent >= 30000 || hasSearched || hasBought) {
+      setShow(true);
+    } else {
+      const timer = setTimeout(() => setShow(true), Math.max(0, 30000 - timeSpent));
+      return () => clearTimeout(timer);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!show) return;
+    supabase.from("games_cache").select("*").limit(6).then(({ data }) => {
+      if (data && data.length > 0) setGames(data);
+    });
+  }, [show]);
+
+  if (!show || games.length === 0) return null;
+
+  return (
+    <div className="px-4 pb-6 mt-4">
+      <h3 className="text-base font-bold text-gray-900 mb-3">More Games You Might Like</h3>
+      <div className="grid grid-cols-3 gap-2">
+        {games.slice(0, 6).map(g => (
+          <button key={g.game_id} onClick={() => navigate(`/game/${g.game_id}`)} className="flex flex-col text-left">
+            <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-200 w-full">
+              <img
+                src={g.game_image || `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop`}
+                alt={g.game_name}
+                className="w-full h-full object-cover"
+                onError={(e) => { (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop`; }}
+              />
+              {g.discount > 0 && (
+                <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-black px-1 py-0.5 rounded">-{g.discount}%</div>
+              )}
+            </div>
+            <p className="text-xs font-semibold text-gray-900 mt-1 leading-tight line-clamp-1">{g.game_name}</p>
+            <p className="text-[10px] text-gray-400">{g.sold_count}</p>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // ─── Birthday Picker Modal ────────────────────────────────────────────────────
@@ -60,6 +165,7 @@ function BirthdayModal({ onClose, onSave, current }: { onClose: () => void; onSa
           </div>
         </div>
         <div className="px-4 py-5">
+          <p className="text-xs text-gray-500 text-center mb-3">⚠️ Birthday cannot be changed after saving</p>
           <button onClick={() => onSave(`${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl">Confirm</button>
         </div>
       </div>
@@ -182,15 +288,7 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
       {tickets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
           <div className="w-28 h-28 flex items-center justify-center mb-4">
-            <svg viewBox="0 0 120 120" className="w-full h-full opacity-30">
-              <rect x="20" y="10" width="80" height="90" rx="8" fill="#9ca3af"/>
-              <rect x="30" y="25" width="60" height="6" rx="3" fill="#d1d5db"/>
-              <rect x="30" y="38" width="45" height="6" rx="3" fill="#d1d5db"/>
-              <rect x="30" y="51" width="52" height="6" rx="3" fill="#d1d5db"/>
-              <rect x="30" y="64" width="38" height="6" rx="3" fill="#d1d5db"/>
-              <rect x="60" y="75" width="40" height="12" rx="4" fill="#6b7280" transform="rotate(-45 80 81)"/>
-              <polygon points="54,98 58,90 66,98" fill="#4b5563"/>
-            </svg>
+            <svg viewBox="0 0 120 120" className="w-full h-full opacity-30"><rect x="20" y="10" width="80" height="90" rx="8" fill="#9ca3af"/><rect x="30" y="25" width="60" height="6" rx="3" fill="#d1d5db"/><rect x="30" y="38" width="45" height="6" rx="3" fill="#d1d5db"/><rect x="30" y="51" width="52" height="6" rx="3" fill="#d1d5db"/><rect x="30" y="64" width="38" height="6" rx="3" fill="#d1d5db"/><rect x="60" y="75" width="40" height="12" rx="4" fill="#6b7280" transform="rotate(-45 80 81)"/><polygon points="54,98 58,90 66,98" fill="#4b5563"/></svg>
           </div>
           <p className="text-gray-400 font-medium">No records</p>
         </div>
@@ -204,7 +302,6 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
           ))}
         </div>
       )}
-
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
           <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
@@ -281,23 +378,14 @@ function DesktopInvite({ user }: { user: any }) {
     });
   }, [user]);
 
-  const inviteLink = useShorter
-    ? `https://noxystore.gg/s/${referral?.short_code || "..."}`
-    : `https://noxystore.gg?share_token=${referral?.code || "..."}&utm_source=copy&utm_campaign=p_invite&utm_medium=social`;
-
+  const inviteLink = useShorter ? `https://noxystore.gg/s/${referral?.short_code || "..."}` : `https://noxystore.gg?share_token=${referral?.code || "..."}&utm_source=copy&utm_campaign=p_invite&utm_medium=social`;
   const shareText = `Sign up on NoxyStore.gg using my link to claim coupons! ${inviteLink}`;
-
-  const handleCopy = async () => {
-    await navigator.clipboard.writeText(inviteLink);
-    setCopied(true); toast.success("Link copied!"); setTimeout(() => setCopied(false), 2000);
-  };
-
+  const handleCopy = async () => { await navigator.clipboard.writeText(inviteLink); setCopied(true); toast.success("Link copied!"); setTimeout(() => setCopied(false), 2000); };
   const handleShare = (p: string) => {
     const enc = encodeURIComponent(shareText);
     const urls: Record<string, string> = { twitter: `https://twitter.com/intent/tweet?text=${enc}`, facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(inviteLink)}`, whatsapp: `https://wa.me/?text=${enc}`, discord: "https://discord.com/channels/@me" };
     if (urls[p]) window.open(urls[p], "_blank");
   };
-
   const usersInvited = referral?.users_invited || 0;
   const ordersCompleted = referral?.orders_completed || 0;
   const totalSpending = referral?.total_spending || 0;
@@ -305,8 +393,6 @@ function DesktopInvite({ user }: { user: any }) {
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-5">Invite for Coupons</h2>
-
-      {/* Hero banner */}
       <div className="bg-yellow-400 rounded-2xl p-6 mb-5 flex items-center justify-between">
         <div className="flex-1">
           <h3 className="font-black text-gray-900 text-lg leading-tight mb-1">Invite new users to sign up and make orders to earn multiple rewards!</h3>
@@ -315,8 +401,6 @@ function DesktopInvite({ user }: { user: any }) {
         </div>
         <img src={inviteReward} alt="" className="w-24 h-24 object-contain flex-shrink-0 ml-4" />
       </div>
-
-      {/* Social share */}
       <div className="bg-gray-50 rounded-2xl p-5 mb-5">
         <div className="flex items-center justify-center gap-10 mb-5">
           {[
@@ -343,8 +427,6 @@ function DesktopInvite({ user }: { user: any }) {
           Share with a shorter link
         </button>
       </div>
-
-      {/* Invite Progress */}
       <div className="bg-gray-50 rounded-2xl p-5 mb-5">
         <h3 className="font-bold text-gray-900 text-base mb-4">Invite Progress Overview</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
@@ -353,13 +435,8 @@ function DesktopInvite({ user }: { user: any }) {
           <div><p className="text-2xl font-black text-orange-500">${totalSpending.toFixed(2)}</p><p className="text-xs text-gray-500 mt-0.5">Total Spending</p></div>
         </div>
       </div>
-
-      {/* Task & Reward */}
       <div className="bg-gray-50 rounded-2xl p-5">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-1 h-5 bg-yellow-400 rounded-full" />
-          <h3 className="font-bold text-gray-900 text-base">Task &amp; Reward</h3>
-        </div>
+        <div className="flex items-center gap-2 mb-4"><div className="w-1 h-5 bg-yellow-400 rounded-full" /><h3 className="font-bold text-gray-900 text-base">Task &amp; Reward</h3></div>
         <div className="grid grid-cols-2 gap-3">
           {[
             { title: "Invite Master", desc: "Invite new users to join NoxyStore", progress: `${usersInvited} / 5`, img: couponSave5 },
@@ -369,17 +446,10 @@ function DesktopInvite({ user }: { user: any }) {
           ].map((t, i) => (
             <div key={i} className="border border-gray-200 rounded-2xl p-4 bg-white relative overflow-hidden">
               <div className="flex items-start gap-3">
-                <div className="flex-1">
-                  <p className="font-bold text-gray-900 text-sm">{t.title}</p>
-                  <p className="text-gray-500 text-xs mt-0.5">{t.desc}</p>
-                  <button onClick={() => toast.info("Complete tasks to earn coupon rewards!")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5 rounded-xl">Claim</button>
-                </div>
+                <div className="flex-1"><p className="font-bold text-gray-900 text-sm">{t.title}</p><p className="text-gray-500 text-xs mt-0.5">{t.desc}</p><button onClick={() => toast.info("Complete tasks to earn coupon rewards!")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5 rounded-xl">Claim</button></div>
                 <img src={t.img} alt="reward" className="w-12 h-12 object-contain flex-shrink-0" />
               </div>
-              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between">
-                <span className="text-xs text-gray-500">Progress: {t.progress}</span>
-                <ChevronRight size={14} className="text-gray-400" />
-              </div>
+              <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between"><span className="text-xs text-gray-500">Progress: {t.progress}</span><ChevronRight size={14} className="text-gray-400" /></div>
             </div>
           ))}
         </div>
@@ -397,10 +467,7 @@ function DesktopCoupons({ user }: { user: any }) {
   const [redeemCode, setRedeemCode] = useState("");
   const [isRedeeming, setIsRedeeming] = useState(false);
 
-  useEffect(() => {
-    if (!user?.email) return;
-    loadCoupons();
-  }, [user]);
+  useEffect(() => { if (!user?.email) return; loadCoupons(); }, [user]);
 
   const loadCoupons = async () => {
     setIsLoading(true);
@@ -434,15 +501,10 @@ function DesktopCoupons({ user }: { user: any }) {
           <button onClick={handleRedeem} disabled={!redeemCode.trim() || isRedeeming} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-2.5 rounded-xl text-sm disabled:opacity-50 transition-colors">{isRedeeming ? <Loader2 size={16} className="animate-spin" /> : "Redeem"}</button>
         </div>
       </div>
-
       {isLoading ? (
         <div className="grid grid-cols-2 gap-4">{[1,2,3,4].map(i => <div key={i} className="bg-gray-100 rounded-2xl h-32 animate-pulse" />)}</div>
       ) : activeCoupons.length === 0 ? (
-        <div className="text-center py-16">
-          <Tag size={48} className="text-gray-200 mx-auto mb-4" />
-          <p className="text-gray-500">No coupons yet</p>
-          <button onClick={() => navigate("/invite")} className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 rounded-xl text-sm">Invite Friends to Earn Coupons</button>
-        </div>
+        <div className="text-center py-16"><Tag size={48} className="text-gray-200 mx-auto mb-4" /><p className="text-gray-500">No coupons yet</p><button onClick={() => navigate("/invite")} className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 rounded-xl text-sm">Invite Friends to Earn Coupons</button></div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {activeCoupons.map(c => {
@@ -451,15 +513,9 @@ function DesktopCoupons({ user }: { user: any }) {
             return (
               <div key={c.id} className="bg-white border border-orange-100 rounded-2xl overflow-hidden shadow-sm">
                 <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 flex items-center gap-3 relative overflow-hidden">
-                  <div className="absolute right-2 top-0 bottom-0 w-20 opacity-20 flex items-center">
-                    <img src={img} alt="" className="w-full object-contain" />
-                  </div>
+                  <div className="absolute right-2 top-0 bottom-0 w-20 opacity-20 flex items-center"><img src={img} alt="" className="w-full object-contain" /></div>
                   <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
-                  <div>
-                    <p className="text-orange-500 font-black text-xl">{c.discount_value}% OFF</p>
-                    {c.max_discount && <p className="text-gray-500 text-xs">(Up to ${c.max_discount.toFixed(2)})</p>}
-                    <p className="text-gray-700 text-xs mt-0.5">{c.description || "Reseller Exclusive Coupon"}</p>
-                  </div>
+                  <div><p className="text-orange-500 font-black text-xl">{c.discount_value}% OFF</p>{c.max_discount && <p className="text-gray-500 text-xs">(Up to ${c.max_discount.toFixed(2)})</p>}<p className="text-gray-700 text-xs mt-0.5">{c.description || "Reseller Exclusive Coupon"}</p></div>
                 </div>
                 <div className="border-t border-dashed border-orange-100 mx-4" />
                 <div className="px-4 py-3 flex items-center justify-between">
@@ -483,7 +539,7 @@ export function AccountPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated, logout, orders, login } = useAuthStore();
   const { t } = useTranslation();
-  const { currency, language } = useSettingsStore();
+  const { currency, language, setLanguage, setCurrency } = useSettingsStore();
   const [activeTab, setActiveTab] = useState<AccountTab>("overview");
   const [desktopSection, setDesktopSection] = useState<DesktopSection>("settings");
   const [showAgeRange, setShowAgeRange] = useState(false);
@@ -493,6 +549,7 @@ export function AccountPage() {
   const [showBindEmail, setShowBindEmail] = useState(false);
   const [showBindEmailPrompt, setShowBindEmailPrompt] = useState(false);
   const [pendingAction, setPendingAction] = useState<"password" | "passkey" | null>(null);
+  const [showPasskeyModal, setShowPasskeyModal] = useState(false);
   const [hasPassword, setHasPassword] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -540,17 +597,17 @@ export function AccountPage() {
     if (!trimmed) { setIsEditingNickname(false); return; }
     const { data, error } = await supabase.auth.updateUser({ data: { username: trimmed } });
     if (error) { toast.error("Failed to update nickname"); return; }
-    if (data.user && user) {
-      login({ ...user, nickname: trimmed });
-    }
+    if (data.user && user) { login({ ...user, nickname: trimmed }); }
     setIsEditingNickname(false);
     toast.success("Nickname updated!");
   };
 
   const saveBirthday = async (val: string) => {
+    // Birthday can only be set once — never changed
+    if (birthday) { toast.error("Birthday cannot be changed once set"); return; }
     setBirthday(val);
     await supabase.auth.updateUser({ data: { birthday: val } });
-    toast.success("Birthday saved!");
+    toast.success("Birthday saved! You won't be able to change this.");
   };
 
   const saveAgeRange = async (range: string) => {
@@ -560,7 +617,7 @@ export function AccountPage() {
 
   const handleLogout = async () => { await logout(); toast.success("Logged out"); navigate("/"); };
   const handlePasswordAction = () => { if (!hasEmail) { setShowBindEmailPrompt(true); setPendingAction("password"); } else { navigate("/login"); } };
-  const handlePasskeyAction = () => { if (!hasEmail) { setShowBindEmailPrompt(true); setPendingAction("passkey"); } else { navigate("/passkeys"); } };
+  const handlePasskeyAction = () => { if (!hasEmail) { setShowBindEmailPrompt(true); setPendingAction("passkey"); } else { setShowPasskeyModal(true); } };
 
   if (!isAuthenticated) {
     return (
@@ -577,7 +634,9 @@ export function AccountPage() {
     );
   }
 
-  // ─── Desktop Sidebar Items ────────────────────────────────────────────────
+  // VIP level (simple calculation)
+  const vipLevel = 1;
+
   const sidebarItems: { key: DesktopSection; icon: any; label: string; badge?: string; dot?: boolean; highlight?: boolean }[] = [
     { key: "buyHistory", icon: ShoppingBag, label: t("buyHistory") },
     { key: "coupon", icon: Tag, label: t("coupons"), badge: "1397" },
@@ -607,11 +666,11 @@ export function AccountPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
                   {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-14 h-14 rounded-full object-cover" /> : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>}
-                  <div className="absolute bottom-0 right-0 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white"><span className="text-black text-[8px] font-bold">V1</span></div>
+                  <div className="absolute bottom-0 right-0 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white"><span className="text-black text-[8px] font-bold">V{vipLevel}</span></div>
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
-                  <button className="text-xs text-yellow-600 font-medium flex items-center gap-1">Check VIP Benefits <ChevronRight size={12} /></button>
+                  <button onClick={() => navigate("/vip")} className="text-xs text-yellow-600 font-medium flex items-center gap-1 hover:underline">Check VIP Benefits <ChevronRight size={12} /></button>
                 </div>
               </div>
               <div className="flex items-center gap-4 py-3 border-y border-gray-100">
@@ -620,10 +679,10 @@ export function AccountPage() {
                   <p className="text-xs text-gray-500">{t("balance")}</p>
                 </button>
                 <div className="h-8 w-px bg-gray-200" />
-                <div>
+                <button onClick={() => navigate("/points")} className="hover:opacity-80 transition-opacity">
                   <p className="text-lg font-bold text-gray-900 flex items-center gap-1"><span className="text-yellow-500">●</span> {user?.points ?? 39}</p>
                   <p className="text-xs text-gray-500">{t("points")}</p>
-                </div>
+                </button>
               </div>
             </div>
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
@@ -664,18 +723,39 @@ export function AccountPage() {
                         ) : (
                           <p className="text-sm text-gray-800">{user?.nickname}</p>
                         ), action: isEditingNickname ? null : "Modify", onAction: () => { setNicknameInput(user?.nickname || ""); setIsEditingNickname(true); setTimeout(() => nicknameInputRef.current?.focus(), 50); } },
-                      { label: "Birthday", value: birthday || "Fill in birthday info", valueClass: birthday ? "text-gray-800" : "text-gray-400 text-sm", action: birthday ? "Change" : "Set", onAction: () => setShowBirthday(true) },
+                      { label: "Birthday", value: birthday || "Fill in birthday info", valueClass: birthday ? "text-gray-800" : "text-gray-400 text-sm",
+                        action: birthday ? "Check my birthday benefit" : "Set",
+                        actionClass: birthday ? "text-orange-500 hover:text-orange-600" : undefined,
+                        onAction: birthday ? () => navigate("/vip") : () => setShowBirthday(true) },
                       { label: "Age Range", value: ageRange || <span className="text-sm text-gray-400">Set your age range</span>, action: ageRange ? "Change" : "Set", onAction: () => setShowAgeRange(true) },
                       { label: "Email", value: hasEmail ? user?.email?.replace(/(.{3}).*(@)/, "$1***$2") : null, action: hasEmail ? null : "Connect", onAction: hasEmail ? undefined : () => setShowBindEmail(true) },
                       { label: "Password", value: hasPassword ? "already set" : null, action: hasPassword ? "Change" : "Go to set up", onAction: handlePasswordAction },
-                      { label: "Passkey", value: null, action: "Manage", onAction: handlePasskeyAction },
+                      { label: "Passkey", value: "Create a Passkey for faster, safer login with Face ID, Fingerprint, or PIN.", action: "Manage", onAction: handlePasskeyAction },
                     ].map((row: any) => (
                       <div key={row.label} className="flex items-center gap-6 py-4 border-b border-gray-100 last:border-0">
                         <span className="w-36 text-sm text-gray-500 flex-shrink-0">{row.label}</span>
                         <div className="flex-1">{row.render ? row.render() : <p className={`text-sm ${row.valueClass || "text-gray-800"}`}>{row.value}</p>}</div>
-                        {row.action && <button onClick={row.onAction} className="text-sm text-gray-400 hover:text-gray-600 flex-shrink-0 flex items-center gap-1">{row.action}<ChevronRight size={14} /></button>}
+                        {row.action && <button onClick={row.onAction} className={`text-sm flex-shrink-0 flex items-center gap-1 ${row.actionClass || "text-gray-400 hover:text-gray-600"}`}>{row.action}<ChevronRight size={14} /></button>}
                       </div>
                     ))}
+                  </div>
+                  {/* Preferences Settings */}
+                  <div className="mt-8 pt-6 border-t border-gray-100">
+                    <h3 className="text-base font-bold text-gray-900 mb-4">Preferences Settings</h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-6 py-2">
+                        <span className="w-36 text-sm text-gray-500 flex-shrink-0">Display Currency</span>
+                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
+                          {["USD","EUR","GBP","IDR","MYR","SGD","THB","VND","PHP","BRL","AUD","CAD","JPY","KRW"].map(c => <option key={c} value={c}>{c}</option>)}
+                        </select>
+                      </div>
+                      <div className="flex items-center gap-6 py-2">
+                        <span className="w-36 text-sm text-gray-500 flex-shrink-0">Language</span>
+                        <select value={language} onChange={e => setLanguage(e.target.value as any)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
+                          {[{code:"en",label:"English"},{code:"es",label:"Español"},{code:"fr",label:"Français"},{code:"id",label:"Bahasa Indonesia"},{code:"ms",label:"Bahasa Melayu"},{code:"ja",label:"日本語"},{code:"zh-TW",label:"中文(繁體)"},{code:"ko",label:"한국어"},{code:"th",label:"ภาษาไทย"},{code:"vi",label:"Tiếng Việt"},{code:"ar",label:"العربية"}].map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                        </select>
+                      </div>
+                    </div>
                   </div>
                 </>
               )}
@@ -710,6 +790,9 @@ export function AccountPage() {
                   <LayoutDashboard size={18} />{t("adminDashboard")}
                 </button>
               )}
+              <button onClick={() => navigate("/points")} className="flex-1 bg-yellow-400 text-black border border-yellow-400 rounded-xl py-3 font-bold flex items-center justify-center gap-2 hover:bg-yellow-300">
+                <Star size={18} /> Points
+              </button>
               <button onClick={handleLogout} className="flex-1 bg-white text-red-500 border border-red-200 rounded-xl py-3 font-bold flex items-center justify-center gap-2 hover:bg-red-50">
                 <LogOut size={18} />{t("logout")}
               </button>
@@ -737,12 +820,18 @@ export function AccountPage() {
             <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-3xl p-5 text-white relative overflow-hidden">
               <div className="flex items-center gap-3 mb-5 mt-1">
                 <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-white">{user?.nickname?.[0]?.toUpperCase()}</span>}</div>
-                <div><h2 className="text-lg font-bold">{user?.nickname}</h2><p className="text-white/70 text-sm">ID: {user?.id?.slice(-12)}</p><span className="bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-block">{user?.role === "admin" ? "Admin" : "Member"}</span></div>
+                <div>
+                  <h2 className="text-lg font-bold">{user?.nickname}</h2>
+                  <p className="text-white/70 text-sm">ID: {user?.id?.slice(-12)}</p>
+                  <button onClick={() => navigate("/vip")} className="bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-flex items-center gap-1 hover:bg-white/30">
+                    Check VIP Benefits <ChevronRight size={10} />
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-2 mb-4">
                 {[
                   { label: t("balance"), value: `$${user?.balance?.toFixed(2)}`, path: "/balance" },
-                  { label: t("points"), value: user?.points ?? 0, path: null },
+                  { label: t("points"), value: user?.points ?? 0, path: "/points" },
                   { label: t("coupons"), value: `${user?.coupons ?? 0}`, path: "/coupons" },
                 ].map(item => (
                   <button key={item.label} onClick={() => (item as any).path && navigate((item as any).path)} className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center hover:bg-white/25 transition-colors">
@@ -756,7 +845,7 @@ export function AccountPage() {
               {[
                 { icon: Package, label: t("orders"), value: `${orders.length} orders`, path: null },
                 { icon: Wallet, label: t("balance"), value: `$${user?.balance?.toFixed(2)}`, path: "/balance" },
-                { icon: Key, label: "Passkeys", value: "Manage passkeys", path: hasEmail ? "/passkeys" : null, onTap: !hasEmail ? handlePasskeyAction : undefined },
+                { icon: Key, label: "Passkeys", value: "Manage passkeys", path: null, onTap: handlePasskeyAction },
                 { icon: Users, label: "Referrals", value: "Earn 10%", path: null },
               ].map(item => (
                 <button key={item.label} onClick={() => { if ((item as any).onTap) { (item as any).onTap(); return; } (item as any).path && navigate((item as any).path); }} className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-all text-left">
@@ -769,7 +858,7 @@ export function AccountPage() {
             <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
               {[
                 { icon: Settings, label: t("settings"), path: null, onTap: () => setActiveTab("profile") },
-                { icon: Globe, label: t("languageAndCurrency"), sub: `${language.toUpperCase()} / ${currency}`, path: null },
+                { icon: Globe, label: t("languageAndCurrency"), sub: `${currency} | ${language.toUpperCase().slice(0,2)}`, path: "/language-currency" },
                 { icon: HelpCircle, label: t("helpCenter"), path: "/support" },
                 { icon: MessageCircle, label: "Live Chat Support", sub: "Get instant help", highlight: true, path: "/support/vip" },
                 { icon: MessageSquare, label: "Feedback", sub: "Report issues or suggestions", path: "/feedback" },
@@ -791,7 +880,11 @@ export function AccountPage() {
             {user?.role === "admin" && (
               <button onClick={() => navigate("/secure-dashboard-92x2011")} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl py-4 font-bold flex items-center justify-center gap-2 shadow-md"><LayoutDashboard size={18} />{t("adminDashboard")}</button>
             )}
-            <button onClick={handleLogout} className="w-full py-4 text-red-500 font-bold flex items-center justify-center gap-2"><LogOut size={18} />{t("logout")}</button>
+
+            {/* Logout button — styled as outlined button (photo 7) */}
+            <button onClick={handleLogout} className="w-full py-4 border border-gray-200 bg-white rounded-2xl text-gray-700 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50">
+              <LogOut size={18} className="text-gray-500" /> Log out
+            </button>
           </div>
         )}
 
@@ -808,7 +901,6 @@ export function AccountPage() {
           </div>
         )}
 
-        {/* Mobile Profile Tab — full Account Information like photo 5 */}
         {activeTab === "profile" && (
           <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
@@ -817,7 +909,6 @@ export function AccountPage() {
               <div className="w-6" />
             </div>
 
-            {/* Avatar */}
             <button onClick={() => avatarInputRef.current?.click()} className="flex items-center justify-between px-4 py-4 border-b border-gray-100 w-full">
               <span className="text-sm font-medium text-gray-800">Avatar</span>
               <div className="flex items-center gap-2">
@@ -826,7 +917,6 @@ export function AccountPage() {
               </div>
             </button>
 
-            {/* Nickname */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
               <span className="text-sm font-medium text-gray-800">Nickname</span>
               {isEditingNickname ? (
@@ -842,16 +932,24 @@ export function AccountPage() {
               )}
             </div>
 
-            {/* Birthday */}
+            {/* Birthday — once set, locked forever */}
             <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
               <span className="text-sm font-medium text-gray-800">Birthday</span>
-              <button onClick={() => setShowBirthday(true)} className="flex items-center gap-1 text-right">
-                <span className={`text-sm ${birthday ? "text-gray-800" : "text-gray-400"}`}>{birthday || "Fill in birthday info, don't miss the surprise"}</span>
-                <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
-              </button>
+              {birthday ? (
+                <div className="flex flex-col items-end gap-1">
+                  <span className="text-sm text-gray-800">{birthday}</span>
+                  <button onClick={() => navigate("/vip")} className="text-xs text-orange-500 font-semibold flex items-center gap-0.5 hover:underline">
+                    Check my birthday benefit <ChevronRight size={11} />
+                  </button>
+                </div>
+              ) : (
+                <button onClick={() => setShowBirthday(true)} className="flex items-center gap-1 text-right">
+                  <span className="text-sm text-gray-400">{"Fill in birthday info, don't miss the surprise"}</span>
+                  <ChevronRight size={16} className="text-gray-400 flex-shrink-0" />
+                </button>
+              )}
             </div>
 
-            {/* Age Range */}
             <div className="flex items-start justify-between px-4 py-4 border-b border-gray-100">
               <div>
                 <span className="text-sm font-medium text-gray-800">Age Range</span>
@@ -863,7 +961,6 @@ export function AccountPage() {
               </button>
             </div>
 
-            {/* Email */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
               <span className="text-sm font-medium text-gray-800">Email</span>
               {hasEmail ? <span className="text-sm text-gray-500">{user?.email?.replace(/(.{3}).*(@)/, "$1***$2")}</span> : (
@@ -871,7 +968,6 @@ export function AccountPage() {
               )}
             </div>
 
-            {/* Password */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
               <span className="text-sm font-medium text-gray-800">Password</span>
               <button onClick={handlePasswordAction} className="flex items-center gap-1 text-gray-400">
@@ -879,20 +975,17 @@ export function AccountPage() {
               </button>
             </div>
 
-            {/* Passkey */}
             <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
               <span className="text-sm font-medium text-gray-800">Passkey</span>
               <button onClick={handlePasskeyAction} className="flex items-center gap-1 text-gray-400"><span className="text-sm">{hasEmail ? "Manage" : "Add a Passkey"}</span><ChevronRight size={16} /></button>
             </div>
 
-            {/* Social Bind Section */}
             <div className="px-4 pt-4 pb-2">
               <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Social Accounts</p>
             </div>
 
             {[
               { label: "Steam", icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-700"><path d="M11.979 0C5.678 0 .511 4.86.022 11.037l6.432 2.658c.545-.371 1.203-.59 1.912-.59.063 0 .125.004.188.006l2.861-4.142V8.91c0-2.495 2.028-4.524 4.524-4.524 2.494 0 4.524 2.031 4.524 4.527s-2.03 4.525-4.524 4.525h-.105l-4.076 2.911c0 .052.004.105.004.159 0 1.875-1.515 3.396-3.39 3.396-1.635 0-3.016-1.173-3.331-2.727L.436 15.27C1.862 20.307 6.486 24 11.979 24c6.627 0 11.999-5.373 11.999-12S18.605 0 11.979 0z"/></svg>, bound: false },
-              { label: "EA", icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-gray-600"><path d="M0 7.76C0 3.301 3.493 0 7.937 0l8.125 0C20.51 0 24 3.301 24 7.76v8.48C24 20.698 20.507 24 16.062 24l-8.125 0C3.492 24 0 20.698 0 16.24Z"/></svg>, bound: false },
               { label: "Google", icon: <svg viewBox="0 0 24 24" className="w-6 h-6"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>, bound: user?.email ? "connected" : false },
               { label: "Facebook", icon: <svg viewBox="0 0 24 24" fill="#1877F2" className="w-6 h-6"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>, bound: false },
               { label: "Twitter / X", icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-black"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.843L1.254 2.25H8.08l4.257 5.629L18.244 2.25z"/></svg>, bound: false },
@@ -900,10 +993,7 @@ export function AccountPage() {
               { label: "TikTok", icon: <svg viewBox="0 0 24 24" fill="currentColor" className="w-6 h-6 text-black"><path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.2 8.2 0 0 0 4.79 1.52V6.69a4.85 4.85 0 0 1-1.02-.0z"/></svg>, bound: false },
             ].map((social, i, arr) => (
               <div key={social.label} className={`flex items-center justify-between px-4 py-4 ${i < arr.length - 1 ? "border-b border-gray-100" : ""}`}>
-                <div className="flex items-center gap-3">
-                  {social.icon}
-                  <span className="text-sm font-medium text-gray-800">{social.label}</span>
-                </div>
+                <div className="flex items-center gap-3">{social.icon}<span className="text-sm font-medium text-gray-800">{social.label}</span></div>
                 {social.bound ? (
                   <div className="flex items-center gap-1 text-gray-400"><span className="text-sm">{social.bound === "connected" ? "Connected" : String(social.bound)}</span><ChevronRight size={16} /></div>
                 ) : (
@@ -912,14 +1002,13 @@ export function AccountPage() {
               </div>
             ))}
 
-            {/* KYC Verification */}
             <div className="px-4 pt-4 pb-2 border-t border-gray-100 mt-2">
               <div className="flex items-center justify-between mb-2">
                 <span className="text-sm font-medium text-gray-800">KYC Verification</span>
                 <button className="flex items-center gap-1 text-gray-400"><span className="text-sm">Verify</span><ChevronRight size={16} /></button>
               </div>
-              <p className="text-xs text-gray-500 leading-relaxed mb-2">Some features require you to pass the KYC real name before you can use them. Please note that KYC real name verification will require you to provide detailed survey information to verify identity, content suitability and risk.</p>
-              <p className="text-xs text-red-500 font-medium leading-relaxed">Caution! You only get two chances, please make sure your message is truthful and as clear as possible.</p>
+              <p className="text-xs text-gray-500 leading-relaxed mb-2">Some features require you to pass the KYC real name before you can use them.</p>
+              <p className="text-xs text-red-500 font-medium leading-relaxed">Caution! You only get two chances.</p>
             </div>
 
             <div className="h-4" />
@@ -929,6 +1018,9 @@ export function AccountPage() {
         {activeTab === "activity" && (
           <div className="text-center py-16"><Package size={48} className="text-gray-200 mx-auto mb-4" /><p className="text-gray-500 font-medium">Activity tracking coming soon</p></div>
         )}
+
+        {/* More Games — conditional: 30s + search/buy */}
+        {activeTab === "overview" && <MoreGamesSection />}
       </div>
       <BottomNav />
     </div>
@@ -941,10 +1033,10 @@ export function AccountPage() {
 
       <input ref={avatarInputRef} type="file" accept="image/*" className="hidden" onChange={handleAvatarUpload} />
       {showAgeRange && <AgeRangeModal onClose={() => setShowAgeRange(false)} onSave={(range) => { saveAgeRange(range); setShowAgeRange(false); }} />}
-      {showBirthday && <BirthdayModal current={birthday} onClose={() => setShowBirthday(false)} onSave={(val) => { saveBirthday(val); setShowBirthday(false); }} />}
-      {showBindEmail && <BindEmailModal onClose={() => setShowBindEmail(false)} onSuccess={() => { setShowBindEmail(false); if (pendingAction === "passkey") navigate("/passkeys"); else if (pendingAction === "password") navigate("/login"); setPendingAction(null); }} />}
+      {showBirthday && !birthday && <BirthdayModal current={birthday} onClose={() => setShowBirthday(false)} onSave={(val) => { saveBirthday(val); setShowBirthday(false); }} />}
+      {showBindEmail && <BindEmailModal onClose={() => setShowBindEmail(false)} onSuccess={() => { setShowBindEmail(false); if (pendingAction === "passkey") setShowPasskeyModal(true); else if (pendingAction === "password") navigate("/login"); setPendingAction(null); }} />}
       {showBindEmailPrompt && <BindEmailPrompt onClose={() => setShowBindEmailPrompt(false)} onConfirm={() => { setShowBindEmailPrompt(false); setShowBindEmail(true); }} />}
+      {showPasskeyModal && <PasskeyModal onClose={() => setShowPasskeyModal(false)} onNavigate={() => { setShowPasskeyModal(false); navigate("/passkeys"); }} />}
     </>
   );
 }
-

@@ -28,6 +28,9 @@ import { SearchPage } from "@/pages/SearchPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { TermsPage } from "@/pages/TermsPage";
 import { CookiePage } from "@/pages/CookiePage";
+import { PointsPage } from "@/pages/PointsPage";
+import { VipBenefitsPage } from "@/pages/VipBenefitsPage";
+import { LanguageCurrencyPage } from "@/pages/LanguageCurrencyPage";
 // Admin pages — each is its own dedicated page
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { AdminOrdersPage } from "@/pages/admin/AdminOrdersPage";
@@ -185,6 +188,9 @@ function App() {
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/cookies" element={<CookiePage />} />
+          <Route path="/points" element={<PointsPage />} />
+          <Route path="/vip" element={<VipBenefitsPage />} />
+          <Route path="/language-currency" element={<LanguageCurrencyPage />} />
 
           {/* Admin routes — each section is its own page */}
           <Route path="/admin" element={<AdminDashboardPage />} />
