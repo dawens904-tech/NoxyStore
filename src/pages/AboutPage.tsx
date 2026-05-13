@@ -82,3 +82,4 @@ export function AboutPage() {
     </div>
   );
 }
+make all on this go to a page specific about go to about us page.
