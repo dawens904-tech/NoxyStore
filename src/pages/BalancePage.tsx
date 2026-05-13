@@ -353,7 +353,28 @@ export function BalancePage() {
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [showAddCard, setShowAddCard] = useState(false);
   const [cashflowFilter, setCashflowFilter] = useState("All");
-  const balance = user?.balance || 0;
+  const [balance, setBalance] = useState<number>(user?.balance || 0);
+
+  // Fetch real wallet balance from wallet_transactions (credits - debits)
+  useEffect(() => {
+    if (!user?.email) return;
+    supabase
+      .from("wallet_transactions")
+      .select("type, amount, status")
+      .eq("user_email", user.email)
+      .eq("status", "completed")
+      .then(({ data }) => {
+        if (!data) return;
+        const bal = data.reduce((acc, tx) => {
+          const debitTypes = ["purchase", "withdraw", "points_redeemed"];
+          const creditTypes = ["topup", "refund", "bonus", "points_earned"];
+          if (debitTypes.includes(tx.type)) return acc - Math.abs(tx.amount);
+          if (creditTypes.includes(tx.type)) return acc + Math.abs(tx.amount);
+          return acc;
+        }, 0);
+        setBalance(Math.max(0, parseFloat(bal.toFixed(2))));
+      });
+  }, [user?.email]);
 
   useEffect(() => {
     if (!user?.email) return;
@@ -734,4 +755,4 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
-please ai fix Fetch the user's real wallet balance from wallet_transactions table (sum of completed credits minus debits grouped by user_email) and display it in AccountPage balance card and BalancePage instead of the placeholder value Debug the lootbar-proxy edge function returning 500 errors: read the function logs in detail, check if the Lootbar token/session refresh is failing, add better error handling that returns descriptive messages to the client instead of generic errors.
+
