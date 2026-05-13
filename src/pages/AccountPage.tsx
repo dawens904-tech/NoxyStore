@@ -20,6 +20,33 @@ import coupon6off from "@/assets/coupon-6off.png";
 import inviteReward from "@/assets/invite-reward.png";
 import couponSave5 from "@/assets/coupon-save5.png";
 
+// ── Metallic VIP Badge ────────────────────────────────────────────────────────
+function VipBadgeMetallic({ level, size = 32 }: { level: number; size?: number }) {
+  const cfgs: Record<number, { g1: string; g2: string; stroke: string; textFill: string }> = {
+    1: { g1: "#e2e8f0", g2: "#94a3b8", stroke: "#64748b", textFill: "#1e293b" },
+    2: { g1: "#fef08a", g2: "#f59e0b", stroke: "#d97706", textFill: "#78350f" },
+    3: { g1: "#a7f3d0", g2: "#10b981", stroke: "#059669", textFill: "#064e3b" },
+    4: { g1: "#ddd6fe", g2: "#8b5cf6", stroke: "#7c3aed", textFill: "#4c1d95" },
+    5: { g1: "#fecaca", g2: "#dc2626", stroke: "#b91c1c", textFill: "#450a0a" },
+  };
+  const c = cfgs[level] || cfgs[1];
+  const uid = `vbm${level}s${size}`;
+  const w = size * 1.6;
+  const h = size;
+  return (
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none">
+      <defs>
+        <linearGradient id={uid} x1="0" y1="0" x2={w} y2={h} gradientUnits="userSpaceOnUse">
+          <stop offset="0%" stopColor={c.g1} />
+          <stop offset="100%" stopColor={c.g2} />
+        </linearGradient>
+      </defs>
+      <rect x="0.75" y="0.75" width={w - 1.5} height={h - 1.5} rx={h * 0.25} fill={`url(#${uid})`} stroke={c.stroke} strokeWidth="1.5" />
+      <text x={w / 2} y={h * 0.68} textAnchor="middle" fill={c.textFill} fontWeight="900" fontSize={h * 0.5} fontFamily="system-ui,-apple-system,sans-serif">V{level}</text>
+    </svg>
+  );
+}
+
 type AccountTab = "overview" | "orders" | "profile" | "activity";
 type DesktopSection = "buyHistory" | "coupon" | "settings" | "helpCenter" | "feedback" | "invite" | "earn";
 
@@ -686,7 +713,7 @@ export function AccountPage() {
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
                   {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-14 h-14 rounded-full object-cover" /> : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>}
-                  <div className="absolute bottom-0 right-0 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white"><span className="text-black text-[8px] font-bold">V{vipLevel}</span></div>
+                  <div className="absolute -bottom-3 -right-1"><VipBadgeMetallic level={vipLevel} size={16} /></div>
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
