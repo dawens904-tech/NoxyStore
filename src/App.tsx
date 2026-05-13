@@ -24,7 +24,7 @@ import { CouponsPage } from "@/pages/CouponsPage";
 import { InvitePage } from "@/pages/InvitePage";
 import { AffiliatePage } from "@/pages/AffiliatePage";
 import { ShopPage } from "@/pages/ShopPage";
-import { about-us } from "@/pages/about-us";
+import AboutUsPage from "@/pages/about-us";
 import { SearchPage } from "@/pages/SearchPage";
 import { PrivacyPage } from "@/pages/PrivacyPage";
 import { TermsPage } from "@/pages/TermsPage";
@@ -224,7 +224,7 @@ function App() {
           <Route path="/cookies" element={<CookiePage />} />
           <Route path="/points" element={<PointsPage />} />
           <Route path="/vip" element={<VipBenefitsPage />} />
-          <Route path="/about-us" element={<about-us />} />
+          <Route path="/about-us" element={<AboutUsPage />} />
           <Route path="/language-currency" element={<LanguageCurrencyPage />} />
           <Route path="/contact" element={<ContactPage />} />
 

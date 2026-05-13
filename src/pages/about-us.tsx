@@ -1,8 +1,6 @@
-// about-uspag.tsx
+
 import React from 'react';
 import { 
-  Menu, 
-  Search, 
   Gamepad2, 
   DollarSign, 
   Star, 
@@ -13,28 +11,15 @@ import {
   ShieldCheck, 
   Headphones 
 } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
+import { DesktopHeader } from '@/components/layout/DesktopHeader';
 
 export default function AboutUsPage() {
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white font-sans">
-      {/* Navbar */}
-      <nav className="flex items-center justify-between px-4 py-3 bg-[#0a0a0a] border-b border-gray-800">
-        <div className="flex items-center gap-4">
-          <Menu className="w-6 h-6 text-white" />
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-yellow-400 rounded-lg flex items-center justify-center">
-              <Gamepad2 className="w-5 h-5 text-black" />
-            </div>
-            <span className="text-xl font-bold italic text-yellow-400">NOXYSTORE</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-4">
-          <Search className="w-6 h-6 text-white" />
-          <div className="px-3 py-1 bg-gray-800 rounded text-sm">
-            EN / USD
-          </div>
-        </div>
-      </nav>
+      {/* Real headers — mobile + desktop */}
+      <div className="lg:hidden"><Header showMenu /></div>
+      <div className="hidden lg:block"><DesktopHeader /></div>
 
       {/* Hero Section with Background */}
       <div className="relative overflow-hidden">
@@ -207,4 +192,3 @@ export default function AboutUsPage() {
     </div>
   );
 }
-remove fake header add real desktop and mobile header.
