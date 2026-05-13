@@ -18,3 +18,4 @@ export function FloatingChat() {
     </button>
   );
 }
+make this a little bit pi anle and also li can close komsi li vinn paret kwense nn dwat flou and lew click li alive paret bien.
