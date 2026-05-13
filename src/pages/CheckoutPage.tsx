@@ -694,7 +694,7 @@ export function CheckoutPage() {
         {Object.entries(extraInfo).length > 0 && (
           <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between">
             <div>{Object.entries(extraInfo).map(([k, v]) => <p key={k} className="text-xs text-gray-500"><span className="capitalize font-medium">{k}</span>: <span className="text-gray-800">{v}</span></p>)}</div>
-            <button onClick={() => navigate(-1)} className="flex items-center gap-1 text-blue-500 text-xs font-semibold"><Edit2 size={10} /> Modify</button>
+            <button onClick={() => navigate("/verify-player", { state: { sku: state.sku, game: state.game, quantity } })} className="flex items-center gap-1 text-blue-500 text-xs font-semibold"><Edit2 size={10} /> Modify</button>
           </div>
         )}
       </div>
@@ -974,4 +974,3 @@ export function CheckoutPage() {
     </>
   );
 }
-on mobile if click mdify its return verify player page to re edit the id anba add payment detail for mobile separel.
