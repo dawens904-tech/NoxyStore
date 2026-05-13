@@ -68,26 +68,38 @@ export function AdminProductsPage() {
   const saveEdit = async (gameId: string) => {
     setIsUploading(true);
     let imageUrl = editData.custom_image_url || "";
+
+    // Upload new file if selected
     if (imgFile) {
       const ext = imgFile.name.split(".").pop();
       const path = `game_${gameId}_${Date.now()}.${ext}`;
       const { error: upErr } = await supabase.storage.from("store-assets").upload(path, imgFile, { upsert: true, contentType: imgFile.type });
       if (upErr) { toast.error("Upload failed"); setIsUploading(false); return; }
       imageUrl = supabase.storage.from("store-assets").getPublicUrl(path).data.publicUrl;
-      // Also update games_cache
-      await supabase.from("games_cache").update({ game_image: imageUrl }).eq("game_id", gameId);
     }
-    const updates: any = {
+
+    // Save to game_overrides (admin overrides table)
+    const overrideUpdates: any = {
       game_id: gameId,
       category_override: editData.category_override,
       is_featured: editData.is_featured,
       is_hidden: editData.is_hidden,
       updated_at: new Date().toISOString(),
     };
-    if (editData.custom_price_str) updates.custom_price = parseFloat(editData.custom_price_str);
-    if (imageUrl) updates.custom_image_url = imageUrl;
-    await supabase.from("game_overrides").upsert(updates);
-    toast.success("Product saved!");
+    if (editData.custom_price_str) overrideUpdates.custom_price = parseFloat(editData.custom_price_str);
+    if (imageUrl) overrideUpdates.custom_image_url = imageUrl;
+    await supabase.from("game_overrides").upsert(overrideUpdates);
+
+    // ── Sync changes to games_cache so all pages reflect updates immediately ──
+    const cacheUpdates: any = {};
+    if (imageUrl) cacheUpdates.game_image = imageUrl;
+    if (editData.category_override) cacheUpdates.category = editData.category_override;
+    if (typeof editData.is_featured === "boolean") cacheUpdates.is_hot = editData.is_featured;
+    if (Object.keys(cacheUpdates).length > 0) {
+      await supabase.from("games_cache").update(cacheUpdates).eq("game_id", gameId);
+    }
+
+    toast.success("Product saved — changes are live on all pages!");
     setEditingId(null); setImgFile(null); setImgPreview("");
     loadAll();
     setIsUploading(false);
@@ -217,4 +229,4 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
-please ai fix product saved real saved in all page when saved product ing its saved to home page and sll page.
+
