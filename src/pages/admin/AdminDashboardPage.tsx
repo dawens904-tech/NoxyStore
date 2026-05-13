@@ -149,3 +149,4 @@ export function AdminDashboardPage() {
     </AdminLayout>
   );
 }
+please fix After saving a product photo in AdminProductsPage, immediately update the local 'games' state so the new image appears in the list without waiting for loadAll() to re-fetch. Also add a persistent image indicator so custom images show a small camera badge to distinguish admin-uploaded photos from Lootbar defaults.
