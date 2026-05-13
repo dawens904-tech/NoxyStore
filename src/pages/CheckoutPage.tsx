@@ -20,104 +20,55 @@ const isAndroid = /Android/.test(navigator.userAgent);
 
 // ─── Inline Logo Components (no borders, no backgrounds, raw logos) ─────────
 
+// ─── Payment Photo Cards (placeholder — user will replace images later) ──────
+const PayCard = ({ src, alt, w = "w-12" }: { src: string; alt: string; w?: string }) => (
+  <img src={src} alt={alt} className={`${w} h-8 object-contain rounded`}
+    onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
+);
+
 const VisaMasterLogo = () => (
   <div className="flex items-center gap-1.5">
-    <svg viewBox="0 0 48 16" className="h-4 w-auto" fill="none">
-      <path d="M17.5 2h-3.2L12 14h2.5l.4-1.5h2.4l.4 1.5H20L17.5 2zm-2.3 7.5l.8-3.5.8 3.5h-1.6z" fill="#1A1F71"/>
-      <circle cx="28" cy="8" r="6" fill="#EB001B"/>
-      <circle cx="32" cy="8" r="6" fill="#F79E1B" fillOpacity="0.8"/>
-      <path d="M30 3.5c1.2 1.3 2 3 2 5s-.8 3.7-2 5c-1.2-1.3-2-3-2-5s.8-3.7 2-5z" fill="#FF5F00"/>
-    </svg>
+    <PayCard src="/img/pay.png" alt="Visa/Mastercard" w="w-20" />
   </div>
 );
 
 const JCBAmexDiscoverDinersLogo = () => (
-  <div className="flex items-center gap-2">
-    {/* JCB */}
-    <svg viewBox="0 0 48 16" className="h-4 w-auto">
-      <rect width="48" height="16" rx="2" fill="#0066B3"/>
-      <path d="M8 4h6v8H8z" fill="#fff"/>
-      <text x="10" y="11" fontSize="6" fontWeight="bold" fill="#0066B3">JCB</text>
-    </svg>
-    {/* AmEx */}
-    <svg viewBox="0 0 48 16" className="h-4 w-auto">
-      <rect width="48" height="16" rx="2" fill="#016FD0"/>
-      <text x="6" y="11" fontSize="7" fontWeight="bold" fill="#fff">AMERICAN EXPRESS</text>
-    </svg>
-    {/* Discover */}
-    <svg viewBox="0 0 48 16" className="h-4 w-auto">
-      <rect width="48" height="16" rx="2" fill="#fff" stroke="#ccc" strokeWidth="0.5"/>
-      <text x="4" y="11" fontSize="8" fontWeight="bold" fill="#FF6000">DISCOVER</text>
-    </svg>
-    {/* Diners */}
-    <svg viewBox="0 0 48 16" className="h-4 w-auto">
-      <rect width="48" height="16" rx="8" fill="#004C99"/>
-      <circle cx="18" cy="8" r="5" fill="none" stroke="#fff" strokeWidth="1.5"/>
-      <text x="28" y="11" fontSize="7" fill="#fff">Diners Club</text>
-    </svg>
+  <div className="flex items-center gap-1.5">
+    <PayCard src="/img/pay.png" alt="JCB / Amex / Discover / Diners" w="w-28" />
   </div>
 );
 
 const PayPalLogo = () => (
-  <svg viewBox="0 0 80 20" className="h-5 w-auto">
-    <text x="0" y="15" fontSize="14" fontWeight="bold" fontFamily="Arial,sans-serif" fill="#003087">Pay</text>
-    <text x="28" y="15" fontSize="14" fontWeight="bold" fontFamily="Arial,sans-serif" fill="#009CDE">Pal</text>
-  </svg>
+  <div className="flex items-center gap-1.5">
+    <PayCard src="/img/pay.png" alt="PayPal" />
+  </div>
 );
 
 const PayLaterLogo = () => (
   <div className="flex items-center gap-1.5">
-    <svg viewBox="0 0 16 16" className="h-4 w-4" fill="#003087">
-      <path d="M8 0a8 8 0 100 16A8 8 0 008 0zm3.5 11.5h-7v-1h7v1zm0-2h-7v-1h7v1zm0-2h-7v-1h7v1z"/>
-    </svg>
+    <PayCard src="/img/pay.png" alt="Pay Later" />
     <span className="text-sm font-semibold text-gray-800">Pay Later</span>
   </div>
 );
 
 const CashAppLogo = () => (
   <div className="flex items-center gap-1.5">
-    <div className="w-5 h-5 bg-[#00D632] rounded-md flex items-center justify-center">
-      <span className="text-white font-bold text-xs">$</span>
-    </div>
+    <PayCard src="/img/pay.png" alt="Cash App" />
     <span className="text-sm font-bold text-gray-900">Cash App</span>
   </div>
 );
 
 const MirLogo = () => (
   <div className="flex items-center gap-1.5">
-    <div className="w-5 h-5 bg-[#1a7f3c] rounded-sm flex items-center justify-center">
-      <span className="text-white font-bold text-[10px]">МИР</span>
-    </div>
+    <PayCard src="/img/pay.png" alt="MIR" />
     <span className="text-sm font-medium text-gray-700">МИР</span>
   </div>
 );
 
 const CryptoLogo = () => (
   <div className="flex items-center gap-1.5">
-    {/* Bitcoin */}
-    <div className="w-6 h-6 bg-[#F7931A] rounded-full flex items-center justify-center">
-      <span className="text-white font-bold text-xs">₿</span>
-    </div>
-    {/* Ethereum */}
-    <div className="w-6 h-6 bg-[#627EEA] rounded-full flex items-center justify-center">
-      <svg viewBox="0 0 10 16" className="h-3 w-2">
-        <path d="M5 0l5 8-5 3-5-3z" fill="#fff"/>
-        <path d="M5 11l5-3-5 8-5-8z" fill="#fff" opacity="0.6"/>
-      </svg>
-    </div>
-    {/* USDC */}
-    <div className="w-6 h-6 bg-[#2775CA] rounded-full flex items-center justify-center">
-      <span className="text-white font-bold text-[8px]">$</span>
-    </div>
-    {/* USDT */}
-    <div className="w-6 h-6 bg-[#26A17B] rounded-full flex items-center justify-center">
-      <span className="text-white font-bold text-[8px]">T</span>
-    </div>
-    {/* PayPal USD */}
-    <div className="w-6 h-6 bg-[#003087] rounded-full flex items-center justify-center">
-      <span className="text-white font-bold text-[8px]">P</span>
-    </div>
-    <span className="text-sm font-medium text-gray-700 ml-1">and more</span>
+    <PayCard src="/img/pay.png" alt="Crypto" w="w-32" />
+    <span className="text-sm font-medium text-gray-700">and more</span>
   </div>
 );
 
@@ -725,10 +676,23 @@ export function CheckoutPage() {
   // ─── Mobile Layout ─────────────────────────────────────────────────────────
   const MobileCheckout = () => (
     <div className="lg:hidden min-h-screen bg-gray-50 pb-32">
-      <div className="flex items-center gap-3 px-4 py-3 border-b border-gray-200 sticky top-0 bg-white z-40">
-        <button onClick={() => navigate(-1)} className="text-gray-700"><ArrowLeft size={20} /></button>
-        <span className="font-bold text-gray-900 text-base flex-1 text-center">Payment</span>
-        <div className="w-8" />
+      {/* NoxyStore mobile header */}
+      <div className="sticky top-0 z-40 bg-[#0a0a0a]">
+        <div className="px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button onClick={() => navigate(-1)} className="text-white">
+              <ArrowLeft size={20} />
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-6 h-6 bg-yellow-400 rounded flex items-center justify-center flex-shrink-0">
+                <svg viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="2.5" className="w-4 h-4"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+              </div>
+              <span className="text-white font-black text-sm tracking-tight">Noxy<span className="text-yellow-400">Store</span></span>
+            </div>
+          </div>
+          <span className="text-white font-bold text-sm">Payment</span>
+          <div className="w-16" />
+        </div>
       </div>
 
       <div className="bg-white border-b border-gray-100 px-4 py-4">
@@ -1026,4 +990,3 @@ export function CheckoutPage() {
     </>
   );
 }
-add mobile header and for card icon remove add fake photo card i will replace it later.
