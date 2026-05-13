@@ -483,4 +483,4 @@ export function HomePage() {
     </div>
   );
 }
-please ai Debug the lootbar-proxy edge function: read the backend edge function logs, identify whether the Lootbar token refresh is failing, and add descriptive error messages to the client instead of generic 500 responses.
+

@@ -8,8 +8,17 @@ const supabase = createClient(
   Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
 );
 
-// ─── Token Management ────────────────────────────────────────────────────────
+// ─── Error Helper ────────────────────────────────────────────────────────────
+function errorResponse(msg: string, detail?: string, statusCode = 500) {
+  const body = JSON.stringify({ status: "error", msg, detail: detail ?? msg });
+  console.error(`[LootbarProxy] ERROR ${statusCode}: ${msg}`, detail ?? "");
+  return new Response(body, {
+    status: statusCode,
+    headers: { ...corsHeaders, "Content-Type": "application/json" },
+  });
+}
 
+// ─── Token Management ────────────────────────────────────────────────────────
 async function getStoredToken(): Promise<{ token: string; callback_key: string } | null> {
   const { data, error } = await supabase
     .from("lootbar_tokens")
@@ -18,7 +27,10 @@ async function getStoredToken(): Promise<{ token: string; callback_key: string }
     .limit(1)
     .single();
 
-  if (error || !data) return null;
+  if (error || !data) {
+    console.log("[LootbarProxy] No token in DB, need fresh login");
+    return null;
+  }
 
   const nowSec = Math.floor(Date.now() / 1000);
   if (data.expire_at > nowSec + 300) {
@@ -26,7 +38,7 @@ async function getStoredToken(): Promise<{ token: string; callback_key: string }
     return { token: data.token, callback_key: data.callback_key };
   }
 
-  console.log("[LootbarProxy] Token expired or expiring soon, refreshing...");
+  console.log("[LootbarProxy] Token expired or expiring soon (expire_at:", data.expire_at, "now:", nowSec, "), refreshing...");
   return null;
 }
 
@@ -35,34 +47,50 @@ async function doLogin(): Promise<{ token: string; callback_key: string }> {
   const email = Deno.env.get("LOOTBAR_EMAIL") ?? "";
   const password = Deno.env.get("LOOTBAR_PASSWORD") ?? "";
 
-  console.log("[LootbarProxy] Logging in to Lootbar...");
+  if (!email || !password) {
+    throw new Error("Lootbar credentials not configured: LOOTBAR_EMAIL or LOOTBAR_PASSWORD secret is missing");
+  }
+
+  console.log("[LootbarProxy] Logging in to Lootbar with email:", email);
 
   const resp = await fetch(`${LOOTBAR_BASE}/api/reseller/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "accept": "application/json" },
     body: JSON.stringify({ nickname, email, password }),
+    signal: AbortSignal.timeout(15000),
   });
 
+  const text = await resp.text();
+  console.log("[LootbarProxy] Login response status:", resp.status, "body:", text.slice(0, 300));
+
   if (!resp.ok) {
-    const errText = await resp.text();
-    throw new Error(`Lootbar login failed: ${resp.status} ${errText}`);
+    throw new Error(`Lootbar login HTTP error ${resp.status}: ${text}`);
   }
 
-  const json = await resp.json();
-  if (json.status !== "ok") throw new Error(`Lootbar login error: ${json.msg}`);
+  let json: Record<string, unknown>;
+  try {
+    json = JSON.parse(text);
+  } catch {
+    throw new Error(`Lootbar login returned non-JSON: ${text.slice(0, 200)}`);
+  }
 
-  const { token, callback_key, expire_at } = json.data;
+  if (json.status !== "ok") {
+    throw new Error(`Lootbar login failed: ${json.msg ?? JSON.stringify(json)}`);
+  }
+
+  const { token, callback_key, expire_at } = json.data as Record<string, unknown>;
+  if (!token) throw new Error("Lootbar login OK but token missing from response");
 
   await supabase.from("lootbar_tokens").upsert({
     id: 1,
-    token,
-    callback_key,
-    expire_at,
+    token: String(token),
+    callback_key: String(callback_key ?? ""),
+    expire_at: Number(expire_at),
     updated_at: new Date().toISOString(),
   });
 
-  console.log("[LootbarProxy] Login successful, token stored");
-  return { token, callback_key };
+  console.log("[LootbarProxy] Login successful, token stored (expires_at:", expire_at, ")");
+  return { token: String(token), callback_key: String(callback_key ?? "") };
 }
 
 async function getToken(): Promise<{ token: string; callback_key: string }> {
@@ -72,7 +100,7 @@ async function getToken(): Promise<{ token: string; callback_key: string }> {
 }
 
 // ─── Lootbar API Request ─────────────────────────────────────────────────────
-async function lootbarRequest(method: string, path: string, body?: unknown): Promise<unknown> {
+async function lootbarRequest(method: string, path: string, body?: unknown, retried = false): Promise<unknown> {
   const { token } = await getToken();
 
   const headers: Record<string, string> = {
@@ -81,24 +109,51 @@ async function lootbarRequest(method: string, path: string, body?: unknown): Pro
     "Content-Type": "application/json",
   };
 
-  const opts: RequestInit = { method, headers };
+  const opts: RequestInit = {
+    method,
+    headers,
+    signal: AbortSignal.timeout(20000),
+  };
   if (body) opts.body = JSON.stringify(body);
 
   console.log(`[LootbarProxy] ${method} ${LOOTBAR_BASE}${path}`);
 
-  const resp = await fetch(`${LOOTBAR_BASE}${path}`, opts);
-  const text = await resp.text();
+  let resp: Response;
+  try {
+    resp = await fetch(`${LOOTBAR_BASE}${path}`, opts);
+  } catch (fetchErr) {
+    throw new Error(`Lootbar API network error on ${path}: ${String(fetchErr)}`);
+  }
 
+  const text = await resp.text();
   console.log(`[LootbarProxy] Response ${resp.status}: ${text.substring(0, 500)}`);
 
-  if (!resp.ok) throw new Error(`Lootbar API error ${resp.status}: ${text}`);
+  // 401 = token expired, retry once with fresh login
+  if (resp.status === 401 && !retried) {
+    console.log("[LootbarProxy] Got 401, forcing token refresh and retrying...");
+    await supabase.from("lootbar_tokens").update({ expire_at: 0 }).eq("id", 1);
+    return lootbarRequest(method, path, body, true);
+  }
 
-  return JSON.parse(text);
+  if (!resp.ok) {
+    let parsed: Record<string, unknown> | null = null;
+    try { parsed = JSON.parse(text); } catch { /* not JSON */ }
+    const apiMsg = parsed?.msg ?? parsed?.message ?? text;
+    throw new Error(`Lootbar API ${resp.status} on ${path}: ${apiMsg}`);
+  }
+
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error(`Lootbar API returned non-JSON on ${path}: ${text.slice(0, 200)}`);
+  }
+
+  return parsed;
 }
 
 // ─── Get games with caching ──────────────────────────────────────────────────
 async function getGamesWithCache(pageNum: number, pageSize: number): Promise<unknown> {
-  // Check DB cache — 1 hour TTL
   const { data: cached, error: cacheError } = await supabase
     .from("games_cache")
     .select("*")
@@ -133,8 +188,7 @@ async function getGamesWithCache(pageNum: number, pageSize: number): Promise<unk
     }
   }
 
-  // Fetch fresh from Lootbar API
-  console.log("[LootbarProxy] Fetching fresh games from Lootbar API...");
+  console.log("[LootbarProxy] Cache miss/stale, fetching fresh games from Lootbar API...");
   const result = await lootbarRequest("GET", `/api/reseller/games?page_num=1&page_size=200`) as Record<string, unknown>;
 
   if (result.status === "ok") {
@@ -150,7 +204,6 @@ async function getGamesWithCache(pageNum: number, pageSize: number): Promise<unk
       else if (name.includes("coin") || name.includes("credit") || name.includes("gold") || name.includes("token")) category = "Game Coins";
       else if (name.includes("key") || name.includes("steam") || name.includes("epic") || name.includes("ubisoft")) category = "Game Keys";
 
-      // Use real Lootbar image — the API returns game_image directly
       const rawImage = game.game_image || game.image_url || game.icon || game.thumb || null;
       const gameImage = rawImage ? String(rawImage) : null;
 
@@ -169,7 +222,6 @@ async function getGamesWithCache(pageNum: number, pageSize: number): Promise<unk
         sold_count: soldCount,
         is_hot: Boolean(game.is_hot || game.hot),
         discount: Number(game.discount || game.discount_percent || 0),
-        // min_price will be updated separately when SKUs are fetched
         cached_at: new Date().toISOString(),
       };
     });
@@ -184,20 +236,15 @@ async function getGamesWithCache(pageNum: number, pageSize: number): Promise<unk
 
     return {
       status: "ok",
-      data: {
-        ...data,
-        items: upsertData,
-        total_count: upsertData.length,
-      }
+      data: { ...data, items: upsertData, total_count: upsertData.length }
     };
   }
 
   return result;
 }
 
-// ─── Get SKUs — with 1-hour sku_cache + min_price update ───────────────────────
+// ─── Get SKUs with caching ───────────────────────────────────────────────────
 async function getSkusWithMinPrice(gameId: string): Promise<unknown> {
-  // Check sku_cache first (1-hour TTL)
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { data: cached, error: cacheErr } = await supabase
     .from("sku_cache")
@@ -224,14 +271,12 @@ async function getSkusWithMinPrice(gameId: string): Promise<unknown> {
     };
   }
 
-  // Fetch fresh from Lootbar API
   const result = await lootbarRequest("GET", `/api/reseller/skus?game_id=${gameId}`) as Record<string, unknown>;
 
   if (result.status === "ok") {
     const data = result.data as Record<string, unknown>;
     const items = (data.items as Array<Record<string, unknown>>) || [];
 
-    // Calculate min price
     const prices = items
       .map((sku: Record<string, unknown>) => Number(sku.price || sku.final_price || 0))
       .filter((p: number) => p > 0);
@@ -242,7 +287,6 @@ async function getSkusWithMinPrice(gameId: string): Promise<unknown> {
       console.log(`[LootbarProxy] Updated min_price for game ${gameId}: $${minPrice}`);
     }
 
-    // Cache SKUs in sku_cache
     if (items.length > 0) {
       const now = new Date().toISOString();
       const upsertData = items.map((sku: Record<string, unknown>) => ({
@@ -258,7 +302,6 @@ async function getSkusWithMinPrice(gameId: string): Promise<unknown> {
         cached_at: now,
       }));
 
-      // Delete old cache for this game then insert fresh
       await supabase.from("sku_cache").delete().eq("game_id", gameId);
       const batchSize = 50;
       for (let i = 0; i < upsertData.length; i += batchSize) {
@@ -277,30 +320,41 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
+  let action = "(unknown)";
   try {
-    const { action, params } = await req.json();
+    let body: Record<string, unknown>;
+    try {
+      body = await req.json();
+    } catch {
+      return errorResponse("Invalid JSON in request body", undefined, 400);
+    }
 
-    console.log(`[LootbarProxy] Action: ${action}`);
+    action = String(body.action ?? "");
+    const params = (body.params ?? {}) as Record<string, unknown>;
+
+    console.log(`[LootbarProxy] Action: ${action}`, params);
 
     let result: unknown;
 
     switch (action) {
       case "get_games": {
-        const pageNum = params?.page_num ?? 1;
-        const pageSize = params?.page_size ?? 200;
+        const pageNum = Number(params?.page_num ?? 1);
+        const pageSize = Number(params?.page_size ?? 200);
         result = await getGamesWithCache(pageNum, pageSize);
         break;
       }
 
       case "get_skus": {
-        if (!params?.game_id) throw new Error("game_id required");
-        result = await getSkusWithMinPrice(params.game_id);
+        if (!params?.game_id) return errorResponse("Missing required param: game_id", undefined, 400);
+        result = await getSkusWithMinPrice(String(params.game_id));
         break;
       }
 
       case "create_order": {
         const { reference_id, game_id, sku_id, num, extra_info, callback_url } = params;
-        if (!reference_id || !game_id || !sku_id) throw new Error("Missing required order fields");
+        if (!reference_id || !game_id || !sku_id) {
+          return errorResponse("Missing required order fields: reference_id, game_id, sku_id", undefined, 400);
+        }
 
         const orderBody = {
           reference_id,
@@ -336,7 +390,7 @@ Deno.serve(async (req) => {
       }
 
       case "query_order": {
-        if (!params?.reference_id) throw new Error("reference_id required");
+        if (!params?.reference_id) return errorResponse("Missing required param: reference_id", undefined, 400);
         result = await lootbarRequest("POST", "/api/reseller/query_order", {
           reference_id: params.reference_id,
         });
@@ -361,24 +415,53 @@ Deno.serve(async (req) => {
         break;
       }
 
+      case "force_relogin": {
+        // Force a fresh login regardless of cached token
+        await supabase.from("lootbar_tokens").update({ expire_at: 0 }).eq("id", 1);
+        const { token, callback_key } = await doLogin();
+        result = { status: "ok", data: { relogged: true, token_preview: token.slice(0, 8) + "...", callback_key_preview: callback_key.slice(0, 8) + "..." } };
+        break;
+      }
+
       case "clear_game_cache": {
         await supabase.from("games_cache").update({ cached_at: new Date(0).toISOString() }).neq("game_id", "");
-        result = { status: "ok", msg: "Cache cleared, will refresh on next request" };
+        result = { status: "ok", msg: "Game cache cleared — will refresh from Lootbar on next request" };
+        break;
+      }
+
+      case "clear_sku_cache": {
+        const gameId = params?.game_id ? String(params.game_id) : null;
+        if (gameId) {
+          await supabase.from("sku_cache").delete().eq("game_id", gameId);
+          result = { status: "ok", msg: `SKU cache cleared for game ${gameId}` };
+        } else {
+          await supabase.from("sku_cache").delete().neq("game_id", "");
+          result = { status: "ok", msg: "All SKU cache cleared" };
+        }
         break;
       }
 
       default:
-        throw new Error(`Unknown action: ${action}`);
+        return errorResponse(`Unknown action: ${action}. Valid actions: get_games, get_skus, create_order, query_order, query_asset, check_token, force_relogin, clear_game_cache, clear_sku_cache`, undefined, 400);
     }
 
     return new Response(JSON.stringify(result), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
+
   } catch (err) {
-    console.error("[LootbarProxy] Error:", err);
-    return new Response(
-      JSON.stringify({ status: "error", msg: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    const msg = String(err);
+
+    // Classify the error for easier debugging
+    let category = "Internal error";
+    if (msg.includes("login")) category = "Auth/Login error";
+    else if (msg.includes("network") || msg.includes("fetch") || msg.includes("timeout") || msg.includes("AbortError")) category = "Network error";
+    else if (msg.includes("credentials") || msg.includes("LOOTBAR_")) category = "Configuration error";
+    else if (msg.includes("401")) category = "Token expired";
+    else if (msg.includes("JSON")) category = "Parse error";
+
+    console.error(`[LootbarProxy] [${category}] action=${action}:`, msg);
+
+    return errorResponse(`${category}: ${msg}`, msg);
   }
 });
