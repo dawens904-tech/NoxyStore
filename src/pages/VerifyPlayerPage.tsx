@@ -3,6 +3,7 @@
  * Flow: GameDetail → VerifyPlayer → Checkout (after payment) → Create Lootbar Order
  * Server Region field uses a bottom-sheet picker matching the Order Information modal design.
  * Free Fire UIDs are validated live via gameskinbo API (fallback to Lootbar on error).
+ * On successful FF lookup: auto-populates Server Region from data.region and shows name/level/region.
  */
 import { useState, useCallback } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -21,10 +22,10 @@ export function VerifyPlayerPage() {
   const state = location.state as LocationState | null;
 
   const [extraInfo, setExtraInfo] = useState<Record<string, string>>({});
-  const [activeSheet, setActiveSheet] = useState<string | null>(null); // field.name of the open sheet
+  const [activeSheet, setActiveSheet] = useState<string | null>(null);
 
   // Free Fire player lookup state
-  const [ffPlayer, setFfPlayer] = useState<{ name: string; level: number } | null>(null);
+  const [ffPlayer, setFfPlayer] = useState<{ name: string; level: number; region?: string } | null>(null);
   const [ffLookupLoading, setFfLookupLoading] = useState(false);
   const [ffLookupError, setFfLookupError] = useState<string | null>(null);
 
@@ -40,9 +41,12 @@ export function VerifyPlayerPage() {
     setFfLookupLoading(true);
     setFfPlayer(null);
     setFfLookupError(null);
+
+    // We need fields from outer scope — grab from state
+    const currentFields = state?.sku?.extra_info || [];
+
     try {
       const { supabase } = await import("@/lib/supabase");
-      // Set a 10s timeout so UI doesn't hang
       const controller = new AbortController();
       const timer = setTimeout(() => controller.abort(), 10000);
       const { data, error } = await supabase.functions.invoke("ff-lookup", {
@@ -50,7 +54,6 @@ export function VerifyPlayerPage() {
       });
       clearTimeout(timer);
       if (error) {
-        // FunctionsHttpError — try to read message
         let msg = "Could not verify UID";
         if ((error as any).context) {
           try { const t = await (error as any).context.text(); if (t) msg = t; } catch {}
@@ -63,14 +66,37 @@ export function VerifyPlayerPage() {
         setFfLookupError("Player not found — please double-check your UID");
         return;
       }
-      setFfPlayer({ name: data.name, level: data.level ?? 0 });
+
+      const detectedRegion: string | undefined = data.region || data.server || undefined;
+      setFfPlayer({ name: data.name, level: data.level ?? 0, region: detectedRegion });
+
+      // Auto-populate server/region select field if detected from API
+      if (detectedRegion) {
+        setExtraInfo((prev) => {
+          const updated = { ...prev };
+          const regionField = currentFields.find(
+            (f) => f.type === "select" &&
+              (f.name.toLowerCase().includes("server") || f.name.toLowerCase().includes("region"))
+          );
+          if (regionField && !updated[regionField.name]) {
+            const opts = regionField.options || [];
+            const match = opts.find(
+              (o) => o.value === detectedRegion ||
+                o.label?.toLowerCase() === detectedRegion.toLowerCase() ||
+                o.value.toLowerCase().includes(detectedRegion.toLowerCase())
+            );
+            if (match) updated[regionField.name] = match.value;
+          }
+          return updated;
+        });
+      }
     } catch (e: any) {
       console.log("ff-lookup exception:", e?.message);
       setFfLookupError("Could not verify UID — proceed carefully");
     } finally {
       setFfLookupLoading(false);
     }
-  }, []);
+  }, [state]);
 
   if (!state?.sku || !state?.game) {
     return (
@@ -134,7 +160,6 @@ export function VerifyPlayerPage() {
             </label>
 
             {field.type === "select" ? (
-              /* Bottom-sheet trigger button */
               <button
                 type="button"
                 onClick={() => setActiveSheet(field.name)}
@@ -157,7 +182,6 @@ export function VerifyPlayerPage() {
                 />
               </button>
             ) : (
-              /* Text input */
               <div className="relative">
                 <input
                   type="text"
@@ -166,7 +190,6 @@ export function VerifyPlayerPage() {
                     const val = e.target.value;
                     setExtraInfo((prev) => ({ ...prev, [field.name]: val }));
                     if (field.name === "uid" && isFreeFire) {
-                      // Debounce: trigger lookup after user stops typing
                       clearTimeout((window as any).__ffLookupTimer);
                       (window as any).__ffLookupTimer = setTimeout(() => lookupFreeFirePlayer(val.trim()), 600);
                     }
@@ -189,9 +212,13 @@ export function VerifyPlayerPage() {
                 {ffPlayer && !ffLookupLoading && (
                   <div className="mt-2 bg-green-50 border border-green-200 rounded-xl px-3 py-2.5 flex items-center gap-2">
                     <CheckCircle size={16} className="text-green-500 flex-shrink-0" />
-                    <div>
+                    <div className="flex-1">
                       <p className="text-sm font-bold text-green-800">{ffPlayer.name}</p>
-                      <p className="text-xs text-green-600">Level {ffPlayer.level} · Verified</p>
+                      <p className="text-xs text-green-600">
+                        Level {ffPlayer.level}
+                        {ffPlayer.region ? ` · ${ffPlayer.region}` : ""}
+                        {" · Verified"}
+                      </p>
                     </div>
                   </div>
                 )}
@@ -249,7 +276,6 @@ export function VerifyPlayerPage() {
       {activeSheet !== null && (() => {
         const field = fields.find((f) => f.name === activeSheet);
         if (!field) return null;
-        // Build options: use field.options if present, otherwise infer from SKU attributes
         const options = field.options && field.options.length > 0
           ? field.options
           : [
@@ -263,26 +289,16 @@ export function VerifyPlayerPage() {
 
         return (
           <div className="fixed inset-0 z-50 flex items-end">
-            {/* Backdrop */}
-            <div
-              className="absolute inset-0 bg-black/40"
-              onClick={() => setActiveSheet(null)}
-            />
-            {/* Sheet */}
+            <div className="absolute inset-0 bg-black/40" onClick={() => setActiveSheet(null)} />
             <div className="relative bg-white rounded-t-3xl w-full shadow-2xl overflow-hidden">
-              {/* Sheet header */}
               <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                <button
-                  onClick={() => setActiveSheet(null)}
-                  className="w-9 h-9 flex items-center justify-center"
-                >
+                <button onClick={() => setActiveSheet(null)} className="w-9 h-9 flex items-center justify-center">
                   <X size={20} className="text-gray-700" />
                 </button>
                 <h3 className="font-bold text-gray-900 text-base">{field.title}</h3>
                 <div className="w-9" />
               </div>
 
-              {/* Options list */}
               <div className="divide-y divide-gray-100 max-h-[60vh] overflow-y-auto">
                 {options.map((opt) => {
                   const isSelected = extraInfo[field.name] === opt.value;
@@ -312,7 +328,6 @@ export function VerifyPlayerPage() {
                 })}
               </div>
 
-              {/* Safe area spacer */}
               <div className="h-6 bg-white" />
             </div>
           </div>
@@ -321,4 +336,3 @@ export function VerifyPlayerPage() {
     </div>
   );
 }
-on this page after a Free Fire UID is verified successfully, auto-populate the Server Region field by detecting the region from the ff-lookup API response (e.g. data.region), so users don't have to manually select it and give user account name and level account and region.
