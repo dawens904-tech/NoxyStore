@@ -1,6 +1,6 @@
 /**
- * VipBenefitsPage — NoxyStore VIP Benefits.
- * Shows VIP progress (V1-V5), benefit grid, and FAQ accordions.
+ * VipBenefitsPage — NoxyStore VIP Benefits (Redesigned like LootBar).
+ * Shows VIP progress (V1-V5), benefit grid with photos, and FAQ accordions.
  * VIP level determined by completed orders points.
  * Desktop: sidebar layout. Mobile: gradient header + grid.
  * No emojis — all icons are SVG/lucide.
@@ -9,25 +9,74 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   ArrowLeft, X, ChevronDown, Info, ChevronRight,
-  Lock, Check, Star
+  Lock, Check
 } from "lucide-react";
-import vip1bg from "@/assets/vip1-bg.jpg";
-import vip2bg from "@/assets/vip2-bg.jpg";
-import vip3bg from "@/assets/vip3-bg.jpg";
-import vip4bg from "@/assets/vip4-bg.jpg";
-import vip5bg from "@/assets/vip5-bg.jpg";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 
-// VIP level colors
-const VIP_COLORS: Record<number, { bg: string; card: string; text: string; accent: string }> = {
-  1: { bg: "from-yellow-200 via-yellow-100 to-amber-50", card: "bg-gradient-to-br from-yellow-300/80 to-amber-200/80", text: "text-amber-900", accent: "#D97706" },
-  2: { bg: "from-green-200 via-green-100 to-emerald-50", card: "bg-gradient-to-br from-green-300/80 to-emerald-200/80", text: "text-green-900", accent: "#059669" },
-  3: { bg: "from-blue-200 via-blue-100 to-sky-50", card: "bg-gradient-to-br from-blue-300/80 to-sky-200/80", text: "text-blue-900", accent: "#2563EB" },
-  4: { bg: "from-purple-200 via-purple-100 to-violet-50", card: "bg-gradient-to-br from-purple-300/80 to-violet-200/80", text: "text-purple-900", accent: "#7C3AED" },
-  5: { bg: "from-red-200 via-red-100 to-rose-50", card: "bg-gradient-to-br from-red-300/80 to-rose-200/80", text: "text-red-900", accent: "#DC2626" },
+// ─── VIP level colors (matching LootBar screenshots) ──────────────────────
+const VIP_COLORS: Record<number, { 
+  bg: string; 
+  card: string; 
+  text: string; 
+  accent: string;
+  headerBg: string;
+  cardBg: string;
+  progressDot: string;
+  progressLine: string;
+}> = {
+  1: { 
+    bg: "from-yellow-400 via-yellow-300 to-amber-200", 
+    card: "bg-gradient-to-br from-yellow-400/90 to-amber-300/90", 
+    text: "text-amber-900", 
+    accent: "#D97706",
+    headerBg: "bg-gradient-to-br from-yellow-300 via-yellow-200 to-amber-100",
+    cardBg: "bg-gradient-to-br from-yellow-400 to-amber-300",
+    progressDot: "bg-yellow-500",
+    progressLine: "#FCD34D"
+  },
+  2: { 
+    bg: "from-lime-400 via-green-300 to-emerald-200", 
+    card: "bg-gradient-to-br from-lime-400/90 to-emerald-300/90", 
+    text: "text-green-900", 
+    accent: "#059669",
+    headerBg: "bg-gradient-to-br from-lime-300 via-green-200 to-emerald-100",
+    cardBg: "bg-gradient-to-br from-lime-400 to-emerald-300",
+    progressDot: "bg-green-500",
+    progressLine: "#86EFAC"
+  },
+  3: { 
+    bg: "from-blue-400 via-blue-300 to-sky-200", 
+    card: "bg-gradient-to-br from-blue-400/90 to-sky-300/90", 
+    text: "text-blue-900", 
+    accent: "#2563EB",
+    headerBg: "bg-gradient-to-br from-blue-300 via-blue-200 to-sky-100",
+    cardBg: "bg-gradient-to-br from-blue-400 to-sky-300",
+    progressDot: "bg-blue-500",
+    progressLine: "#93C5FD"
+  },
+  4: { 
+    bg: "from-purple-400 via-purple-300 to-violet-200", 
+    card: "bg-gradient-to-br from-purple-400/90 to-violet-300/90", 
+    text: "text-purple-900", 
+    accent: "#7C3AED",
+    headerBg: "bg-gradient-to-br from-purple-300 via-purple-200 to-violet-100",
+    cardBg: "bg-gradient-to-br from-purple-400 to-violet-300",
+    progressDot: "bg-purple-500",
+    progressLine: "#C4B5FD"
+  },
+  5: { 
+    bg: "from-red-400 via-red-300 to-rose-200", 
+    card: "bg-gradient-to-br from-red-400/90 to-rose-300/90", 
+    text: "text-red-900", 
+    accent: "#DC2626",
+    headerBg: "bg-gradient-to-br from-red-300 via-red-200 to-rose-100",
+    cardBg: "bg-gradient-to-br from-red-400 to-rose-300",
+    progressDot: "bg-red-500",
+    progressLine: "#FCA5A5"
+  },
 };
 
 function getVipLevel(points: number) {
@@ -46,27 +95,18 @@ function getPointsForNextLevel(points: number) {
   return 300;
 }
 
-// ─── VIP level background photos ──────────────────────────────────────────
-const VIP_BG_MAP: Record<number, string> = {
-  1: vip1bg,
-  2: vip2bg,
-  3: vip3bg,
-  4: vip4bg,
-  5: vip5bg,
-};
-
-// ─── Benefit placeholder photos (replace with real images when ready) ──────
-const BENEFIT_PHOTO_MAP: Record<string, string> = {
-  birthday:          "https://images.unsplash.com/photo-1464349153735-7db50ed83c84?w=160&h=120&fit=crop",
-  point_money:       "https://images.unsplash.com/photo-1518458028785-8fbcd101ebb9?w=160&h=120&fit=crop",
-  points_coupon:     "https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=160&h=120&fit=crop",
-  points_item:       "https://images.unsplash.com/photo-1560419015-7c425b20b244?w=160&h=120&fit=crop",
-  vip_service:       "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=160&h=120&fit=crop",
-  fast_delivery:     "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=160&h=120&fit=crop",
-  higher_discount:   "https://images.unsplash.com/photo-1607082349566-187342175e2f?w=160&h=120&fit=crop",
-  more_points:       "https://images.unsplash.com/photo-1553729459-efe14ef6055d?w=160&h=120&fit=crop",
-  exclusive_service: "https://images.unsplash.com/photo-1589829085413-56de8ae18c73?w=160&h=120&fit=crop",
-  priority_delivery: "https://images.unsplash.com/photo-1566576912321-d58ddd7a6088?w=160&h=120&fit=crop",
+// ─── Fake benefit photos (replace with real images) ───────────────────────
+const BENEFIT_PHOTOS: Record<string, string> = {
+  birthday:          "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop",
+  point_money:       "https://images.unsplash.com/photo-1511512578047-dfb367046420?w=200&h=200&fit=crop",
+  points_coupon:     "https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?w=200&h=200&fit=crop",
+  points_item:       "https://images.unsplash.com/photo-1560419015-7c425b20b244?w=200&h=200&fit=crop",
+  vip_service:       "https://images.unsplash.com/photo-1538481199705-c710c4e965fc?w=200&h=200&fit=crop",
+  fast_delivery:     "https://images.unsplash.com/photo-1550745165-9bc0b252726f?w=200&h=200&fit=crop",
+  higher_discount:   "https://images.unsplash.com/photo-1556438064-2d7646166914?w=200&h=200&fit=crop",
+  more_points:       "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=200&h=200&fit=crop",
+  exclusive_service: "https://images.unsplash.com/photo-1614680376408-81e91ffe3db7?w=200&h=200&fit=crop",
+  priority_delivery: "https://images.unsplash.com/photo-1616578492901-befd2b52f6c0?w=200&h=200&fit=crop",
 };
 
 // ─── Benefits data — detailed V1-V5 descriptions ──────────────────────────
@@ -205,53 +245,60 @@ export function VipBenefitsPage() {
     const c = VIP_COLORS[level] || VIP_COLORS[1];
     const isActive = level === vipLevel;
     const isLocked = level > vipLevel;
-    const bgPhoto = VIP_BG_MAP[level];
+    const levelPointsNeeded = Math.max(0, getPointsForNextLevel(points) - points);
+
     return (
-      <div className={`relative rounded-2xl p-5 min-w-[260px] border-2 transition-all overflow-hidden ${isActive ? "border-yellow-400 shadow-lg" : "border-transparent"} ${c.card}`}>
-        {/* VIP level background photo */}
-        {bgPhoto && (
-          <div className="absolute inset-0 pointer-events-none">
-            <img src={bgPhoto} alt="" className="w-full h-full object-cover opacity-25" />
-            <div className="absolute inset-0 bg-gradient-to-br from-white/30 to-transparent" />
-          </div>
-        )}
+      <div className={`relative rounded-2xl p-5 min-w-[260px] border border-white/30 transition-all shadow-lg ${c.cardBg}`}>
         <div className="absolute inset-0 rounded-2xl overflow-hidden pointer-events-none">
           <div className="absolute -right-6 -bottom-6 w-28 h-28 rounded-full bg-white/10" />
           <div className="absolute -right-2 -top-2 w-16 h-16 rounded-full bg-white/10" />
+          <div className="absolute right-4 bottom-4 w-24 h-24 opacity-20">
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+              <path d="M50 10 L60 40 L90 40 L65 60 L75 90 L50 70 L25 90 L35 60 L10 40 L40 40 Z" fill="white" />
+            </svg>
+          </div>
         </div>
         <div className="relative z-10">
           <div className="flex items-start justify-between mb-3">
-            <div>
-              <p className={`text-2xl font-black italic ${c.text}`}>VIP {level}</p>
+            <div className="flex-1">
+              <p className="text-3xl font-black italic text-white/90" style={{ fontFamily: 'serif' }}>VIP {level}</p>
               {isLocked ? (
                 <div className="flex items-center gap-1 mt-1">
-                  <Lock size={11} className={`${c.text} opacity-60`} />
-                  <p className={`text-xs font-semibold ${c.text} opacity-70`}>Locked</p>
+                  <Lock size={11} className="text-white/60" />
+                  <p className="text-xs font-semibold text-white/70">Locked</p>
                 </div>
               ) : (
-                <p className={`text-xs font-medium mt-1 ${c.text} opacity-80`}>
-                  {level < 5 ? `Earn ${pointsNeeded} more points to upgrade to VIP ${level + 1}!` : "Maximum VIP level achieved!"}
+                <p className="text-xs font-medium mt-1 text-white/80">
+                  {level < 5 ? `Earn ${levelPointsNeeded} more points to upgrade to VIP ${level + 1}!` : "Maximum VIP level achieved!"}
                 </p>
+              )}
+              {!isLocked && level < 5 && (
+                <div className="mt-2 w-full bg-black/20 rounded-full h-1">
+                  <div 
+                    className="bg-white/80 h-1 rounded-full transition-all" 
+                    style={{ width: `${Math.min(100, (points / nextLevelPoints) * 100)}%` }}
+                  />
+                </div>
               )}
             </div>
             <div className="text-right">
-              <div className="flex items-center gap-1 mb-0.5">
-                <p className={`text-[10px] font-semibold ${c.text} opacity-70`}>Validity</p>
+              <div className="flex items-center gap-1 mb-0.5 justify-end">
+                <p className="text-[10px] font-semibold text-white/70">Validity</p>
                 <button onClick={() => setValidityModal(true)}>
-                  <Info size={11} className={`${c.text} opacity-60`} />
+                  <Info size={11} className="text-white/60" />
                 </button>
               </div>
-              <p className={`text-xs font-bold ${c.text}`}>{validityStr}</p>
+              <p className="text-xs font-bold text-white">{validityStr}</p>
+              {!isLocked && (
+                <button
+                  onClick={() => setBenefitModal({ benefit: BENEFITS[0] })}
+                  className="mt-2 bg-black/80 text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-black transition-colors"
+                >
+                  Details
+                </button>
+              )}
             </div>
           </div>
-          {!isLocked && (
-            <button
-              onClick={() => setBenefitModal({ benefit: BENEFITS[0] })}
-              className="bg-black text-white text-xs font-bold px-4 py-2 rounded-full hover:bg-gray-800 transition-colors"
-            >
-              Details
-            </button>
-          )}
         </div>
       </div>
     );
@@ -259,17 +306,18 @@ export function VipBenefitsPage() {
 
   // ─── Progress Bar ──────────────────────────────────────────────────────────
   const VipProgressBar = () => (
-    <div className="relative flex items-center justify-center py-4">
+    <div className="relative flex items-center justify-center py-6 px-4">
       <svg className="absolute inset-0 w-full h-full" viewBox="0 0 300 60" preserveAspectRatio="none">
-        <path d="M 20 40 Q 75 10 150 30 Q 225 50 280 20" fill="none" stroke="#d1d5db" strokeWidth="1.5" />
+        <path d="M 30 45 Q 90 15 150 35 Q 210 55 270 25" fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5" />
       </svg>
       {[1, 2, 3, 4, 5].map((level) => {
         const isReached = level <= vipLevel;
         const isCurrent = level === vipLevel;
+        const levelColor = VIP_COLORS[level];
         return (
           <button key={level} onClick={() => setActiveVipCard(level)} className="flex flex-col items-center relative z-10" style={{ flex: 1 }}>
-            <div className={`w-3 h-3 rounded-full border-2 transition-all ${isCurrent ? "bg-black border-black scale-150" : isReached ? "bg-yellow-400 border-yellow-500" : "bg-white border-gray-300"}`} />
-            <span className={`text-xs font-bold mt-1.5 ${isCurrent ? "text-gray-900" : "text-gray-400"}`}>V{level}</span>
+            <div className={`w-3 h-3 rounded-full border-2 transition-all ${isCurrent ? "bg-white border-white scale-150 shadow-lg" : isReached ? `${levelColor.progressDot} border-white` : "bg-white/30 border-white/50"}`} />
+            <span className={`text-xs font-bold mt-1.5 ${isCurrent ? "text-white" : isReached ? "text-white/80" : "text-white/50"}`}>V{level}</span>
           </button>
         );
       })}
@@ -279,31 +327,23 @@ export function VipBenefitsPage() {
   // ─── Benefit card for mobile grid ──────────────────────────────────────────
   const BenefitCard = ({ benefit }: { benefit: typeof BENEFITS[0] }) => {
     const isLocked = benefit.vipMin > vipLevel;
-    const photo = BENEFIT_PHOTO_MAP[benefit.id];
     return (
       <button
         onClick={() => setBenefitModal({ benefit })}
-        className={`relative border rounded-xl overflow-hidden text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
+        className={`relative border rounded-xl p-4 flex items-center justify-between text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50/80" : "border-gray-200 bg-white"}`}
       >
-        {/* Benefit photo */}
-        <div className="relative h-24 w-full bg-gray-100 overflow-hidden">
-          <img
-            src={photo}
-            alt={benefit.label}
-            className={`w-full h-full object-cover ${isLocked ? "grayscale opacity-50" : ""}`}
-            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=160&h=100&fit=crop"; }}
-          />
-          {isLocked && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <div className="bg-black/50 text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-                <Lock size={8} /> V{benefit.vipMin}
-              </div>
-            </div>
-          )}
-        </div>
-        <div className="px-3 py-2.5">
-          <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
-        </div>
+        {isLocked && (
+          <div className="absolute top-2 left-2 bg-gray-500/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+            <Lock size={8} /> V{benefit.vipMin}
+          </div>
+        )}
+        <span className={`text-sm font-semibold ${isLocked ? "text-gray-400 mt-4" : "text-gray-800"}`}>{benefit.label}</span>
+        <img 
+          src={BENEFIT_PHOTOS[benefit.id]} 
+          alt={benefit.label}
+          className={`w-12 h-12 object-contain flex-shrink-0 ${isLocked ? "grayscale opacity-40" : ""}`}
+          onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/48?text=?"; }}
+        />
       </button>
     );
   };
@@ -311,29 +351,23 @@ export function VipBenefitsPage() {
   // ─── Desktop benefit card (vertical) ──────────────────────────────────────
   const BenefitCardDesktop = ({ benefit }: { benefit: typeof BENEFITS[0] }) => {
     const isLocked = benefit.vipMin > vipLevel;
-    const photo = BENEFIT_PHOTO_MAP[benefit.id];
     return (
       <button
         onClick={() => setBenefitModal({ benefit })}
-        className={`relative border rounded-xl overflow-hidden flex flex-col text-left transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50" : "border-gray-200 bg-white"}`}
+        className={`relative border rounded-xl p-4 flex flex-col items-center gap-2 text-center transition-all hover:shadow-md ${isLocked ? "border-gray-200 bg-gray-50/80" : "border-gray-200 bg-white"}`}
       >
-        {/* Benefit photo */}
-        <div className="relative h-20 w-full bg-gray-100 overflow-hidden">
-          <img
-            src={photo}
-            alt={benefit.label}
-            className={`w-full h-full object-cover ${isLocked ? "grayscale opacity-50" : ""}`}
-            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=160&h=80&fit=crop"; }}
-          />
-          {isLocked && (
-            <div className="absolute top-1.5 left-1.5 bg-black/50 text-white text-[9px] font-black px-1.5 py-0.5 rounded-sm flex items-center gap-0.5">
-              <Lock size={8} /> V{benefit.vipMin}
-            </div>
-          )}
-        </div>
-        <div className="px-3 py-2.5">
-          <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
-        </div>
+        {isLocked && (
+          <div className="absolute top-2 left-2 bg-gray-500/80 text-white text-[9px] font-black px-1.5 py-0.5 rounded flex items-center gap-0.5">
+            <Lock size={8} /> V{benefit.vipMin}
+          </div>
+        )}
+        <img 
+          src={BENEFIT_PHOTOS[benefit.id]} 
+          alt={benefit.label}
+          className={`w-14 h-14 object-contain ${isLocked ? "grayscale opacity-40" : ""}`}
+          onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/56?text=?"; }}
+        />
+        <span className={`text-xs font-semibold ${isLocked ? "text-gray-400" : "text-gray-800"}`}>{benefit.label}</span>
       </button>
     );
   };
@@ -406,34 +440,61 @@ export function VipBenefitsPage() {
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
             <div className="px-8 py-6">
               <h2 className="text-xl font-bold text-gray-900 mb-6">NoxyStore VIP Benefits</h2>
-              {/* VIP progress header */}
-              <div className={`relative bg-gradient-to-br ${colors.bg} rounded-2xl p-6 mb-6 overflow-hidden`}>
-                <div className="absolute right-0 top-0 w-32 h-32 rounded-full bg-white/20 -translate-y-8 translate-x-8" />
-                <div className="relative z-10 flex items-center gap-4 mb-4">
-                  <div className="relative">
-                    <div className="w-14 h-14 rounded-full bg-gray-400 flex items-center justify-center text-white text-xl font-bold">
-                      {user?.nickname?.[0]?.toUpperCase() || "U"}
-                    </div>
-                    <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black text-[9px] font-black px-1.5 py-0.5 rounded-sm border border-white">V{vipLevel}</div>
-                  </div>
-                  <p className={`font-bold ${colors.text} text-base`}>{user?.nickname || user?.email?.split("@")[0]}</p>
-                  <div className="flex-1 flex items-center gap-2 justify-center">
-                    {[1, 2, 3, 4, 5].map(l => (
-                      <button key={l} onClick={() => setActiveVipCard(l)} className="flex flex-col items-center gap-1 transition-all">
-                        <div className={`w-3 h-3 rounded-full border-2 ${l === vipLevel ? "bg-black border-black scale-125" : l < vipLevel ? "bg-yellow-400 border-yellow-500" : "bg-white border-gray-300"}`} />
-                        <span className={`text-xs ${l === vipLevel ? "font-bold text-gray-900" : "text-gray-400"}`}>V{l}</span>
-                      </button>
-                    ))}
-                  </div>
+
+              {/* VIP progress header - Redesigned like LootBar */}
+              <div className={`relative ${colors.headerBg} rounded-2xl p-6 mb-6 overflow-hidden`}>
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute right-0 top-0 w-40 h-40 rounded-full bg-white/20" />
+                  <div className="absolute right-20 top-10 w-24 h-24 rounded-full bg-white/10" />
+                  <div className="absolute left-10 bottom-0 w-32 h-32 rounded-full bg-white/10" />
                 </div>
-                <VipCard level={activeVipCard} />
+
+                <div className="relative z-10">
+                  {/* Avatar + Username */}
+                  <div className="flex flex-col items-center mb-4">
+                    <div className="relative mb-2">
+                      <div className="w-16 h-16 rounded-full bg-gray-400/80 flex items-center justify-center text-white text-2xl font-bold border-2 border-white/50">
+                        {user?.nickname?.[0]?.toUpperCase() || "U"}
+                      </div>
+                      <div className="absolute -bottom-1 -right-1 bg-black/70 text-white text-[10px] font-black px-2 py-0.5 rounded border border-white/50">
+                        V{vipLevel}
+                      </div>
+                      <div className="absolute -top-1 left-1/2 -translate-x-1/2">
+                        <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+                          <path d="M10 0L12.5 6H19L14 10L16 16L10 12L4 16L6 10L1 6H7.5L10 0Z" fill="white" fillOpacity="0.8"/>
+                        </svg>
+                      </div>
+                    </div>
+                    <p className="font-bold text-gray-900 text-lg">{user?.nickname || user?.email?.split("@")[0]}</p>
+                  </div>
+
+                  {/* Progress Bar */}
+                  <div className="flex items-center justify-center gap-1 mb-4">
+                    {[1, 2, 3, 4, 5].map(l => {
+                      const lvlColors = VIP_COLORS[l];
+                      const isReached = l <= vipLevel;
+                      const isCurrent = l === vipLevel;
+                      return (
+                        <button key={l} onClick={() => setActiveVipCard(l)} className="flex flex-col items-center gap-1 transition-all mx-2">
+                          <div className={`w-3 h-3 rounded-full border-2 transition-all ${isCurrent ? "bg-gray-800 border-gray-800 scale-125 shadow-lg" : isReached ? `${lvlColors.progressDot} border-white` : "bg-white/50 border-white/50"}`} />
+                          <span className={`text-xs font-bold ${isCurrent ? "text-gray-900" : isReached ? "text-gray-700" : "text-gray-400"}`}>V{l}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {/* VIP Card */}
+                  <VipCard level={activeVipCard} />
+                </div>
               </div>
+
               {/* Benefits grid */}
               <p className="text-base font-bold text-center text-gray-900 mb-1">NoxyStore VIP Benefits</p>
               <p className="text-xs text-gray-400 text-center mb-5">— Upgrade to unlock more benefits —</p>
               <div className="grid grid-cols-4 gap-3 mb-6">
                 {BENEFITS.map(b => <BenefitCardDesktop key={b.id} benefit={b} />)}
               </div>
+
               {/* FAQ */}
               <div className="border border-gray-100 rounded-xl overflow-hidden">
                 <p className="text-base font-bold text-center text-gray-900 py-4 border-b border-gray-100">NoxyStore VIP Membership Level FAQ</p>
@@ -473,24 +534,36 @@ export function VipBenefitsPage() {
         <div className="w-8" />
       </div>
 
-      {/* VIP gradient header */}
-      <div className={`relative bg-gradient-to-br ${colors.bg} overflow-hidden`}>
-        <div className="absolute inset-0 opacity-30">
-          <div className="absolute right-0 top-0 w-40 h-40 rounded-full bg-white/30" />
-          <div className="absolute right-10 top-10 w-24 h-24 rounded-full bg-white/20" />
+      {/* VIP gradient header - Redesigned like LootBar */}
+      <div className={`relative ${colors.headerBg} overflow-hidden`}>
+        <div className="absolute inset-0 opacity-40">
+          <div className="absolute right-0 top-0 w-40 h-40 rounded-full bg-white/20" />
+          <div className="absolute right-10 top-10 w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute left-0 bottom-0 w-32 h-32 rounded-full bg-white/10" />
         </div>
-        <div className="relative z-10 px-4 pt-6 pb-2">
+
+        <div className="relative z-10 px-4 pt-6 pb-4">
+          {/* Avatar + Username */}
           <div className="flex flex-col items-center mb-4">
             <div className="relative mb-2">
-              <div className="w-14 h-14 rounded-full bg-gray-400 flex items-center justify-center text-white text-xl font-bold">
+              <div className="w-16 h-16 rounded-full bg-gray-400/80 flex items-center justify-center text-white text-2xl font-bold border-2 border-white/50">
                 {user?.nickname?.[0]?.toUpperCase() || "U"}
               </div>
-              <div className="absolute -bottom-1 -right-1 bg-yellow-500 text-black text-[8px] font-black px-1.5 py-0.5 rounded-sm border border-white">V{vipLevel}</div>
+              <div className="absolute -bottom-1 -right-1 bg-black/70 text-white text-[10px] font-black px-2 py-0.5 rounded border border-white/50">
+                V{vipLevel}
+              </div>
+              <div className="absolute -top-1 left-1/2 -translate-x-1/2">
+                <svg width="20" height="16" viewBox="0 0 20 16" fill="none">
+                  <path d="M10 0L12.5 6H19L14 10L16 16L10 12L4 16L6 10L1 6H7.5L10 0Z" fill="white" fillOpacity="0.8"/>
+                </svg>
+              </div>
             </div>
-            <p className={`font-bold ${colors.text} text-sm`}>{user?.nickname || user?.email?.split("@")[0]}</p>
+            <p className="font-bold text-gray-900 text-base">{user?.nickname || user?.email?.split("@")[0]}</p>
           </div>
+
           <VipProgressBar />
-          <div className="mx-2 mb-4">
+
+          <div className="mx-2 mb-2">
             <VipCard level={activeVipCard} />
           </div>
         </div>
@@ -542,29 +615,23 @@ export function VipBenefitsPage() {
         <div className="fixed inset-0 z-50 flex items-end lg:items-center justify-center" onClick={() => setBenefitModal({ benefit: null })}>
           <div className="absolute inset-0 bg-black/40" />
           <div className="relative bg-white w-full max-w-md rounded-t-3xl lg:rounded-2xl shadow-2xl overflow-hidden z-10" onClick={e => e.stopPropagation()}>
-            <div className="bg-amber-50 px-5 py-4 border-b border-amber-100 flex items-center justify-between">
+            <div className="bg-gray-50 px-5 py-4 border-b border-gray-100 flex items-center justify-between">
               <button onClick={() => setBenefitModal({ benefit: null })}><X size={20} className="text-gray-700" /></button>
               <p className="font-bold text-gray-900">{benefitModal.benefit.label}</p>
               <div className="w-6" />
             </div>
             <div className="px-6 py-8 text-center">
-              {/* Benefit photo — replace with real image when ready */}
+              {/* Benefit photo */}
               <div className="flex justify-center mb-5">
                 <img
-                  src={`https://images.unsplash.com/photo-${
-                    ["1542751371-adc38448a05e","1511512578047-dfb367046420","1493711662062-fa541adb3fc8",
-                     "1560419015-7c425b20b244","1538481199705-c710c4e965fc","1550745165-9bc0b252726f",
-                     "1556438064-2d7646166914","1485827404703-89b55fcc595e","1614680376408-81e91ffe3db7",
-                     "1616578492901-befd2b52f6c0"
-                    ][BENEFITS.findIndex(b => b.id === benefitModal.benefit!.id) % 10]
-                  }?w=200&h=200&fit=crop`}
+                  src={BENEFIT_PHOTOS[benefitModal.benefit.id]}
                   alt={benefitModal.benefit.label}
                   className={`w-24 h-24 rounded-2xl object-cover ${
                     benefitModal.benefit.vipMin > vipLevel
                       ? "grayscale opacity-40 border-2 border-gray-200"
-                      : "border-2 border-yellow-300"
+                      : "border-2 border-gray-200"
                   }`}
-                  onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop"; }}
+                  onError={(e) => { (e.target as HTMLImageElement).src = "https://via.placeholder.com/96?text=?"; }}
                 />
               </div>
               <p className="text-base text-gray-700 leading-relaxed mb-6 whitespace-pre-line text-left">{benefitModal.benefit.description}</p>
@@ -586,7 +653,7 @@ export function VipBenefitsPage() {
                   {benefitModal.benefit.type === "birthday" && (
                     <p className="text-xs text-gray-500 mb-3">Birthday gifts are automatically sent on the day registered in your account settings.</p>
                   )}
-                  <button onClick={() => setBenefitModal({ benefit: null })} className="w-full bg-yellow-400 text-black font-bold py-3 rounded-xl text-sm">Got it</button>
+                  <button onClick={() => setBenefitModal({ benefit: null })} className="w-full bg-black text-white font-bold py-3 rounded-xl text-sm">Got it</button>
                 </div>
               )}
             </div>
