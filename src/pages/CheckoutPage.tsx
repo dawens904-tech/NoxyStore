@@ -677,7 +677,7 @@ export function CheckoutPage() {
   // ─── Mobile Layout ─────────────────────────────────────────────────────────
   const MobileCheckout = () => (
     <div className="lg:hidden min-h-screen bg-gray-50 pb-32">
-      <Header showBack title="Payment" />
+      <Header showMenu />
 
       <div className="bg-white border-b border-gray-100 px-4 py-4">
         <div className="flex items-center gap-3">
@@ -974,4 +974,3 @@ export function CheckoutPage() {
     </>
   );
 }
-remove arrow bakc fucking just import the real mobile header without modified it.
