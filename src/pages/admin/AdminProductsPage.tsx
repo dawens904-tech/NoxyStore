@@ -258,4 +258,4 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
-fix product saved never unsave when admin saved a ohoto and update all page that have the game photo yo upload lan and replace with that phoot saved real never unsave only if admib delete it.
+
