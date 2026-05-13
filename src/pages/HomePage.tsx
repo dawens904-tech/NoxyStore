@@ -456,3 +456,4 @@ export function HomePage() {
     </div>
   );
 }
+please add language on all section and also gategory and add price product on game popula key and add language system on all.
