@@ -801,4 +801,4 @@ export function VipBenefitsPage() {
     </>
   );
 }
-hello ai please add desktop header and mobile haeder dont skip.
+
