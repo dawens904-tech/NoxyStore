@@ -130,10 +130,10 @@ function MobileGameCard({ game }: { game: LootbarGame }) {
       <div className="flex items-center gap-1.5">
         <div className="flex items-center gap-0.5">
           <Star className="w-3 h-3 fill-yellow-400 text-yellow-400" />
-          <span className="text-[11px] font-bold text-yellow-500">5.0</span>
+          <span className="text-[11px] font-bold text-yellow-500">{game.rating?.toFixed(1) || "5.0"}</span>
         </div>
         <span className="text-[10px] text-gray-400">|</span>
-        <span className="text-[10px] text-gray-400">100k+ Sold</span>
+        <span className="text-[10px] text-gray-400">{game.sold_count || "100k+ Sold"}</span>
       </div>
     </button>
   );
@@ -255,8 +255,8 @@ export function HomePage() {
               </button>
             </div>
             <div className="grid grid-cols-7 gap-4">
-              {isLoading ? Array.from({ length: 7 }).map((_, i) => <div key={i} className="shimmer rounded-2xl aspect-square" />)
-                : hotGames.concat(games.slice(0, 7 - hotGames.length)).slice(0, 7).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+              {isLoading ? Array.from({ length: 14 }).map((_, i) => <div key={i} className="shimmer rounded-2xl aspect-square" />)
+                : hotGames.concat(games.filter(g => !g.is_hot)).slice(0, 14).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
             </div>
           </div>
 
@@ -324,7 +324,7 @@ export function HomePage() {
                 </button>
               </div>
               <div className="grid grid-cols-7 gap-4">
-                {discountGames.slice(0, 7).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+                {discountGames.slice(0, 14).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
               </div>
             </div>
           )}
@@ -341,7 +341,7 @@ export function HomePage() {
                 </button>
               </div>
               <div className="grid grid-cols-7 gap-4">
-                {newGames.slice(0,7).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+                {newGames.slice(0,14).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
               </div>
             </div>
           )}
@@ -358,7 +358,7 @@ export function HomePage() {
                 </button>
               </div>
               <div className="grid grid-cols-7 gap-4">
-                {giftCardGames.slice(0,7).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
+                {giftCardGames.slice(0,14).map((game) => <GameCard key={game.game_id} game={game} size="sm" />)}
               </div>
             </div>
           )}
@@ -602,4 +602,3 @@ export function HomePage() {
     </div>
   );
 }
-for desktop add 2 line and for rating add real fetch lootbar rating sold.
