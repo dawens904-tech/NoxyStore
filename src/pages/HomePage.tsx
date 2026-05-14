@@ -164,6 +164,7 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [dynamicBanners, setDynamicBanners] = useState<Array<{ id: string; title: string; subtitle: string; image_url: string; link: string; sort_order: number }>>([]);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
 
   // Mobile row expansion state — 3 cols, 3 lines initially
   const [hotRows, setHotRows] = useState(3);
@@ -207,7 +208,8 @@ export function HomePage() {
     supabase.from("home_sections").select("*").eq("is_active", true).order("sort_order")
       .then(({ data }) => { if (data) setSections(data as HomeSection[]); });
     supabase.from("home_banners").select("*").eq("is_active", true).order("sort_order")
-      .then(({ data }) => { if (data) setDynamicBanners(data); });
+      .then(({ data }) => { if (data) setDynamicBanners(data); setIsLoadingBanners(false); })
+      .catch(() => setIsLoadingBanners(false));
   }, []);
 
   const getSectionGames = (section: HomeSection): LootbarGame[] => {
@@ -238,7 +240,11 @@ export function HomePage() {
       {/* ── Desktop Layout ── */}
       <div className="hidden lg:block">
         <div className="max-w-[1280px] mx-auto px-6 py-6 space-y-8">
-          <DesktopHeroBanner banners={dynamicBanners} />
+          {isLoadingBanners ? (
+            <div className="shimmer w-full h-80 rounded-2xl" />
+          ) : (
+            <DesktopHeroBanner banners={dynamicBanners} />
+          )}
 
           {/* Desktop Category Icons */}
           <div className="flex items-center justify-center gap-10 py-2">
@@ -647,4 +653,3 @@ export function HomePage() {
     </div>
   );
 }
-banner pa dwe depan de lootbar function banner dwe always visible with no check auto stay never  unsaved.
