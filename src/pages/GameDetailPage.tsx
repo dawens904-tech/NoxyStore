@@ -2,7 +2,10 @@ import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { Footer } from "@/components/layout/Footer";
 import { MobileFooter } from "@/components/layout/MobileFooter";
-import { Star, Zap, Shield, Clock, ChevronRight, Info, AlertCircle, X, Check, ChevronDown } from "lucide-react";
+import {
+  Star, Zap, Shield, Clock, ChevronRight, AlertCircle, X, Check,
+  ChevronDown, ChevronUp, Info,
+} from "lucide-react";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { Header } from "@/components/layout/Header";
 import { FloatingChat } from "@/components/features/FloatingChat";
@@ -11,343 +14,400 @@ import type { LootbarGame, SkuItem } from "@/types";
 import { trackEvent } from "@/lib/analytics";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
+import { useSettingsStore } from "@/stores/settingsStore";
+import { CURRENCY_RATES } from "@/constants/translations";
 
-// ── Country flag + name map ──────────────────────────────────────────────────
-const COUNTRY_FLAG: Record<string, string> = {
-  "United States": "🇺🇸", "US": "🇺🇸",
-  "Turkey": "🇹🇷", "TR": "🇹🇷",
-  "United Kingdom": "🇬🇧", "UK": "🇬🇧", "GB": "🇬🇧",
-  "France": "🇫🇷", "FR": "🇫🇷",
-  "Japan": "🇯🇵", "JP": "🇯🇵",
-  "Germany": "🇩🇪", "DE": "🇩🇪",
-  "Brazil": "🇧🇷", "BR": "🇧🇷",
-  "Australia": "🇦🇺", "AU": "🇦🇺",
-  "Canada": "🇨🇦", "CA": "🇨🇦",
-  "Italy": "🇮🇹", "IT": "🇮🇹",
-  "Spain": "🇪🇸", "ES": "🇪🇸",
-  "Russia": "🇷🇺", "RU": "🇷🇺",
-  "South Korea": "🇰🇷", "KR": "🇰🇷",
-  "China": "🇨🇳", "CN": "🇨🇳",
-  "Mexico": "🇲🇽", "MX": "🇲🇽",
-  "India": "🇮🇳", "IN": "🇮🇳",
-  "Indonesia": "🇮🇩", "ID": "🇮🇩",
-  "Malaysia": "🇲🇾", "MY": "🇲🇾",
-  "Singapore": "🇸🇬", "SG": "🇸🇬",
-  "Thailand": "🇹🇭", "TH": "🇹🇭",
-  "Vietnam": "🇻🇳", "VN": "🇻🇳",
-  "Philippines": "🇵🇭", "PH": "🇵🇭",
-  "Saudi Arabia": "🇸🇦", "SA": "🇸🇦",
-  "UAE": "🇦🇪", "AE": "🇦🇪",
-  "Egypt": "🇪🇬", "EG": "🇪🇬",
-  "Hong Kong": "🇭🇰", "HK": "🇭🇰",
-  "Taiwan": "🇹🇼", "TW": "🇹🇼",
-  "Pakistan": "🇵🇰", "PK": "🇵🇰",
-  "Argentina": "🇦🇷", "AR": "🇦🇷",
-  "Poland": "🇵🇱", "PL": "🇵🇱",
-  "Netherlands": "🇳🇱", "NL": "🇳🇱",
-  "Sweden": "🇸🇪", "SE": "🇸🇪",
-  "Norway": "🇳🇴", "NO": "🇳🇴",
-  "Denmark": "🇩🇰", "DK": "🇩🇰",
-  "Finland": "🇫🇮", "FI": "🇫🇮",
-  "Switzerland": "🇨🇭", "CH": "🇨🇭",
-  "Austria": "🇦🇹", "AT": "🇦🇹",
-  "Belgium": "🇧🇪", "BE": "🇧🇪",
-  "Portugal": "🇵🇹", "PT": "🇵🇹",
-  "Czech Republic": "🇨🇿", "CZ": "🇨🇿",
-  "Romania": "🇷🇴", "RO": "🇷🇴",
-  "Hungary": "🇭🇺", "HU": "🇭🇺",
-  "Greece": "🇬🇷", "GR": "🇬🇷",
-  "Israel": "🇮🇱", "IL": "🇮🇱",
-  "South Africa": "🇿🇦", "ZA": "🇿🇦",
-  "Global": "🌐", "ROW": "🌐", "GLOBAL": "🌐",
-  "Europe": "🇪🇺", "EU": "🇪🇺",
-  "America": "🌎", "Americas": "🌎",
-  "Asia": "🌏",
-  "TW,HK,MO": "🇹🇼",
-  "VNG": "🇻🇳",
-  "Middle East": "🌍",
-};
-
-function getFlag(region: string): string {
-  return COUNTRY_FLAG[region] || "🌐";
+// ─── Types ───────────────────────────────────────────────────────────────────
+interface ManualProduct {
+  id: string;
+  product_name: string;
+  photo_url: string | null;
+  game_category: string;
+  is_active: boolean;
+  requires_server: boolean;
+  requires_player_id: boolean;
+  short_description: string;
+  full_description: string;
 }
 
-// ── Region Dropdown (mobile bottom-sheet / desktop dropdown) ─────────────────
-function RegionDropdown({
-  regions,
-  selected,
-  onSelect,
-}: {
-  regions: { value: string; label: string }[];
-  selected: string;
-  onSelect: (v: string) => void;
-}) {
-  const [open, setOpen] = useState(false);
-  const selectedLabel = regions.find((r) => r.value === selected)?.label || selected;
-  const dropdownRef = useRef<HTMLDivElement>(null);
+interface ManualRegion {
+  id: string;
+  region_name: string;
+  region_key: string;
+  sort_order: number;
+}
 
-  useEffect(() => {
-    if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) setOpen(false);
+interface ManualSku {
+  id: string;
+  sku_name: string;
+  original_price: number;
+  sale_price: number | null;
+  photo_url: string | null;
+  region_id: string | null;
+  sort_order: number;
+}
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function useCurrencyFormat() {
+  const { currency } = useSettingsStore();
+  return (usd: number | null | undefined): string => {
+    if (!usd && usd !== 0) return "";
+    const rate = CURRENCY_RATES[currency] ?? 1;
+    const converted = usd * rate;
+    const sym: Record<string, string> = {
+      USD: "$", EUR: "€", GBP: "£", IDR: "Rp", MYR: "RM",
+      SGD: "S$", THB: "฿", VND: "₫", PHP: "₱", BRL: "R$",
     };
-    document.addEventListener("mousedown", handler);
-    return () => document.removeEventListener("mousedown", handler);
-  }, [open]);
+    const s = sym[currency] ?? "$";
+    if (currency === "IDR" || currency === "VND") return `${s}${Math.round(converted).toLocaleString()}`;
+    return `${s}${converted.toFixed(2)}`;
+  };
+}
 
+// ─── Product Card ─────────────────────────────────────────────────────────────
+function ProductCard({
+  image, name, price, oldPrice, discount, selected, onClick, fallbackImg,
+}: {
+  image: string | null;
+  name: string;
+  price: string;
+  oldPrice?: string;
+  discount?: number;
+  selected: boolean;
+  onClick: () => void;
+  fallbackImg: string;
+}) {
+  const [imgErr, setImgErr] = useState(false);
   return (
-    <div className="relative" ref={dropdownRef}>
-      <button
-        onClick={() => setOpen(!open)}
-        className="w-full flex items-center justify-between bg-white border border-gray-200 rounded-xl px-4 py-3 hover:border-gray-300 transition-colors"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-2xl leading-none">{getFlag(selectedLabel)}</span>
-          <span className="text-sm font-semibold text-gray-800">{selectedLabel}</span>
+    <button
+      onClick={onClick}
+      className={`relative flex flex-col text-left bg-white rounded-2xl border-2 overflow-hidden transition-all duration-150 hover:shadow-md active:scale-[0.98] ${
+        selected ? "border-yellow-400 shadow-lg ring-2 ring-yellow-200" : "border-gray-200 hover:border-gray-300"
+      }`}
+    >
+      {/* Image */}
+      <div className="relative aspect-square w-full bg-gradient-to-br from-gray-100 to-gray-200 overflow-hidden">
+        <img
+          src={imgErr ? fallbackImg : (image || fallbackImg)}
+          alt={name}
+          className="w-full h-full object-cover"
+          onError={() => setImgErr(true)}
+        />
+        {/* Discount badge */}
+        {(discount ?? 0) > 0 && (
+          <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-md leading-none">
+            -{discount}%
+          </div>
+        )}
+        {/* Selected check */}
+        {selected && (
+          <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow">
+            <Check size={11} className="text-black" />
+          </div>
+        )}
+      </div>
+      {/* Info */}
+      <div className="p-2.5 flex-1 flex flex-col justify-between">
+        <p className="text-[12px] font-semibold text-gray-800 leading-snug line-clamp-2 mb-1.5">{name}</p>
+        <div>
+          <p className="text-[13px] font-black text-orange-500 leading-none">{price}</p>
+          {oldPrice && (
+            <p className="text-[10px] text-gray-400 line-through mt-0.5 leading-none">{oldPrice}</p>
+          )}
         </div>
-        <ChevronDown size={16} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
-      </button>
+      </div>
+    </button>
+  );
+}
 
-      {open && (
-        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg z-50 max-h-60 overflow-y-auto">
-          {regions.map((r) => {
-            const isSelected = r.value === selected;
-            return (
-              <button
-                key={r.value}
-                onClick={() => { onSelect(r.value); setOpen(false); }}
-                className={`w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors ${isSelected ? "bg-yellow-50" : ""}`}
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-xl leading-none">{getFlag(r.label)}</span>
-                  <span className={`text-sm font-medium ${isSelected ? "text-yellow-700 font-semibold" : "text-gray-800"}`}>{r.label}</span>
-                </div>
-                {isSelected && (
-                  <Check size={16} className="text-yellow-500 flex-shrink-0" />
-                )}
-              </button>
-            );
-          })}
-        </div>
-      )}
+// ─── Server Tabs ──────────────────────────────────────────────────────────────
+function ServerTabs({
+  regions, selected, onSelect,
+}: {
+  regions: ManualRegion[];
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  return (
+    <div ref={scrollRef} className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      {regions.map((r) => (
+        <button
+          key={r.id}
+          onClick={() => onSelect(r.id)}
+          className={`flex-shrink-0 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
+            selected === r.id
+              ? "border-yellow-400 bg-yellow-50 text-yellow-700"
+              : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
+          }`}
+        >
+          {r.region_name}
+        </button>
+      ))}
     </div>
   );
 }
 
-// ── Mobile Region Bottom Sheet ────────────────────────────────────────────────
-function RegionSheet({
-  regions,
-  selected,
-  onSelect,
-  onClose,
+// ─── Lootbar Region Tabs ──────────────────────────────────────────────────────
+function LootbarRegionTabs({
+  regions, selected, onSelect,
 }: {
   regions: { value: string; label: string }[];
   selected: string;
   onSelect: (v: string) => void;
-  onClose: () => void;
 }) {
-  const selectedLabel = regions.find((r) => r.value === selected)?.label || selected;
-  const [search, setSearch] = useState("");
-  const filtered = regions.filter((r) => r.label.toLowerCase().includes(search.toLowerCase()));
-
   return (
-    <div className="fixed inset-0 z-50 flex items-end">
-      <div className="absolute inset-0 bg-black/50" onClick={onClose} />
-      <div className="relative bg-white rounded-t-3xl w-full shadow-2xl overflow-hidden" style={{ maxHeight: "75vh" }}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-          <button onClick={onClose}><X size={20} className="text-gray-700" /></button>
-          <h3 className="font-bold text-gray-900 text-base">{selectedLabel}</h3>
-          <div className="w-8" />
-        </div>
-        <div className="px-4 py-2 border-b border-gray-100">
-          <input
-            type="text"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search region…"
-            className="w-full bg-gray-100 rounded-xl px-4 py-2.5 text-sm outline-none text-gray-800"
-            autoFocus
-          />
-        </div>
-        <div className="overflow-y-auto" style={{ maxHeight: "calc(75vh - 130px)" }}>
-          <div className="divide-y divide-gray-100">
-            {filtered.map((r) => {
-              const isSel = r.value === selected;
-              return (
-                <button
-                  key={r.value}
-                  onClick={() => { onSelect(r.value); onClose(); }}
-                  className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${isSel ? "bg-yellow-50" : "hover:bg-gray-50"}`}
-                >
-                  <div className="flex items-center gap-3">
-                    <span className="text-2xl leading-none">{getFlag(r.label)}</span>
-                    <span className={`text-base font-medium ${isSel ? "text-yellow-700" : "text-gray-800"}`}>{r.label}</span>
-                  </div>
-                  {isSel && <Check size={18} className="text-yellow-500 flex-shrink-0" />}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-        <div className="h-6 bg-white" />
-      </div>
+    <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
+      {regions.map((r) => (
+        <button
+          key={r.value}
+          onClick={() => onSelect(r.value)}
+          className={`flex-shrink-0 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
+            selected === r.value
+              ? "border-yellow-400 bg-yellow-50 text-yellow-700"
+              : "border-gray-200 text-gray-600 bg-white hover:border-gray-300"
+          }`}
+        >
+          {r.label}
+        </button>
+      ))}
     </div>
   );
 }
 
+// ─── Main Component ───────────────────────────────────────────────────────────
 export function GameDetailPage() {
   const { gameId } = useParams<{ gameId: string }>();
   const navigate = useNavigate();
+  const fmt = useCurrencyFormat();
 
+  // Game data (could be Lootbar or manual)
   const [game, setGame] = useState<LootbarGame | null>(null);
+  const [manualProduct, setManualProduct] = useState<ManualProduct | null>(null);
+  const [isManual, setIsManual] = useState(false);
+
+  // Lootbar data
   const [skus, setSkus] = useState<SkuItem[]>([]);
+  const [lootbarRegions, setLootbarRegions] = useState<{ value: string; label: string }[]>([]);
+  const [selectedLootbarRegion, setSelectedLootbarRegion] = useState("");
+
+  // Manual product data
+  const [manualRegions, setManualRegions] = useState<ManualRegion[]>([]);
+  const [selectedRegionId, setSelectedRegionId] = useState("");
+  const [manualSkus, setManualSkus] = useState<ManualSku[]>([]);
+
+  // UI state
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedRegion, setSelectedRegion] = useState<string>("");
-  const [selectedSku, setSelectedSku] = useState<SkuItem | null>(null);
+  const [selectedSkuId, setSelectedSkuId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [imgError, setImgError] = useState(false);
   const [markup, setMarkup] = useState(0);
-  const [notice, setNotice] = useState<string | null>("Americas Area Topup may take 10 minutes. Longer during busy periods.");
-  const [instructions, setInstructions] = useState<Array<{ step: number; title: string; description: string; image?: string }>>([]);
-  const [showInviteModal, setShowInviteModal] = useState(false);
-  const [referralCode, setReferralCode] = useState("");
-  const [inviteCopied, setInviteCopied] = useState(false);
-  const [useShorterInvite, setUseShorterInvite] = useState(true);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [showFullDesc, setShowFullDesc] = useState(false);
   const [extraInfoValues, setExtraInfoValues] = useState<Record<string, string>>({});
-  const [showRegionSheet, setShowRegionSheet] = useState(false);
 
-  // Detect if this is a gift card product
-  const isGiftCard = useMemo(() =>
-    game?.category?.toLowerCase().includes("gift") ||
-    game?.game_name?.toLowerCase().includes("gift") ||
-    game?.game_name?.toLowerCase().includes("card") ||
-    game?.game_name?.toLowerCase().includes("itunes") ||
-    game?.game_name?.toLowerCase().includes("google play") ||
-    game?.game_name?.toLowerCase().includes("amazon") ||
-    game?.game_name?.toLowerCase().includes("tiktok"),
-  [game]);
+  const fallbackImg = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=400&fit=crop";
 
   useEffect(() => {
     if (!gameId) return;
     trackEvent("game_view", { page: `/game/${gameId}`, gameId });
     setIsLoading(true);
-    setSelectedSku(null);
+    setSelectedSkuId(null);
     setExtraInfoValues({});
 
     supabase.from("markup_settings").select("markup_percent").eq("id", 1).single()
       .then(({ data }) => { if (data) setMarkup(Number(data.markup_percent) || 0); });
 
-    supabase.auth.getUser().then(({ data }) => {
-      if (!data.user?.email) return;
-      supabase.from("referral_codes").select("code, short_code").eq("user_email", data.user.email).single()
-        .then(({ data: ref }) => { if (ref) setReferralCode(ref.short_code || ref.code); });
-    });
+    // Detect if this is a manual product (UUID format) vs Lootbar numeric ID
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-/i.test(gameId ?? "");
 
-    supabase.functions.invoke("lootbar-proxy", {
-      body: { action: "game_guide", game_id: gameId }
-    }).then(({ data }) => {
-      if (data?.guide && Array.isArray(data.guide) && data.guide.length > 0) {
-        setInstructions(data.guide.map((g: any, i: number) => ({
-          step: i + 1,
-          title: g.title || `Step ${i + 1}`,
-          description: g.content || g.description || "",
-          image: g.image || g.img || undefined,
-        })));
-      }
-    }).catch(() => {});
-
-    supabase.from("games_cache").select("*").eq("game_id", gameId).single()
-      .then(({ data: cached }) => {
-        if (cached) {
-          setGame({
-            game_id: cached.game_id,
-            game_name: cached.game_name,
-            game_image: cached.game_image || "",
-            category: cached.category || "Top Up",
-            rating: cached.rating ?? 5.0,
-            sold_count: cached.sold_count || "100k+ Sold",
-            is_hot: cached.is_hot ?? false,
-            discount: cached.discount ?? 0,
-            min_price: cached.min_price ?? null,
-          });
-        }
-      });
-
-    lootbarApi.getSkus(gameId).then((data) => {
-      // Sort SKUs by price ascending — lowest price shown first
-      const sorted = [...data].sort((a, b) => (a.price || 0) - (b.price || 0));
-      setSkus(sorted);
-      if (sorted.length > 0) {
-        const firstRegion = sorted[0]?.attribute?.[0]?.value || "global";
-        setSelectedRegion(firstRegion);
-      }
-      setIsLoading(false);
-    }).catch(() => setIsLoading(false));
+    if (isUUID) {
+      loadManualProduct(gameId);
+    } else {
+      loadLootbarGame(gameId);
+    }
   }, [gameId]);
 
-  const regions = useMemo(() => {
-    const seen = new Set<string>();
-    return skus.filter((s) => {
-      const region = s.attribute?.[0]?.value;
-      if (!region) return false;
-      if (seen.has(region)) return false;
-      seen.add(region);
-      return true;
-    }).map((s) => ({
-      value: s.attribute[0].value,
-      label: s.attribute[0].value_text || s.attribute[0].value,
-    }));
-  }, [skus]);
+  // ─── Manual Product Loader ────────────────────────────────────────────────
+  const loadManualProduct = async (id: string) => {
+    setIsManual(true);
+    const { data: prod } = await supabase
+      .from("manual_products")
+      .select("*")
+      .eq("id", id)
+      .eq("is_active", true)
+      .single();
 
-  const filteredSkus = useMemo(() => {
-    if (!selectedRegion) return skus;
+    if (!prod) { setIsLoading(false); return; }
+    setManualProduct(prod as ManualProduct);
+
+    // Load regions
+    const { data: regs } = await supabase
+      .from("manual_product_regions")
+      .select("*")
+      .eq("product_id", id)
+      .eq("is_active", true)
+      .order("sort_order");
+
+    const regions = (regs as ManualRegion[]) || [];
+    setManualRegions(regions);
+
+    // Load SKUs
+    const { data: skuData } = await supabase
+      .from("manual_skus")
+      .select("*")
+      .eq("product_id", id)
+      .eq("is_active", true)
+      .order("sort_order");
+
+    const rawSkus = (skuData as ManualSku[]) || [];
+    // Sort: sale price first, then by original price
+    rawSkus.sort((a, b) => (a.sale_price ?? a.original_price) - (b.sale_price ?? b.original_price));
+    setManualSkus(rawSkus);
+
+    // Auto-select first region
+    if (regions.length > 0) setSelectedRegionId(regions[0].id);
+    setIsLoading(false);
+  };
+
+  // ─── Lootbar Game Loader ──────────────────────────────────────────────────
+  const loadLootbarGame = async (id: string) => {
+    setIsManual(false);
+
+    // Load game info from cache
+    const { data: cached } = await supabase.from("games_cache").select("*").eq("game_id", id).single();
+    if (cached) {
+      setGame({
+        game_id: cached.game_id,
+        game_name: cached.game_name,
+        game_image: cached.game_image || "",
+        category: cached.category || "Top Up",
+        rating: cached.rating ?? 5.0,
+        sold_count: cached.sold_count || "100k+ Sold",
+        is_hot: cached.is_hot ?? false,
+        discount: cached.discount ?? 0,
+        min_price: cached.min_price ?? null,
+      });
+      if (cached.short_description) setNotice(cached.short_description);
+    }
+
+    // Load SKUs
+    lootbarApi.getSkus(id).then((data) => {
+      const sorted = [...data].sort((a, b) => (a.price || 0) - (b.price || 0));
+      setSkus(sorted);
+
+      // Extract regions from attribute
+      const seen = new Set<string>();
+      const regs: { value: string; label: string }[] = [];
+      sorted.forEach((s) => {
+        const region = s.attribute?.[0]?.value;
+        if (region && !seen.has(region)) {
+          seen.add(region);
+          regs.push({ value: region, label: s.attribute[0].value_text || region });
+        }
+      });
+      setLootbarRegions(regs);
+      if (regs.length > 0) setSelectedLootbarRegion(regs[0].value);
+      setIsLoading(false);
+    }).catch(() => setIsLoading(false));
+  };
+
+  // ─── Derived data ─────────────────────────────────────────────────────────
+  const filteredLootbarSkus = useMemo(() => {
+    if (!selectedLootbarRegion) return skus;
     return skus.filter((s) =>
-      s.attribute?.[0]?.value === selectedRegion || s.attribute?.length === 0
+      s.attribute?.[0]?.value === selectedLootbarRegion || !s.attribute?.length
     );
-  }, [skus, selectedRegion]);
+  }, [skus, selectedLootbarRegion]);
 
-  const extraInfoFields = useMemo(() => selectedSku?.extra_info || [], [selectedSku]);
+  const filteredManualSkus = useMemo(() => {
+    if (!manualRegions.length) return manualSkus;
+    return manualSkus.filter((s) => s.region_id === selectedRegionId);
+  }, [manualSkus, selectedRegionId, manualRegions]);
+
+  const selectedLootbarSku = skus.find((s) => s.sku_id === selectedSkuId);
+  const selectedManualSku = manualSkus.find((s) => s.id === selectedSkuId);
 
   const applyMarkup = (price: number) => price * (1 + markup / 100);
-  const totalPrice = selectedSku ? applyMarkup(selectedSku.price || 0) * quantity : 0;
-  const totalSavings = selectedSku ? (selectedSku.discount_amount || 0) * quantity : 0;
 
-  // Determine if this product needs player verification (has extra_info fields)
+  const totalPrice = useMemo(() => {
+    if (isManual && selectedManualSku) {
+      const p = selectedManualSku.sale_price ?? selectedManualSku.original_price;
+      return applyMarkup(p) * quantity;
+    }
+    if (!isManual && selectedLootbarSku) {
+      return applyMarkup(selectedLootbarSku.price || 0) * quantity;
+    }
+    return 0;
+  }, [isManual, selectedManualSku, selectedLootbarSku, markup, quantity]);
+
+  const extraInfoFields = useMemo(() => selectedLootbarSku?.extra_info || [], [selectedLootbarSku]);
   const needsVerification = extraInfoFields.length > 0;
 
-  // Desktop: always go directly to checkout with inline extra info (never to VerifyPlayerPage)
-  const handleDesktopTopUp = () => {
-    if (!selectedSku) { toast.error("Please select a package first"); return; }
-    for (const field of extraInfoFields) {
-      if (field.required && !extraInfoValues[field.name]?.trim()) {
-        toast.error(`${field.title} is required`);
-        return;
+  const requiresServer = isManual
+    ? (manualProduct?.requires_server ?? false)
+    : false; // Lootbar handles regions differently
+
+  const requiresPlayerId = isManual
+    ? (manualProduct?.requires_player_id ?? true)
+    : needsVerification;
+
+  // ─── Game display info ─────────────────────────────────────────────────────
+  const gameName = isManual ? manualProduct?.product_name : game?.game_name;
+  const gameImage = isManual ? manualProduct?.photo_url : game?.game_image;
+  const gameRating = isManual ? null : game?.rating;
+  const gameSoldCount = isManual ? null : game?.sold_count;
+  const gameCategory = isManual ? manualProduct?.game_category : game?.category;
+  const shortDesc = isManual ? manualProduct?.short_description : null;
+  const fullDesc = isManual ? manualProduct?.full_description : null;
+
+  // ─── Actions ──────────────────────────────────────────────────────────────
+  const handleTopUp = (isMobile = false) => {
+    if (!selectedSkuId) { toast.error("Please select a package first"); return; }
+
+    if (isManual && selectedManualSku) {
+      const price = applyMarkup(selectedManualSku.sale_price ?? selectedManualSku.original_price);
+      const region = manualRegions.find((r) => r.id === selectedRegionId);
+      const skuForCheckout = {
+        sku_id: selectedManualSku.id,
+        sku_name: selectedManualSku.sku_name,
+        price,
+        original_price: applyMarkup(selectedManualSku.original_price),
+        discount_amount: 0,
+        attribute: [],
+        extra_info: requiresPlayerId ? [{ name: "player_id", title: "Player ID", type: "text", required: true, placeholder: "Enter your Player ID" }] : [],
+        image: selectedManualSku.photo_url || manualProduct?.photo_url || null,
+      };
+      const gameForCheckout = {
+        game_id: manualProduct!.id,
+        game_name: manualProduct!.product_name,
+        game_image: manualProduct!.photo_url || "",
+        category: manualProduct!.game_category,
+      };
+
+      if (isMobile && requiresPlayerId) {
+        navigate("/verify-player", { state: { sku: skuForCheckout, game: gameForCheckout, quantity, region: region?.region_name } });
+      } else {
+        navigate("/checkout", { state: { sku: skuForCheckout, game: gameForCheckout, quantity, extraInfo: extraInfoValues, region: region?.region_name } });
+      }
+      return;
+    }
+
+    // Lootbar flow
+    if (selectedLootbarSku) {
+      for (const field of extraInfoFields) {
+        if (field.required && !extraInfoValues[field.name]?.trim()) {
+          toast.error(`${field.title} is required`);
+          return;
+        }
+      }
+      const finalSku = { ...selectedLootbarSku, price: applyMarkup(selectedLootbarSku.price || 0) };
+      if (isMobile && needsVerification) {
+        navigate("/verify-player", { state: { sku: finalSku, game, quantity } });
+      } else {
+        navigate("/checkout", { state: { sku: finalSku, game, quantity, extraInfo: extraInfoValues } });
       }
     }
-    const finalSku = { ...selectedSku, price: applyMarkup(selectedSku.price || 0) };
-    navigate("/checkout", { state: { sku: finalSku, game, quantity, extraInfo: extraInfoValues } });
-  };
-
-  // Mobile: go to VerifyPlayerPage when extra info is needed, else straight to checkout
-  const handleTopUpNow = () => {
-    if (!selectedSku) { toast.error("Please select a package first"); return; }
-    const finalSku = { ...selectedSku, price: applyMarkup(selectedSku.price || 0) };
-    if (needsVerification) {
-      // Pass game, sku, quantity to VerifyPlayerPage — extra info collected there
-      navigate("/verify-player", { state: { sku: finalSku, game, quantity } });
-    } else {
-      navigate("/checkout", { state: { sku: finalSku, game, quantity, extraInfo: extraInfoValues } });
-    }
-  };
-
-  // Mobile: select SKU only — user must tap Continue/Top-up Now to proceed
-  const handleMobileSkuSelect = (sku: SkuItem) => {
-    setSelectedSku(sku);
-    setExtraInfoValues({});
-  };
-
-  const setFieldValue = (name: string, value: string) => {
-    setExtraInfoValues((prev) => ({ ...prev, [name]: value }));
   };
 
   const ExtraInfoForm = ({ compact = false }: { compact?: boolean }) => (
@@ -358,10 +418,10 @@ export function GameDetailPage() {
             {field.required && <span className="text-red-500 mr-0.5">*</span>}
             {field.title}
           </label>
-          {field.type === "select" && field.options && field.options.length > 0 ? (
+          {field.type === "select" && field.options?.length ? (
             <select
               value={extraInfoValues[field.name] || ""}
-              onChange={(e) => setFieldValue(field.name, e.target.value)}
+              onChange={(e) => setExtraInfoValues((p) => ({ ...p, [field.name]: e.target.value }))}
               className="w-full border border-gray-300 focus:border-yellow-400 px-3 py-2.5 text-sm text-gray-900 outline-none bg-white rounded-xl"
             >
               <option value="">Please select {field.title}</option>
@@ -373,8 +433,8 @@ export function GameDetailPage() {
             <input
               type="text"
               value={extraInfoValues[field.name] || ""}
-              onChange={(e) => setFieldValue(field.name, e.target.value)}
-              placeholder={field.placeholder || `Please enter your ${field.title}`}
+              onChange={(e) => setExtraInfoValues((p) => ({ ...p, [field.name]: e.target.value }))}
+              placeholder={field.placeholder || `Enter your ${field.title}`}
               className="w-full border border-gray-300 focus:border-yellow-400 px-3 py-2.5 text-sm text-gray-900 outline-none transition-colors rounded-xl"
             />
           )}
@@ -383,228 +443,246 @@ export function GameDetailPage() {
     </>
   );
 
-  if (isLoading && !game) {
+  // ─── Loading state ────────────────────────────────────────────────────────
+  if (isLoading && !game && !manualProduct) {
     return (
       <div className="min-h-screen bg-[#f5f5f5]">
         <div className="hidden lg:block"><DesktopHeader /></div>
-        <div className="lg:hidden sticky top-0 z-40 bg-[#0a0a0a] px-4 py-3 flex items-center gap-3">
-          <button onClick={() => navigate(-1)} className="text-white">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M19 12H5M12 5l-7 7 7 7" /></svg>
-          </button>
-          <span className="text-white font-bold text-sm">Top-up</span>
-        </div>
-        <div className="px-4 pt-4 space-y-4 max-w-[1280px] mx-auto">
+        <div className="lg:hidden"><Header showBack /></div>
+        <div className="max-w-[1280px] mx-auto px-4 py-6 space-y-4">
           <div className="shimmer h-40 rounded-2xl" />
-          <div className="shimmer h-12 rounded-2xl" />
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-            {Array.from({ length: 8 }).map((_, i) => <div key={i} className="shimmer h-36 rounded-xl" />)}
+          <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+            {Array.from({ length: 10 }).map((_, i) => <div key={i} className="shimmer rounded-2xl aspect-square" />)}
           </div>
         </div>
       </div>
     );
   }
 
-  // ─── Desktop Layout ─────────────────────────────────────────────────────────
+  // ─── Game Header Block ─────────────────────────────────────────────────────
+  const GameHeader = ({ compact = false }: { compact?: boolean }) => (
+    <div className={`flex items-start gap-4 ${compact ? "pb-0" : ""}`}>
+      <img
+        src={imgError ? fallbackImg : (gameImage || fallbackImg)}
+        alt={gameName || "Game"}
+        className={`${compact ? "w-16 h-16" : "w-20 h-20 lg:w-24 lg:h-24"} rounded-2xl object-cover flex-shrink-0 shadow-md`}
+        onError={() => setImgError(true)}
+      />
+      <div className="flex-1 min-w-0">
+        <h1 className={`font-black text-gray-900 leading-tight mb-1 ${compact ? "text-base" : "text-xl lg:text-2xl"}`}>
+          {gameName}
+        </h1>
+        {/* Rating & sold count — only real data */}
+        {(gameRating != null || gameSoldCount) && (
+          <div className="flex items-center gap-2 mb-2">
+            {gameRating != null && (
+              <>
+                <div className="flex gap-0.5">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Star key={i} size={compact ? 11 : 13} fill="#FFD200" stroke="none" />
+                  ))}
+                </div>
+                <span className={`font-black text-yellow-600 ${compact ? "text-xs" : "text-sm"}`}>
+                  {gameRating.toFixed(1)}
+                </span>
+              </>
+            )}
+            {gameSoldCount && (
+              <span className={`text-gray-400 ${compact ? "text-[11px]" : "text-xs"}`}>{gameSoldCount}</span>
+            )}
+          </div>
+        )}
+        {/* Category badge */}
+        {gameCategory && (
+          <span className="inline-block bg-gray-100 text-gray-600 text-xs font-semibold px-2.5 py-1 rounded-lg">
+            {gameCategory}
+          </span>
+        )}
+      </div>
+    </div>
+  );
+
+  // ─── Description Block ─────────────────────────────────────────────────────
+  const DescriptionBlock = () => {
+    if (!shortDesc && !fullDesc) return null;
+    return (
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-base font-bold text-gray-900 mb-2">About</h3>
+        <p className="text-sm text-gray-600 leading-relaxed">
+          {showFullDesc ? (fullDesc || shortDesc) : shortDesc}
+        </p>
+        {fullDesc && fullDesc !== shortDesc && (
+          <button
+            onClick={() => setShowFullDesc(!showFullDesc)}
+            className="mt-2 text-sm font-semibold text-yellow-600 flex items-center gap-1"
+          >
+            {showFullDesc ? "Show Less" : "Show All"}
+            {showFullDesc ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  // ─── Trust badges ─────────────────────────────────────────────────────────
+  const TrustBadges = () => (
+    <div className="flex items-center gap-4 flex-wrap">
+      {[
+        { icon: <Zap size={14} className="text-yellow-500" />, label: "Fast Delivery" },
+        { icon: <Shield size={14} className="text-green-500" />, label: "Secure" },
+        { icon: <Clock size={14} className="text-blue-500" />, label: "24/7 Support" },
+      ].map((b) => (
+        <span key={b.label} className="flex items-center gap-1.5 text-sm text-gray-600">
+          {b.icon} {b.label}
+        </span>
+      ))}
+    </div>
+  );
+
+  // ─── Desktop Layout ────────────────────────────────────────────────────────
   const DesktopLayout = () => (
     <div className="hidden lg:block min-h-screen bg-[#f5f5f5]">
       <DesktopHeader />
 
-      <div className="max-w-[1280px] mx-auto px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm text-gray-500">
-          <button onClick={() => navigate("/")} className="hover:text-gray-700">Home</button>
-          <ChevronRight size={14} />
-          <button onClick={() => navigate("/categories")} className="hover:text-gray-700">{game?.category || "Top Up"}</button>
-          <ChevronRight size={14} />
-          <span className="text-gray-800 font-medium">{game?.game_name}</span>
-        </div>
-        <a
-          href="https://www.trustpilot.com/review/noxystore.com"
-          target="_blank" rel="noopener noreferrer"
-          className="flex items-center gap-3 hover:opacity-75 transition-opacity"
-        >
-          <span className="text-sm text-gray-600 font-semibold">Excellent</span>
-          <div className="flex gap-0.5">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-5 h-5 bg-green-500 rounded-sm flex items-center justify-center">
-                <Star size={10} fill="white" stroke="none" />
-              </div>
-            ))}
-          </div>
-          <span className="text-sm text-gray-500">44,884 reviews on Trustpilot</span>
-        </a>
+      {/* Breadcrumb */}
+      <div className="max-w-[1280px] mx-auto px-6 py-3 flex items-center gap-2 text-sm text-gray-500">
+        <button onClick={() => navigate("/")} className="hover:text-gray-700">Home</button>
+        <ChevronRight size={14} />
+        <button onClick={() => navigate("/categories")} className="hover:text-gray-700">{gameCategory || "Games"}</button>
+        <ChevronRight size={14} />
+        <span className="text-gray-800 font-medium">{gameName}</span>
       </div>
 
       <div className="max-w-[1280px] mx-auto px-6 pb-16">
         <div className="flex gap-6 items-start">
-          {/* Left panel */}
-          <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 130px)", scrollbarWidth: "none" } as React.CSSProperties}>
-            {/* Game header */}
-            <div className="bg-white p-6 mb-4 border border-gray-100 rounded-xl">
-              <div className="flex items-start gap-5">
-                <img
-                  src={imgError ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=100&h=100&fit=crop" : (game?.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=100&h=100&fit=crop")}
-                  alt={game?.game_name}
-                  className="w-24 h-24 rounded-2xl object-cover flex-shrink-0"
-                  onError={() => setImgError(true)}
-                />
-                <div className="flex-1">
-                  <h1 className="text-2xl font-black text-gray-900 mb-1">{game?.game_name}</h1>
-                  <div className="flex items-center gap-3 mb-2">
-                    <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded">{(game?.rating ?? 5.0).toFixed(1)}</span>
-                    <div className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={14} fill="#FFD200" stroke="none" />)}</div>
-                    <span className="text-sm text-gray-400">346 reviews</span>
-                    <span className="text-gray-300">|</span>
-                    <span className="text-sm text-gray-500">{game?.sold_count}</span>
-                  </div>
-                  <div className="flex flex-wrap gap-2 mb-3">
-                    {["7-Day After-Sales Guarantee", "Safe and Fast Top-Up", "24/7 Customer Service"].map((tag) => (
-                      <span key={tag} className="border border-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">{tag}</span>
-                    ))}
-                  </div>
-                  <div className="flex items-center gap-4 text-sm">
-                    <span className="flex items-center gap-1.5 text-gray-600"><Zap size={14} className="text-yellow-500" /> Fast</span>
-                    <span className="flex items-center gap-1.5 text-gray-600"><Shield size={14} className="text-green-500" /> Safe</span>
-                    <span className="flex items-center gap-1.5 text-gray-600"><Clock size={14} className="text-blue-500" /> 24/7</span>
-                  </div>
-                </div>
-              </div>
 
-              {/* Gift card notice */}
-              {isGiftCard && selectedRegion && (
-                <div className="mt-4 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-start gap-2">
-                  <Info size={15} className="text-amber-600 flex-shrink-0 mt-0.5" />
-                  <p className="text-sm text-amber-800 font-medium">
-                    ONLY for {regions.find(r => r.value === selectedRegion)?.label || selectedRegion} account registered users. Non-Returnable and Non-Refundable.
-                  </p>
-                </div>
-              )}
+          {/* ── Left content panel ── */}
+          <div className="flex-1 min-w-0 space-y-4">
+            {/* Game header card */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <GameHeader />
+              <div className="mt-4">
+                <TrustBadges />
+              </div>
             </div>
 
+            {/* Notice */}
             {notice && (
-              <div className="bg-amber-50 border border-amber-200 px-4 py-2.5 flex items-center justify-between mb-4 rounded-xl">
+              <div className="bg-amber-50 border border-amber-200 rounded-2xl px-4 py-3 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <AlertCircle size={14} className="text-amber-600 flex-shrink-0" />
                   <p className="text-sm text-amber-800">{notice}</p>
                 </div>
-                <button onClick={() => setNotice(null)} className="text-gray-400 hover:text-gray-600 ml-2"><X size={14} /></button>
+                <button onClick={() => setNotice(null)}><X size={14} className="text-gray-400 hover:text-gray-600" /></button>
               </div>
             )}
 
-            {/* Region selector — dropdown with flags for gift cards, tabs for others */}
-            {regions.length > 1 && (
-              <div className="bg-white px-5 py-4 mb-4 border border-gray-100 rounded-xl">
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-3">
+            {/* Server / Region tabs */}
+            {isManual && manualRegions.length > 1 && (
+              <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">Select Server</p>
+                <ServerTabs
+                  regions={manualRegions}
+                  selected={selectedRegionId}
+                  onSelect={(id) => { setSelectedRegionId(id); setSelectedSkuId(null); }}
+                />
+              </div>
+            )}
+
+            {!isManual && lootbarRegions.length > 1 && (
+              <div className="bg-white rounded-2xl border border-gray-100 px-5 py-4">
+                <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3">
                   {skus[0]?.attribute?.[0]?.key_text || "Region"}
                 </p>
-                {isGiftCard ? (
-                  <RegionDropdown
-                    regions={regions}
-                    selected={selectedRegion}
-                    onSelect={(v) => { setSelectedRegion(v); setSelectedSku(null); setExtraInfoValues({}); }}
-                  />
-                ) : (
-                  <div className="flex flex-wrap gap-2">
-                    {regions.map((r) => (
-                      <button
-                        key={r.value}
-                        onClick={() => { setSelectedRegion(r.value); setSelectedSku(null); setExtraInfoValues({}); }}
-                        className={`px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                          selectedRegion === r.value
-                            ? "border-yellow-400 bg-yellow-50 text-yellow-700"
-                            : "border-gray-200 text-gray-600 hover:border-gray-300 bg-white"
-                        }`}
-                      >
-                        {r.label}
-                      </button>
-                    ))}
-                  </div>
-                )}
+                <LootbarRegionTabs
+                  regions={lootbarRegions}
+                  selected={selectedLootbarRegion}
+                  onSelect={(v) => { setSelectedLootbarRegion(v); setSelectedSkuId(null); }}
+                />
               </div>
             )}
 
-            {/* SKU grid */}
-            <div className="bg-white p-5 mb-4 border border-gray-100 rounded-xl">
+            {/* Product grid — 5 per row on desktop */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-5">
+              <p className="text-sm font-bold text-gray-700 mb-4">Select Package</p>
               {isLoading ? (
-                <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                  {Array.from({ length: 8 }).map((_, i) => <div key={i} className="shimmer h-36 rounded-xl" />)}
+                <div className="grid grid-cols-5 gap-3">
+                  {Array.from({ length: 10 }).map((_, i) => <div key={i} className="shimmer rounded-2xl aspect-square" />)}
                 </div>
+              ) : isManual ? (
+                filteredManualSkus.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-8">No packages available for this server</p>
+                ) : (
+                  <div className="grid grid-cols-5 gap-3">
+                    {filteredManualSkus.map((sku) => {
+                      const displayPrice = applyMarkup(sku.sale_price ?? sku.original_price);
+                      const oldPrice = sku.sale_price ? applyMarkup(sku.original_price) : null;
+                      const discount = sku.sale_price
+                        ? Math.round((1 - sku.sale_price / sku.original_price) * 100)
+                        : 0;
+                      return (
+                        <ProductCard
+                          key={sku.id}
+                          image={sku.photo_url}
+                          name={sku.sku_name}
+                          price={fmt(displayPrice)}
+                          oldPrice={oldPrice ? fmt(oldPrice) : undefined}
+                          discount={discount}
+                          selected={selectedSkuId === sku.id}
+                          onClick={() => { setSelectedSkuId(sku.id); setExtraInfoValues({}); }}
+                          fallbackImg={manualProduct?.photo_url || fallbackImg}
+                        />
+                      );
+                    })}
+                  </div>
+                )
               ) : (
-                <div className="grid grid-cols-3 xl:grid-cols-4 gap-3">
-                  {filteredSkus.map((sku) => {
-                    const markedPrice = applyMarkup(sku.price || 0);
-                    const savings = sku.discount_amount || 0;
-                    const isSelected = selectedSku?.sku_id === sku.sku_id;
-                    return (
-                      <button
-                        key={sku.sku_id}
-                        onClick={() => { setSelectedSku(sku); setExtraInfoValues({}); }}
-                        className={`relative flex flex-col bg-white border-2 overflow-hidden transition-all hover:shadow-md text-left rounded-xl ${
-                          isSelected ? "border-yellow-400 shadow-md" : "border-gray-200 hover:border-gray-300"
-                        }`}
-                      >
-                        <div className="aspect-[4/3] bg-gradient-to-b from-blue-100 to-purple-100 relative">
-                          <img
-                            src={sku.image || game?.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=150&fit=crop"}
-                            alt={sku.sku_name}
-                            className="w-full h-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=150&fit=crop"; }}
-                          />
-                          {isSelected && (
-                            <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center shadow-sm">
-                              <Check size={11} className="text-black" />
-                            </div>
-                          )}
-                          {savings > 0 && (
-                            <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[9px] font-bold px-1.5 py-0.5 rounded">
-                              -{savings.toFixed(0)}%
-                            </div>
-                          )}
-                        </div>
-                        <div className="p-2.5">
-                          <p className="text-xs font-bold text-gray-900 leading-tight line-clamp-2 mb-1.5">{sku.sku_name}</p>
-                          <p className="text-sm font-black text-orange-500">${markedPrice.toFixed(2)}</p>
-                          {savings > 0 && (
-                            <div className="flex items-center gap-1 mt-0.5">
-                              <span className="text-[10px] text-gray-400 line-through">${(sku.original_price || sku.price || 0).toFixed(2)}</span>
-                              <span className="bg-orange-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">-${savings.toFixed(2)}</span>
-                            </div>
-                          )}
-                        </div>
-                      </button>
-                    );
-                  })}
-                </div>
+                filteredLootbarSkus.length === 0 ? (
+                  <p className="text-gray-400 text-sm text-center py-8">No packages found</p>
+                ) : (
+                  <div className="grid grid-cols-5 gap-3">
+                    {filteredLootbarSkus.map((sku) => {
+                      const markedPrice = applyMarkup(sku.price || 0);
+                      const savings = sku.discount_amount || 0;
+                      const discountPct = savings > 0 && sku.original_price
+                        ? Math.round((savings / sku.original_price) * 100) : 0;
+                      return (
+                        <ProductCard
+                          key={sku.sku_id}
+                          image={sku.image}
+                          name={sku.sku_name}
+                          price={fmt(markedPrice)}
+                          oldPrice={savings > 0 ? fmt(sku.original_price || sku.price) : undefined}
+                          discount={discountPct}
+                          selected={selectedSkuId === sku.sku_id}
+                          onClick={() => { setSelectedSkuId(sku.sku_id); setExtraInfoValues({}); }}
+                          fallbackImg={game?.game_image || fallbackImg}
+                        />
+                      );
+                    })}
+                  </div>
+                )
               )}
             </div>
 
-            {/* Instructions */}
-            <div className="bg-white p-6 border border-gray-100 rounded-xl">
-              <h3 className="text-lg font-bold text-gray-900 mb-4">Top-up Instructions</h3>
-              <div className="grid grid-cols-2 gap-4 mb-5 pb-5 border-b border-gray-100">
+            {/* Description */}
+            <DescriptionBlock />
+
+            {/* How to top-up */}
+            <div className="bg-white rounded-2xl border border-gray-100 p-6">
+              <h3 className="text-base font-bold text-gray-900 mb-4">How to Top-up</h3>
+              <div className="space-y-4">
                 {[
-                  { label: "Category", value: game?.category || "Top Up" },
-                  { label: "Delivery Method", value: "Direct top-up via API" },
-                  { label: "Processing Time", value: "3–5 minutes" },
-                  { label: "Security", value: "NoxyStore Guarantee" },
-                ].map((item) => (
-                  <div key={item.label}>
-                    <p className="text-xs text-gray-500 uppercase tracking-wide font-semibold mb-0.5">{item.label}</p>
-                    <p className="text-sm text-gray-800 font-medium">{item.value}</p>
-                  </div>
-                ))}
-              </div>
-              <div className="space-y-5">
-                {(instructions.length > 0 ? instructions : [
-                  { step: 1, title: "Select your package", description: "Choose the top-up amount that suits you from the list above.", image: undefined },
-                  { step: 2, title: "Fill in your player information", description: "Enter your Player ID or UID accurately. Double-check before proceeding.", image: undefined },
-                  { step: 3, title: "Complete your payment", description: "Choose a payment method and complete the transaction securely.", image: undefined },
-                  { step: 4, title: "Receive your items", description: "Top-up is processed automatically. Items arrive within 3–5 minutes.", image: undefined },
-                ]).map((inst) => (
-                  <div key={inst.step} className="flex gap-4">
-                    <div className="flex-shrink-0 w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center font-black text-sm text-black">{inst.step}</div>
-                    <div className="flex-1">
-                      <p className="font-bold text-gray-900 text-sm mb-1">{inst.title}</p>
-                      {inst.description && <p className="text-sm text-gray-600 leading-relaxed">{inst.description}</p>}
+                  { step: 1, title: "Select your package", desc: "Choose the top-up amount that suits you from the list above." },
+                  { step: 2, title: "Enter your Player ID", desc: "Enter your Player ID or game account information accurately." },
+                  { step: 3, title: "Complete payment", desc: "Choose your payment method and complete the transaction securely." },
+                  { step: 4, title: "Receive items", desc: "Your items are delivered automatically, usually within 1–5 minutes." },
+                ].map((inst) => (
+                  <div key={inst.step} className="flex gap-3">
+                    <div className="w-7 h-7 bg-yellow-400 rounded-lg flex items-center justify-center font-black text-sm text-black flex-shrink-0">{inst.step}</div>
+                    <div>
+                      <p className="font-bold text-sm text-gray-900">{inst.title}</p>
+                      <p className="text-sm text-gray-500 mt-0.5">{inst.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -612,53 +690,90 @@ export function GameDetailPage() {
             </div>
           </div>
 
-          {/* Right: Order panel */}
+          {/* ── Right: Order panel ── */}
           <div className="w-72 flex-shrink-0">
-            <div style={{ position: "sticky", top: "70px", maxHeight: "calc(100vh - 90px)", overflowY: "auto" } as React.CSSProperties}>
-              <div className="border border-gray-200 shadow-sm bg-white rounded-xl overflow-hidden">
-                <div className="px-5 pt-5 pb-4 border-b border-gray-200">
-                  <h3 className="font-bold text-gray-900 mb-4">Order Information</h3>
-                  {selectedSku ? (
-                    <ExtraInfoForm />
-                  ) : (
-                    <div className="bg-gray-50 p-3 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-xl">
-                      ← Select a package
+            <div style={{ position: "sticky", top: "70px" } as React.CSSProperties}>
+              <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
+                {/* Player info form */}
+                {(selectedSkuId && (extraInfoFields.length > 0 || (isManual && requiresPlayerId))) && (
+                  <div className="px-5 pt-5 pb-4 border-b border-gray-100">
+                    <h4 className="font-bold text-gray-800 text-sm mb-3">Player Information</h4>
+                    {isManual ? (
+                      <>
+                        <div className="mb-3">
+                          <label className="block text-xs font-semibold text-gray-600 mb-1.5">
+                            <span className="text-red-500 mr-0.5">*</span>Player ID
+                          </label>
+                          <input
+                            type="text"
+                            value={extraInfoValues["player_id"] || ""}
+                            onChange={(e) => setExtraInfoValues((p) => ({ ...p, player_id: e.target.value }))}
+                            placeholder="Enter your Player ID"
+                            className="w-full border border-gray-300 focus:border-yellow-400 px-3 py-2.5 text-sm text-gray-900 outline-none rounded-xl"
+                          />
+                        </div>
+                        {requiresServer && (
+                          <div className="mb-3">
+                            <label className="block text-xs font-semibold text-gray-600 mb-1.5">Server</label>
+                            <p className="text-sm font-semibold text-gray-800 bg-gray-50 px-3 py-2 rounded-xl">
+                              {manualRegions.find((r) => r.id === selectedRegionId)?.region_name || "—"}
+                            </p>
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <ExtraInfoForm compact />
+                    )}
+                  </div>
+                )}
+
+                {/* No selection placeholder */}
+                {!selectedSkuId && (
+                  <div className="px-5 py-6 border-b border-gray-100">
+                    <div className="bg-gray-50 border border-dashed border-gray-200 rounded-xl p-4 text-center">
+                      <p className="text-sm text-gray-400">Select a package from the left</p>
                     </div>
-                  )}
-                </div>
-                <div className="px-5 py-4 border-b border-gray-200">
+                  </div>
+                )}
+
+                {/* Quantity */}
+                <div className="px-5 py-4 border-b border-gray-100">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-semibold text-gray-700">Quantity</span>
-                    <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-r border-gray-300">−</button>
+                    <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+                      <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-r border-gray-200">−</button>
                       <span className="text-sm font-bold w-10 text-center">{quantity}</span>
-                      <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-l border-gray-300">+</button>
+                      <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-l border-gray-200">+</button>
                     </div>
                   </div>
                 </div>
-                <div className="px-5 py-4">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="text-sm text-gray-500">Price</span>
-                    <span className="text-xl font-black text-orange-500">{selectedSku ? `$${totalPrice.toFixed(2)}` : "—"}</span>
+
+                {/* Price & CTA */}
+                <div className="px-5 py-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm text-gray-500">Total</span>
+                    <span className="text-2xl font-black text-orange-500">
+                      {selectedSkuId ? fmt(totalPrice) : "—"}
+                    </span>
                   </div>
-                  {totalSavings > 0 && (
-                    <p className="text-xs text-orange-500 text-right mb-2 font-semibold">Savings ${totalSavings.toFixed(2)}</p>
-                  )}
                   <button
-                    onClick={handleDesktopTopUp}
-                    disabled={!selectedSku}
-                    className={`w-full py-3.5 font-bold text-base transition-all mt-3 rounded-xl ${selectedSku ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
+                    onClick={() => handleTopUp(false)}
+                    disabled={!selectedSkuId}
+                    className={`w-full py-3.5 rounded-xl font-bold text-base transition-all ${
+                      selectedSkuId ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+                    }`}
                   >
                     Top-up Now
                   </button>
                   <div className="flex items-center justify-center gap-1.5 mt-3">
-                    <Shield size={13} className="text-green-500" />
-                    <span className="text-xs text-gray-500">NoxyStore Security Guarantee</span>
+                    <Shield size={12} className="text-green-500" />
+                    <span className="text-xs text-gray-400">NoxyStore Security Guarantee</span>
                   </div>
                 </div>
               </div>
             </div>
           </div>
+
         </div>
       </div>
 
@@ -667,229 +782,243 @@ export function GameDetailPage() {
     </div>
   );
 
-  // ─── Mobile Layout ──────────────────────────────────────────────────────────
+  // ─── Mobile Layout ─────────────────────────────────────────────────────────
   const MobileLayout = () => (
-    <div className="lg:hidden bg-white min-h-screen">
-      {/* Mobile Header — real layout component */}
-      <Header showMenu />
+    <div className="lg:hidden min-h-screen bg-[#f5f5f5]">
+      {/* Mobile header — branded with back button */}
+      <div className="bg-[#0a0a0a] sticky top-0 z-40 px-4 py-3 flex items-center gap-3">
+        <button onClick={() => navigate(-1)} className="text-white p-1 -ml-1">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+            <path d="M19 12H5M12 5l-7 7 7 7" />
+          </svg>
+        </button>
+        <button onClick={() => navigate("/")} className="font-black text-base tracking-tight">
+          <span className="text-yellow-400">NOXY</span>
+          <span className="text-white">STORE</span>
+          <span className="text-yellow-400 text-xs">.gg</span>
+        </button>
+        <div className="flex-1" />
+        <span className="text-white/60 text-xs font-medium truncate max-w-[120px]">{gameName}</span>
+      </div>
 
-      <div className="pb-52">
-        {/* Game info */}
-        <div className="px-4 py-4 border-b border-gray-100">
-          <div className="flex items-center gap-3 mb-3">
-            <img
-              src={imgError ? "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop" : (game?.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop")}
-              alt={game?.game_name}
-              className="w-16 h-16 rounded-xl object-cover flex-shrink-0 shadow-sm"
-              onError={() => setImgError(true)}
-            />
-            <div>
-              <h1 className="text-lg font-bold text-gray-900 leading-tight">{game?.game_name}</h1>
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <span className="bg-yellow-400 text-black text-xs font-bold px-1.5 py-0.5 rounded">{(game?.rating ?? 5.0).toFixed(1)}</span>
-                <div className="flex">{Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} fill="#FFD200" stroke="none" />)}</div>
-                <span className="text-xs text-gray-400">346</span>
+      <div className="pb-44">
+        {/* Game banner */}
+        <div className="relative h-36 bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden">
+          <img
+            src={imgError ? fallbackImg : (gameImage || fallbackImg)}
+            alt={gameName || "Game"}
+            className="w-full h-full object-cover opacity-40"
+            onError={() => setImgError(true)}
+          />
+          <div className="absolute inset-0 flex items-end px-4 pb-4">
+            <div className="flex items-end gap-3">
+              <img
+                src={imgError ? fallbackImg : (gameImage || fallbackImg)}
+                alt={gameName || "Game"}
+                className="w-16 h-16 rounded-2xl object-cover shadow-lg border-2 border-white/20"
+                onError={() => setImgError(true)}
+              />
+              <div>
+                <h1 className="text-white font-black text-lg leading-tight">{gameName}</h1>
+                {(gameRating != null || gameSoldCount) && (
+                  <div className="flex items-center gap-2 mt-0.5">
+                    {gameRating != null && (
+                      <div className="flex gap-0.5">
+                        {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={10} fill="#FFD200" stroke="none" />)}
+                      </div>
+                    )}
+                    {gameSoldCount && <span className="text-white/60 text-xs">{gameSoldCount}</span>}
+                  </div>
+                )}
               </div>
-              <p className="text-xs text-gray-500 mt-0.5">{game?.sold_count}</p>
             </div>
           </div>
-
-          {/* Tags */}
-          <div className="flex flex-wrap gap-1.5 mb-3">
-            {["7-Day After-Sales Guarantee", "Safe and Fast Top-Up", "24/7 Customer Service"].map((tag) => (
-              <span key={tag} className="border border-gray-200 text-gray-600 text-[11px] px-2.5 py-1 rounded-full">{tag}</span>
-            ))}
-          </div>
-
-          {/* Gift card notice */}
-          {isGiftCard && selectedRegion && (
-            <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 flex items-start gap-2">
-              <Info size={14} className="text-amber-600 flex-shrink-0 mt-0.5" />
-              <p className="text-xs text-amber-800 font-medium leading-relaxed">
-                ONLY for {regions.find(r => r.value === selectedRegion)?.label || selectedRegion} accounts. Non-Returnable and Non-Refundable.
-              </p>
-            </div>
-          )}
         </div>
 
+        {/* Trust badges */}
+        <div className="flex items-center gap-4 px-4 py-3 bg-white border-b border-gray-100 overflow-x-auto">
+          {[
+            { icon: <Zap size={13} className="text-yellow-500" />, label: "Fast" },
+            { icon: <Shield size={13} className="text-green-500" />, label: "Secure" },
+            { icon: <Clock size={13} className="text-blue-500" />, label: "24/7 Support" },
+          ].map((b) => (
+            <span key={b.label} className="flex-shrink-0 flex items-center gap-1 text-xs text-gray-600 font-medium">
+              {b.icon} {b.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Notice */}
         {notice && (
-          <div className="mx-4 mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2 flex items-center justify-between">
-            <p className="text-xs text-amber-700 leading-relaxed">{notice}</p>
-            <button onClick={() => setNotice(null)}><X size={12} className="text-gray-400 flex-shrink-0 ml-2" /></button>
+          <div className="mx-3 mt-3 bg-amber-50 border border-amber-100 rounded-xl px-3 py-2.5 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Info size={13} className="text-amber-500 flex-shrink-0" />
+              <p className="text-xs text-amber-700 leading-relaxed">{notice}</p>
+            </div>
+            <button onClick={() => setNotice(null)}><X size={12} className="text-gray-400 ml-2" /></button>
           </div>
         )}
 
-        {/* Region selector */}
-        {regions.length > 1 && (
-          <div className="px-4 pt-4 pb-3 border-b border-gray-100">
-            {isGiftCard ? (
-              <button
-                onClick={() => setShowRegionSheet(true)}
-                className="w-full flex items-center justify-between bg-gray-50 border border-gray-200 rounded-xl px-4 py-3"
-              >
-                <div className="flex items-center gap-3">
-                  <span className="text-2xl leading-none">{getFlag(regions.find(r => r.value === selectedRegion)?.label || selectedRegion)}</span>
-                  <span className="text-sm font-semibold text-gray-800">{regions.find(r => r.value === selectedRegion)?.label || selectedRegion}</span>
-                </div>
-                <ChevronDown size={16} className="text-gray-400" />
-              </button>
-            ) : (
-              <div>
-                <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">
-                  {skus[0]?.attribute?.[0]?.key_text || "Region"}
-                </p>
-                <div className="flex gap-2 overflow-x-auto scrollbar-hide pb-1">
-                  {regions.map((r) => (
-                    <button
-                      key={r.value}
-                      onClick={() => { setSelectedRegion(r.value); setSelectedSku(null); setExtraInfoValues({}); }}
-                      className={`flex-shrink-0 px-4 py-2 rounded-xl border text-sm font-semibold transition-all ${
-                        selectedRegion === r.value ? "border-yellow-400 text-yellow-600 bg-yellow-50" : "border-gray-200 text-gray-600 bg-white"
-                      }`}
-                    >
-                      {r.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+        {/* Server tabs */}
+        {isManual && manualRegions.length > 1 && (
+          <div className="px-3 pt-4 pb-2">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Select Server</p>
+            <ServerTabs
+              regions={manualRegions}
+              selected={selectedRegionId}
+              onSelect={(id) => { setSelectedRegionId(id); setSelectedSkuId(null); }}
+            />
           </div>
         )}
 
-        {/* SKU grid */}
-        <div className="px-4 pt-3">
+        {!isManual && lootbarRegions.length > 1 && (
+          <div className="px-3 pt-4 pb-2">
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">
+              {skus[0]?.attribute?.[0]?.key_text || "Region"}
+            </p>
+            <LootbarRegionTabs
+              regions={lootbarRegions}
+              selected={selectedLootbarRegion}
+              onSelect={(v) => { setSelectedLootbarRegion(v); setSelectedSkuId(null); }}
+            />
+          </div>
+        )}
+
+        {/* Product grid — 2 per row on mobile */}
+        <div className="px-3 pt-3">
+          <p className="text-sm font-bold text-gray-700 mb-3">Select Package</p>
           {isLoading ? (
             <div className="grid grid-cols-2 gap-3">
-              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="shimmer h-36 rounded-xl" />)}
+              {Array.from({ length: 6 }).map((_, i) => <div key={i} className="shimmer rounded-2xl aspect-square" />)}
             </div>
+          ) : isManual ? (
+            filteredManualSkus.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">No packages available for this server</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredManualSkus.map((sku) => {
+                  const displayPrice = applyMarkup(sku.sale_price ?? sku.original_price);
+                  const oldPrice = sku.sale_price ? applyMarkup(sku.original_price) : null;
+                  const discount = sku.sale_price
+                    ? Math.round((1 - sku.sale_price / sku.original_price) * 100)
+                    : 0;
+                  return (
+                    <ProductCard
+                      key={sku.id}
+                      image={sku.photo_url}
+                      name={sku.sku_name}
+                      price={fmt(displayPrice)}
+                      oldPrice={oldPrice ? fmt(oldPrice) : undefined}
+                      discount={discount}
+                      selected={selectedSkuId === sku.id}
+                      onClick={() => { setSelectedSkuId(sku.id); setExtraInfoValues({}); }}
+                      fallbackImg={manualProduct?.photo_url || fallbackImg}
+                    />
+                  );
+                })}
+              </div>
+            )
           ) : (
-            <div className="grid grid-cols-2 gap-3">
-              {filteredSkus.map((sku) => {
-                const markedPrice = applyMarkup(sku.price || 0);
-                const savings = sku.discount_amount || 0;
-                const isSelected = selectedSku?.sku_id === sku.sku_id;
-                return (
-                  <button
-                    key={sku.sku_id}
-                    onClick={() => handleMobileSkuSelect(sku)}
-                    className={`relative flex flex-col bg-white rounded-xl border-2 overflow-hidden text-left transition-all ${isSelected ? "border-yellow-400 shadow-md" : "border-gray-200"}`}
-                  >
-                    <div className="aspect-[4/3] bg-gradient-to-b from-blue-100 to-purple-100 relative">
-                      <img
-                        src={sku.image || game?.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=150&fit=crop"}
-                        alt={sku.sku_name}
-                        className="w-full h-full object-cover"
-                        onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=150&fit=crop"; }}
-                      />
-                      {isSelected && (
-                        <div className="absolute top-1.5 right-1.5 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center">
-                          <Check size={10} className="text-black" />
-                        </div>
-                      )}
-                      {savings > 0 && (
-                        <div className="absolute top-1.5 left-1.5 bg-orange-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">-{savings.toFixed(0)}%</div>
-                      )}
-                    </div>
-                    <div className="p-2.5">
-                      <p className="text-xs font-bold text-gray-900 leading-tight line-clamp-2 mb-1">{sku.sku_name}</p>
-                      <p className="text-sm font-black text-orange-500">${markedPrice.toFixed(2)}</p>
-                      {savings > 0 && (
-                        <div className="flex items-center gap-1 mt-0.5">
-                          <span className="text-[10px] text-gray-400 line-through">${(sku.original_price || sku.price || 0).toFixed(2)}</span>
-                          <span className="bg-orange-500 text-white text-[9px] font-bold px-1 py-0.5 rounded">-${savings.toFixed(2)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
+            filteredLootbarSkus.length === 0 ? (
+              <p className="text-gray-400 text-sm text-center py-8">No packages found</p>
+            ) : (
+              <div className="grid grid-cols-2 gap-3">
+                {filteredLootbarSkus.map((sku) => {
+                  const markedPrice = applyMarkup(sku.price || 0);
+                  const savings = sku.discount_amount || 0;
+                  const discountPct = savings > 0 && sku.original_price
+                    ? Math.round((savings / sku.original_price) * 100) : 0;
+                  return (
+                    <ProductCard
+                      key={sku.sku_id}
+                      image={sku.image}
+                      name={sku.sku_name}
+                      price={fmt(markedPrice)}
+                      oldPrice={savings > 0 ? fmt(sku.original_price || sku.price) : undefined}
+                      discount={discountPct}
+                      selected={selectedSkuId === sku.sku_id}
+                      onClick={() => { setSelectedSkuId(sku.sku_id); setExtraInfoValues({}); }}
+                      fallbackImg={game?.game_image || fallbackImg}
+                    />
+                  );
+                })}
+              </div>
+            )
           )}
         </div>
+
+        {/* Short description */}
+        {(shortDesc || fullDesc) && (
+          <div className="mx-3 mt-4 bg-white rounded-2xl border border-gray-100 p-4">
+            <h3 className="text-sm font-bold text-gray-900 mb-1.5">About</h3>
+            <p className="text-xs text-gray-600 leading-relaxed">
+              {showFullDesc ? (fullDesc || shortDesc) : shortDesc}
+            </p>
+            {fullDesc && fullDesc !== shortDesc && (
+              <button
+                onClick={() => setShowFullDesc(!showFullDesc)}
+                className="mt-2 text-xs font-semibold text-yellow-600 flex items-center gap-1"
+              >
+                {showFullDesc ? "Show Less" : "Show All"}
+                {showFullDesc ? <ChevronUp size={12} /> : <ChevronDown size={12} />}
+              </button>
+            )}
+          </div>
+        )}
+
+        <MobileFooter />
+        <FloatingChat />
       </div>
 
-      {/* Bottom CTA */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 pb-safe z-50" style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
-        <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-600">Quantity</span>
-          <div className="flex items-center gap-2">
-            <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 rounded-xl border border-gray-300 flex items-center justify-center text-gray-600">−</button>
-            <span className="text-base font-bold w-6 text-center">{quantity}</span>
-            <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 rounded-xl border border-gray-300 flex items-center justify-center text-gray-600">+</button>
+      {/* ─── Fixed Bottom CTA ─── */}
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 pt-3 z-50"
+        style={{ paddingBottom: "calc(0.75rem + env(safe-area-inset-bottom))" }}>
+
+        {/* Player ID input when SKU selected and requires player ID */}
+        {selectedSkuId && requiresPlayerId && (
+          <div className="mb-2">
+            {isManual ? (
+              <input
+                type="text"
+                value={extraInfoValues["player_id"] || ""}
+                onChange={(e) => setExtraInfoValues((p) => ({ ...p, player_id: e.target.value }))}
+                placeholder="Enter your Player ID"
+                className="w-full border border-gray-300 focus:border-yellow-400 px-3 py-2.5 text-sm text-gray-900 outline-none rounded-xl bg-gray-50"
+              />
+            ) : null}
           </div>
-        </div>
+        )}
+
         <div className="flex items-center justify-between">
           <div>
-            {totalSavings > 0 && (
-              <p className="text-xs text-orange-500 font-semibold flex items-center gap-1">
-                Savings ${totalSavings.toFixed(2)} <ChevronRight size={12} />
-              </p>
-            )}
-            <p className="text-xl font-black text-orange-500">{selectedSku ? `$${totalPrice.toFixed(2)}` : "—"}</p>
+            <p className="text-[11px] text-gray-400 mb-0.5">Total Price</p>
+            <p className="text-xl font-black text-orange-500">{selectedSkuId ? fmt(totalPrice) : "—"}</p>
           </div>
-          <button
-            onClick={handleTopUpNow}
-            disabled={!selectedSku}
-            className={`px-8 py-3 rounded-2xl font-bold text-base transition-all ${selectedSku ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
-          >
-            {needsVerification ? "Continue" : "Top-up Now"}
-          </button>
+
+          <div className="flex items-center gap-2">
+            {/* Quantity */}
+            <div className="flex items-center border border-gray-200 rounded-xl overflow-hidden">
+              <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50">−</button>
+              <span className="text-sm font-bold w-8 text-center">{quantity}</span>
+              <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 flex items-center justify-center text-gray-500 hover:bg-gray-50">+</button>
+            </div>
+            {/* Top-up button */}
+            <button
+              onClick={() => handleTopUp(true)}
+              disabled={!selectedSkuId}
+              className={`px-6 py-3 rounded-xl font-bold text-sm transition-all ${
+                selectedSkuId ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-gray-200 text-gray-400 cursor-not-allowed"
+              }`}
+            >
+              {(needsVerification && !isManual) ? "Continue" : "Top-up"}
+            </button>
+          </div>
         </div>
-        {!selectedSku && (
-          <p className="text-center text-xs text-gray-400 mt-1.5">Select a package above to continue</p>
+
+        {!selectedSkuId && (
+          <p className="text-center text-xs text-gray-400 mt-1">Select a package above to continue</p>
         )}
       </div>
-
-      <MobileFooter />
-      <FloatingChat />
-
-      {/* Region bottom sheet for gift cards */}
-      {showRegionSheet && (
-        <RegionSheet
-          regions={regions}
-          selected={selectedRegion}
-          onSelect={(v) => { setSelectedRegion(v); setSelectedSku(null); setExtraInfoValues({}); }}
-          onClose={() => setShowRegionSheet(false)}
-        />
-      )}
-
-      {/* Invite Modal */}
-      {showInviteModal && (
-        <div className="fixed inset-0 z-50 flex items-end">
-          <div className="absolute inset-0 bg-black/40" onClick={() => setShowInviteModal(false)} />
-          <div className="relative bg-white rounded-t-3xl w-full shadow-2xl max-h-[85vh] overflow-y-auto">
-            <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-              <button onClick={() => setShowInviteModal(false)}><X size={20} className="text-gray-700" /></button>
-              <h3 className="font-black text-gray-900">Invite Friends</h3>
-              <div className="w-6" />
-            </div>
-            <div className="px-5 py-4">
-              <div className="flex gap-2 mb-3">
-                <div className="flex-1 bg-gray-100 rounded-xl px-3 py-3 text-sm text-gray-500 font-mono truncate">
-                  {useShorterInvite ? `noxystore.gg/s/${referralCode || "..."}` : `noxystore.gg?ref=${referralCode || "..."}`}
-                </div>
-                <button
-                  onClick={async () => {
-                    const link = useShorterInvite ? `https://noxystore.gg/s/${referralCode}` : `https://noxystore.gg?ref=${referralCode}`;
-                    await navigator.clipboard.writeText(link);
-                    setInviteCopied(true);
-                    setTimeout(() => setInviteCopied(false), 2000);
-                  }}
-                  className="bg-yellow-400 text-black font-bold px-4 py-3 rounded-xl flex items-center gap-1.5 text-sm"
-                >
-                  {inviteCopied ? <Check size={14} /> : "Copy"}
-                </button>
-              </div>
-              <button onClick={() => setUseShorterInvite(!useShorterInvite)} className="flex items-center gap-2 text-sm text-gray-500 mb-4">
-                <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${useShorterInvite ? "bg-yellow-400 border-yellow-400" : "border-gray-300"}`}>
-                  {useShorterInvite && <Check size={11} className="text-black" />}
-                </div>
-                Share with a shorter link
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 
