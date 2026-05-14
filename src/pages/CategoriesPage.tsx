@@ -203,3 +203,4 @@ export function CategoriesPage() {
     </div>
   );
 }
+add real mobile header and make this page more stable more clean
