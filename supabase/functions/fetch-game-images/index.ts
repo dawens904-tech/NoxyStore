@@ -3,9 +3,9 @@
  *
  * Automatically finds and stores game cover images for games missing images.
  * Priority order:
- *   1. RAWG Video Games DB  (RAWG_API_KEY)
- *   2. IGDB                 (TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET)
- *   3. SerpApi Google Images (SERPAPI_KEY)
+ *   1. SerpApi Google Images — searches "{gameName} lootbar" for exact Lootbar logos
+ *   2. RAWG Video Games DB  (RAWG_API_KEY)
+ *   3. IGDB                 (TWITCH_CLIENT_ID + TWITCH_CLIENT_SECRET)
  *
  * Only fetches when game_image is null/empty — never overwrites existing images.
  * Results are saved directly to games_cache.game_image.
@@ -46,7 +46,75 @@ function normalizeGameName(name: string): string {
   return clean || name;
 }
 
-// ─── 1. RAWG ─────────────────────────────────────────────────────────────────
+// ─── 1. SerpApi — Lootbar logo search (highest accuracy) ─────────────────────
+async function fetchFromSerpApiLootbar(gameName: string): Promise<string | null> {
+  if (!SERPAPI_KEY) {
+    console.warn("[FetchImages] SERPAPI_KEY not set, skipping SerpApi");
+    return null;
+  }
+
+  // Search specifically for the Lootbar logo/icon of this game for best visual match
+  const q = encodeURIComponent(`${gameName} lootbar`);
+  const url = `https://serpapi.com/search.json?engine=google_images&q=${q}&api_key=${SERPAPI_KEY}&num=5&safe=active&imgSize=medium&imgType=photo`;
+
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) { console.warn(`[FetchImages] SerpApi(lootbar) ${resp.status} for "${gameName}"`); return null; }
+
+    const data = await resp.json() as { images_results?: Array<{ original: string; thumbnail: string; source: string }> };
+    const results = data.images_results;
+    if (!results?.length) return null;
+
+    // Prefer images from lootbar.gg domain, then any valid http image
+    const lootbarImg = results.find(
+      (r) => r.source?.includes("lootbar") && r.original?.startsWith("http")
+    );
+    if (lootbarImg) {
+      console.log(`[FetchImages] SerpApi(lootbar.gg): image found for "${gameName}"`);
+      return lootbarImg.original;
+    }
+
+    // Fallback to any first valid result from the lootbar query
+    const first = results.find((r) => r.original?.startsWith("http"));
+    if (first) {
+      console.log(`[FetchImages] SerpApi(lootbar query): image found for "${gameName}"`);
+      return first.original;
+    }
+
+    return null;
+  } catch (e) {
+    console.warn(`[FetchImages] SerpApi(lootbar) error for "${gameName}":`, e);
+    return null;
+  }
+}
+
+// SerpApi generic game cover art fallback (second SerpApi pass)
+async function fetchFromSerpApiGeneric(gameName: string): Promise<string | null> {
+  if (!SERPAPI_KEY) return null;
+
+  const q = encodeURIComponent(`${normalizeGameName(gameName)} game cover art`);
+  const url = `https://serpapi.com/search.json?engine=google_images&q=${q}&api_key=${SERPAPI_KEY}&num=5&safe=active`;
+
+  try {
+    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
+    if (!resp.ok) { console.warn(`[FetchImages] SerpApi(generic) ${resp.status} for "${gameName}"`); return null; }
+
+    const data = await resp.json() as { images_results?: Array<{ original: string }> };
+    const results = data.images_results;
+    if (!results?.length) return null;
+
+    const first = results.find((r) => r.original?.startsWith("http"));
+    if (!first) return null;
+
+    console.log(`[FetchImages] SerpApi(generic): image found for "${gameName}"`);
+    return first.original;
+  } catch (e) {
+    console.warn(`[FetchImages] SerpApi(generic) error for "${gameName}":`, e);
+    return null;
+  }
+}
+
+// ─── 2. RAWG ──────────────────────────────────────────────────────────────────
 async function fetchFromRAWG(gameName: string): Promise<string | null> {
   if (!RAWG_API_KEY) {
     console.warn("[FetchImages] RAWG_API_KEY not set, skipping RAWG");
@@ -79,7 +147,7 @@ async function fetchFromRAWG(gameName: string): Promise<string | null> {
   }
 }
 
-// ─── 2. IGDB (Twitch OAuth) ────────────────────────────────────────────────────
+// ─── 3. IGDB (Twitch OAuth) ────────────────────────────────────────────────────
 let _igdbToken: string | null = null;
 let _igdbTokenExpiry = 0;
 
@@ -130,14 +198,12 @@ async function fetchFromIGDB(gameName: string): Promise<string | null> {
     const data = await resp.json() as Array<{ name: string; rating?: number; cover?: { url: string } }>;
     if (!data?.length) return null;
 
-    // Pick highest rated result with a cover
     const best = data
       .filter((g) => g.cover?.url)
       .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))[0];
 
     if (!best?.cover?.url) return null;
 
-    // IGDB returns //images.igdb.com/... — upgrade to https + high-res
     const imageUrl = best.cover.url
       .replace("//", "https://")
       .replace("t_thumb", "t_cover_big");
@@ -146,36 +212,6 @@ async function fetchFromIGDB(gameName: string): Promise<string | null> {
     return imageUrl;
   } catch (e) {
     console.warn(`[FetchImages] IGDB error for "${gameName}":`, e);
-    return null;
-  }
-}
-
-// ─── 3. SerpApi Google Images ────────────────────────────────────────────────
-async function fetchFromSerpApi(gameName: string): Promise<string | null> {
-  if (!SERPAPI_KEY) {
-    console.warn("[FetchImages] SERPAPI_KEY not set, skipping SerpApi");
-    return null;
-  }
-
-  const q = encodeURIComponent(`${normalizeGameName(gameName)} game cover art`);
-  const url = `https://serpapi.com/search.json?engine=google_images&q=${q}&api_key=${SERPAPI_KEY}&num=5&safe=active`;
-
-  try {
-    const resp = await fetch(url, { signal: AbortSignal.timeout(10000) });
-    if (!resp.ok) { console.warn(`[FetchImages] SerpApi ${resp.status} for "${gameName}"`); return null; }
-
-    const data = await resp.json() as { images_results?: Array<{ original: string; thumbnail: string }> };
-    const results = data.images_results;
-    if (!results?.length) return null;
-
-    // Use original URL of the first result
-    const first = results.find((r) => r.original && r.original.startsWith("http"));
-    if (!first) return null;
-
-    console.log(`[FetchImages] SerpApi: image found for "${gameName}"`);
-    return first.original;
-  } catch (e) {
-    console.warn(`[FetchImages] SerpApi error for "${gameName}":`, e);
     return null;
   }
 }
@@ -220,7 +256,7 @@ Deno.serve(async (req: Request) => {
     );
 
     console.log(`[FetchImages] Processing ${missing.length} games with missing images`);
-    console.log(`[FetchImages] Sources: RAWG=${!!RAWG_API_KEY}, IGDB=${!!TWITCH_CLIENT_ID}, SerpApi=${!!SERPAPI_KEY}`);
+    console.log(`[FetchImages] Sources: SerpApi=${!!SERPAPI_KEY}, RAWG=${!!RAWG_API_KEY}, IGDB=${!!TWITCH_CLIENT_ID}`);
 
     const results: Array<{ game_id: string; game_name: string; status: string; source?: string; image?: string }> = [];
 
@@ -228,23 +264,29 @@ Deno.serve(async (req: Request) => {
       let imageUrl: string | null = null;
       let source = "";
 
-      // 1. RAWG
-      imageUrl = await fetchFromRAWG(game.game_name);
-      if (imageUrl) source = "rawg";
+      // 1. SerpApi — search "{gameName} lootbar" for exact Lootbar-style game logos
+      imageUrl = await fetchFromSerpApiLootbar(game.game_name);
+      if (imageUrl) source = "serpapi_lootbar";
 
-      // 2. IGDB
+      // 2. SerpApi generic — search "{gameName} game cover art"
+      if (!imageUrl) {
+        imageUrl = await fetchFromSerpApiGeneric(game.game_name);
+        if (imageUrl) source = "serpapi_generic";
+      }
+
+      // 3. RAWG
+      if (!imageUrl) {
+        imageUrl = await fetchFromRAWG(game.game_name);
+        if (imageUrl) source = "rawg";
+      }
+
+      // 4. IGDB
       if (!imageUrl) {
         imageUrl = await fetchFromIGDB(game.game_name);
         if (imageUrl) source = "igdb";
       }
 
-      // 3. SerpApi
-      if (!imageUrl) {
-        imageUrl = await fetchFromSerpApi(game.game_name);
-        if (imageUrl) source = "serpapi";
-      }
-
-      // 4. Unsplash generic fallback
+      // 5. Unsplash generic fallback
       if (!imageUrl && use_fallback && !skip_unsplash) {
         imageUrl = getUnsplashFallback(game.game_name);
         source = "unsplash";

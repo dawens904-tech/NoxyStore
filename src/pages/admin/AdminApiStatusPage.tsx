@@ -178,8 +178,8 @@ export function AdminApiStatusPage() {
             </div>
           )}
           <div className="mt-3 text-xs text-gray-600 space-y-1">
-            <p>Source priority: <span className="text-yellow-400 font-mono">RAWG</span> → <span className="text-purple-400 font-mono">IGDB</span> → <span className="text-blue-400 font-mono">SerpApi</span> → Unsplash fallback</p>
-            <p>RAWG: free key at <span className="font-mono">rawg.io/apidocs</span> · IGDB: Twitch dev account at <span className="font-mono">dev.twitch.tv</span> · SerpApi: <span className="font-mono">serpapi.com</span></p>
+            <p>Source priority: <span className="text-blue-400 font-mono">SerpApi (lootbar query)</span> → <span className="text-yellow-400 font-mono">RAWG</span> → <span className="text-purple-400 font-mono">IGDB</span> → Unsplash fallback</p>
+            <p>SerpApi: <span className="font-mono">serpapi.com</span> · RAWG: free key at <span className="font-mono">rawg.io/apidocs</span> · IGDB: Twitch dev account at <span className="font-mono">dev.twitch.tv</span></p>
           </div>
         </div>
 
@@ -204,4 +204,3 @@ export function AdminApiStatusPage() {
     </AdminLayout>
   );
 }
-use srapi first and search all game logo from lootbar example free fire lootbar and give the lootbar free fire logo also the other.
