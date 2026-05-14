@@ -40,9 +40,21 @@ function DesktopHeroBanner({ banners }: { banners: typeof BANNER_IMAGES }) {
   const items = banners.length > 0 ? banners : BANNER_IMAGES;
 
   useEffect(() => {
+    if (items.length === 0) return;
     const timer = setInterval(() => setCurrent((c) => (c + 1) % items.length), 4000);
     return () => clearInterval(timer);
   }, [items.length]);
+
+  if (items.length === 0) {
+    return (
+      <div className="relative w-full h-80 overflow-hidden bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 rounded-2xl mx-auto flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl font-black text-yellow-400 opacity-20 mb-2">NOXYSTORE</div>
+          <p className="text-gray-500 text-sm">Add banners from the admin panel</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-full h-80 overflow-hidden bg-gray-900 rounded-2xl mx-auto">
@@ -648,4 +660,4 @@ export function HomePage() {
     </div>
   );
 }
-fix banner load correct and saved and also image poul pa plede f check lootbar api saved tout bgy.
+
