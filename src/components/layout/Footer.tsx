@@ -5,21 +5,21 @@ import TrustpilotReviews from '@/components/features/TrustpilotReviews';
 
 // Carousel bileşeni
 const logos = [
-  "/img/pay.png",
+  "/images/IMG_8408.webp",
   "/img/googlepay.png",
-  "/img/klarna.png",
-  "/img/paysafecard.png",
-  "/img/paynow.png",
-  "/img/qris.png",
-  "/img/dana.png",
-  "/img/gcash.png",
-  "/img/tng.png",
+  "/images/IMG_8730.png",
+  "/images/IMG_8731.png",
+  "/images/IMG_8732.jpeg",
+  "/images/IMG_8733.png",
+  "/images/IMG_8734.png",
+  "/images/IMG_8735.png",
+  "/images/IMG_8726.webp",
   "/img/fpx.png",
-  "/img/familymart.png",
-  "/img/lawson.png",
+  "/images/IMG_8736.jpeg",
+  "/images/IMG_8738.jpeg",
   "/img/secoma.png",
-  "/img/btc.png",
-  "/img/eth.png"
+  "/images/IMG_8728.webp",
+  "/images/IMG_8737.png"
 ];
 
 function Carousel() {
