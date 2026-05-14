@@ -323,19 +323,34 @@ function LootbarTab() {
 
   const save = async (gameId: string) => {
     setIsSaving(true);
-    let imgUrl = editData.custom_image_url as string || "";
+    // Start with existing URL so we never overwrite with empty
+    let imgUrl = (editData.custom_image_url as string) || overrides[gameId]?.custom_image_url || "";
     if (imgFile) {
       const url = await uploadImg(imgFile, `lb_${gameId}`);
       if (url) imgUrl = url;
     }
-    await supabase.from("game_overrides").upsert({ game_id: gameId, ...editData, custom_image_url: imgUrl, updated_at: new Date().toISOString() });
+    const overridePayload = {
+      game_id: gameId,
+      category_override: editData.category_override,
+      is_featured: editData.is_featured,
+      is_hidden: editData.is_hidden,
+      ...(imgUrl ? { custom_image_url: imgUrl } : {}),
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from("game_overrides").upsert(overridePayload);
+    // Sync changes to games_cache so home page / categories / game-detail all reflect instantly
     const cacheUpdate: Record<string, unknown> = {};
     if (imgUrl) cacheUpdate.game_image = imgUrl;
     if (editData.category_override) cacheUpdate.category = editData.category_override;
-    if (Object.keys(cacheUpdate).length) await supabase.from("games_cache").update(cacheUpdate).eq("game_id", gameId);
-    setOverrides((p) => ({ ...p, [gameId]: { ...p[gameId], game_id: gameId, ...editData, custom_image_url: imgUrl } }));
-    toast.success("Saved");
+    if (typeof editData.is_featured === "boolean") cacheUpdate.is_hot = editData.is_featured;
+    if (Object.keys(cacheUpdate).length) {
+      await supabase.from("games_cache").update(cacheUpdate).eq("game_id", gameId);
+    }
+    setOverrides((p) => ({ ...p, [gameId]: { ...p[gameId], ...overridePayload } }));
+    toast.success("Saved — changes are now live on the store");
     setEditId(null);
+    setImgFile(null);
+    setImgPrev("");
     setIsSaving(false);
   };
 
@@ -897,9 +912,10 @@ function ProductForm({
       return;
     }
     setIsSaving(true);
-    let photoUrl = sku?.photo_url || null;
+    // Always preserve existing photo_url; only replace if a new file was chosen
+    let photoUrl: string | null = sku?.photo_url ?? null;
     if (imgFile) {
-      const url = await uploadImg(imgFile, `sku_${game.id}`);
+      const url = await uploadImg(imgFile, `sku_${game.id}_${Date.now()}`);
       if (url) photoUrl = url;
     }
     const payload = {
@@ -914,10 +930,12 @@ function ProductForm({
     };
 
     if (sku?.id) {
-      await supabase.from("manual_skus").update(payload).eq("id", sku.id);
-      toast.success("Product updated");
+      const { error } = await supabase.from("manual_skus").update(payload).eq("id", sku.id);
+      if (error) { toast.error("Save failed: " + error.message); setIsSaving(false); return; }
+      toast.success("Product updated — changes are live");
     } else {
-      await supabase.from("manual_skus").insert(payload);
+      const { error } = await supabase.from("manual_skus").insert(payload);
+      if (error) { toast.error("Save failed: " + error.message); setIsSaving(false); return; }
       toast.success("Product added");
     }
     setIsSaving(false);
@@ -1061,4 +1079,3 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
-fix error when i saved a photo product its must stay never unsave or when app refresh its disappear no fix product saved and also in lootbar functionmto know this product change ever and show on home page game detail categories.
