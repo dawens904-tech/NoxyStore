@@ -30,7 +30,7 @@ function Carousel() {
           <img
             key={i}
             src={logo}
-            className="h-8 w-auto object-contain opacity-90 hover:opacity-100 hover:drop-shadow-md transition"
+            className="h-6 w-auto object-contain opacity-90 hover:opacity-100 hover:drop-shadow-md transition"
           />
         ))}
       </div>
@@ -192,4 +192,4 @@ function DesktopFooter() {
     </footer>
   );
 }
-fix carousel image yo smaller fucking diw mete yo paret piti femen and also mobile and mete yo kouri more fast.
+

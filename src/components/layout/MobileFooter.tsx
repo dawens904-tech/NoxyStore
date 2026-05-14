@@ -25,7 +25,7 @@ function MobileCarousel() {
           <img
             key={i}
             src={logo}
-            className="h-8 w-auto object-contain opacity-80 hover:opacity-100 transition flex-shrink-0"
+            className="h-6 w-auto object-contain opacity-80 hover:opacity-100 transition flex-shrink-0"
             alt=""
           />
         ))}
