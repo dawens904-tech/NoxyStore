@@ -7,7 +7,7 @@ import { Header } from "@/components/layout/Header";
 import { lootbarApi } from "@/lib/lootbar-api";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { LootbarGame } from "@/types";
-import { CATEGORIES } from "@/constants/mockData";
+const CATEGORIES = ["All", "Top Up", "Game Coins", "Gift Card", "Game Keys", "Game Items"];
 
 type SortMode = "recommended" | "latest";
 

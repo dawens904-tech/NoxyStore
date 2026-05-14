@@ -12,7 +12,7 @@ import { lootbarApi } from "@/lib/lootbar-api";
 import { useTranslation } from "@/hooks/useTranslation";
 import type { LootbarGame } from "@/types";
 import { Wallet, Coins, Gift, Swords } from "lucide-react";
-import { BANNER_IMAGES } from "@/constants/mockData";
+const BANNER_IMAGES: Array<{ id: string; title: string; subtitle: string; image_url: string; image: string; link: string; fallback: string }> = [];
 import { supabase } from "@/lib/supabase";
 import { trackEvent } from "@/lib/analytics";
 import { NewUserCouponModal } from "@/components/features/NewUserCouponModal";
