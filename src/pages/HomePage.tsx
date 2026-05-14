@@ -164,7 +164,7 @@ export function HomePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [sections, setSections] = useState<HomeSection[]>([]);
   const [dynamicBanners, setDynamicBanners] = useState<Array<{ id: string; title: string; subtitle: string; image_url: string; link: string; sort_order: number }>>([]);
-  const [isLoadingBanners, setIsLoadingBanners] = useState(true);
+  const [isLoadingBanners, setIsLoadingBanners] = useState(false);
 
   // Mobile row expansion state — 3 cols, 3 lines initially
   const [hotRows, setHotRows] = useState(3);
@@ -240,11 +240,7 @@ export function HomePage() {
       {/* ── Desktop Layout ── */}
       <div className="hidden lg:block">
         <div className="max-w-[1280px] mx-auto px-6 py-6 space-y-8">
-          {isLoadingBanners ? (
-            <div className="shimmer w-full h-80 rounded-2xl" />
-          ) : (
-            <DesktopHeroBanner banners={dynamicBanners} />
-          )}
+          <DesktopHeroBanner banners={dynamicBanners} />
 
           {/* Desktop Category Icons */}
           <div className="flex items-center justify-center gap-10 py-2">
@@ -653,5 +649,3 @@ export function HomePage() {
     </div>
   );
 }
-
-please fix banner error loading never load when u enter to the website auto set banner only game must fetch banner stay alive never loading.
