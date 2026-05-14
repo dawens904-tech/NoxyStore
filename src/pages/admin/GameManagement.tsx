@@ -626,4 +626,3 @@ export default function GameManagement() {
     </div>
   );
 }
-remove old game manual add product add this page model.
