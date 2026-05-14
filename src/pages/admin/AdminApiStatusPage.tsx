@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { RefreshCw, Zap, Image } from "lucide-react";
+import { RefreshCw, Zap, Image, AlertCircle } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { lootbarApi } from "@/lib/lootbar-api";
 import { supabase } from "@/lib/supabase";
@@ -15,6 +15,7 @@ export function AdminApiStatusPage() {
   useEffect(() => {
     checkApi();
     loadTokenInfo();
+    loadMissingImagesCount();
   }, []);
 
   const checkApi = async () => {
@@ -45,6 +46,15 @@ export function AdminApiStatusPage() {
 
   const [isFetchingImages, setIsFetchingImages] = useState(false);
   const [imageFetchResult, setImageFetchResult] = useState<{ updated: number; not_found: number } | null>(null);
+  const [missingImagesCount, setMissingImagesCount] = useState<number | null>(null);
+
+  const loadMissingImagesCount = async () => {
+    const { count } = await supabase
+      .from("games_cache")
+      .select("*", { count: "exact", head: true })
+      .or("game_image.is.null,game_image.eq.");
+    if (count !== null) setMissingImagesCount(count);
+  };
 
   const fetchMissingImages = async () => {
     setIsFetchingImages(true);
@@ -54,7 +64,11 @@ export function AdminApiStatusPage() {
         body: { use_fallback: true },
       });
       if (error) { toast.error("Image fetch failed"); }
-      else { setImageFetchResult({ updated: data.updated ?? 0, not_found: data.not_found ?? 0 }); toast.success(`Updated ${data.updated} game images`); }
+      else {
+        setImageFetchResult({ updated: data.updated ?? 0, not_found: data.not_found ?? 0 });
+        toast.success(`Updated ${data.updated} game images`);
+        loadMissingImagesCount();
+      }
     } catch { toast.error("Image fetch error"); }
     setIsFetchingImages(false);
   };
@@ -125,12 +139,32 @@ export function AdminApiStatusPage() {
           </div>
         </div>
 
+        {/* Missing Images Indicator */}
+        {missingImagesCount !== null && missingImagesCount > 0 && (
+          <div className="bg-orange-900/30 border border-orange-400/30 rounded-2xl p-4 flex items-center gap-3">
+            <AlertCircle size={18} className="text-orange-400 flex-shrink-0" />
+            <div className="flex-1">
+              <p className="text-orange-300 font-semibold text-sm">{missingImagesCount} games missing images</p>
+              <p className="text-orange-500/70 text-xs mt-0.5">Use the Fetch Images button below to auto-fill them</p>
+            </div>
+            <button onClick={loadMissingImagesCount} className="text-orange-400 hover:text-orange-300">
+              <RefreshCw size={14} />
+            </button>
+          </div>
+        )}
+        {missingImagesCount === 0 && (
+          <div className="bg-green-900/20 border border-green-400/20 rounded-2xl p-4 flex items-center gap-3">
+            <div className="w-2 h-2 rounded-full bg-green-400" />
+            <p className="text-green-400 text-sm font-semibold">All games have images</p>
+          </div>
+        )}
+
         {/* Auto Image Fetcher */}
         <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl p-5">
           <div className="flex items-center justify-between mb-3">
             <div>
               <h3 className="font-bold text-white">Auto Game Images</h3>
-              <p className="text-xs text-gray-500 mt-0.5">Fetch missing images from RAWG database (up to 50 games)</p>
+              <p className="text-xs text-gray-500 mt-0.5">Fetch missing images from RAWG database (up to 50 games){missingImagesCount !== null ? ` · ${missingImagesCount} missing` : ""}</p>
             </div>
             <button onClick={fetchMissingImages} disabled={isFetchingImages} className="flex items-center gap-1.5 bg-purple-500 text-white font-bold text-xs px-3 py-2 rounded-xl hover:bg-purple-400 disabled:opacity-50">
               <Image size={12} className={isFetchingImages ? "animate-pulse" : ""} />
@@ -170,4 +204,3 @@ export function AdminApiStatusPage() {
     </AdminLayout>
   );
 }
-please Create a scheduled edge function (cron) that calls lootbar-proxy get_games every hour to keep games_cache fresh automatically without admin intervention Add a real-time indicator in AdminApiStatusPage showing how many games currently have missing images (null game_image in games_cache), updating on page load with a Supabase count query.
