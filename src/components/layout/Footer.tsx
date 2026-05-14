@@ -192,4 +192,3 @@ function DesktopFooter() {
     </footer>
   );
 }
-add language system to both foooter mobile to.
