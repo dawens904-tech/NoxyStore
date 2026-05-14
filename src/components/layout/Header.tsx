@@ -1,11 +1,10 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Search, Menu, X, ShoppingCart, Bell, User, ChevronRight } from "lucide-react";
+import { Search, Menu, X, User, ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTranslation } from "@/hooks/useTranslation";
 import { LanguageCurrencyModal } from "@/components/ui/LanguageCurrencyModal";
-import { useCartStore } from "@/stores/cartStore";
 
 interface HeaderProps {
   showMenu?: boolean;
@@ -17,7 +16,6 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
   const navigate = useNavigate();
   const { language, currency } = useSettingsStore();
   const { t } = useTranslation();
-  const { items } = useCartStore();
   const { isAuthenticated, user } = useAuthStore();
   const [showLangModal, setShowLangModal] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -60,11 +58,6 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
             <button onClick={() => navigate("/search")} className="text-white p-2">
               <Search size={19} />
             </button>
-
-            {/* Cart */}
-            <button onClick={() => navigate("/cart")} className="relative text-white p-2">
-              <ShoppingCart size={19} />
-              {items.length > 0 && (
 
             {/* Lang/Currency or login */}
             {isAuthenticated ? (
