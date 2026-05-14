@@ -163,3 +163,4 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
     </>
   );
 }
+make currency togle an square instead of border.
