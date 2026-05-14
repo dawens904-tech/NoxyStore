@@ -67,7 +67,7 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
             ) : (
               <button
                 onClick={() => setShowLangModal(true)}
-                className="flex items-center gap-1 bg-white/15 text-white text-[11px] font-bold px-2 py-1.5 rounded-lg ml-1"
+                className="flex items-center gap-1 bg-white/15 text-white text-[11px] font-bold px-2 py-1.5 rounded ml-1"
               >
                 {language.toUpperCase()}/{currency}
               </button>
@@ -163,4 +163,4 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
     </>
   );
 }
-make currency togle an square instead of border.
+
