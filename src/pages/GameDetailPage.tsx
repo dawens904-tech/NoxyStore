@@ -274,9 +274,11 @@ export function GameDetailPage() {
       });
 
     lootbarApi.getSkus(gameId).then((data) => {
-      setSkus(data);
-      if (data.length > 0) {
-        const firstRegion = data[0]?.attribute?.[0]?.value || "global";
+      // Sort SKUs by price ascending — lowest price shown first
+      const sorted = [...data].sort((a, b) => (a.price || 0) - (b.price || 0));
+      setSkus(sorted);
+      if (sorted.length > 0) {
+        const firstRegion = sorted[0]?.attribute?.[0]?.value || "global";
         setSelectedRegion(firstRegion);
       }
       setIsLoading(false);
@@ -898,4 +900,3 @@ export function GameDetailPage() {
     </>
   );
 }
-fetch all real product price and fixed low product first after pi gran yo last ti product devan.
