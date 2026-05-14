@@ -898,3 +898,4 @@ export function GameDetailPage() {
     </>
   );
 }
+fetch all real product price and fixed low product first after pi gran yo last ti product devan.
