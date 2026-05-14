@@ -167,7 +167,9 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
             )}
           </button>
 
-          {/* Notifications (logged in) */}
+          {/* 
+          
+          s (logged in) */}
           {isAuthenticated && (
             <button className="hidden lg:flex p-2 text-gray-400 hover:text-white transition-colors">
               <Bell size={20} />
@@ -243,3 +245,4 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
     </>
   );
 }
+change icon notifications pa email icon and when click its open /messages that have notification with logo when click its show all system trade notification like https://lootbar.gg/messages/trade all order success and also add Trade Messages, New Game News, System messages.
