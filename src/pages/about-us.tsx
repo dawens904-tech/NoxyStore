@@ -196,4 +196,4 @@ export default function AboutUsPage() {
     </div>
   );
 }
-
+make this better in desktop and also fix img lan poul paret.
