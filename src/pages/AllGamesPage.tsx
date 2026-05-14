@@ -8,7 +8,7 @@ import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { lootbarApi } from "@/lib/lootbar-api";
 import type { LootbarGame } from "@/types";
-import { CATEGORIES } from "@/constants/mockData";
+const CATEGORIES = ["All", "Top Up", "Game Coins", "Gift Card", "Game Keys", "Game Items"];
 
 type SortOption = "default" | "rating" | "discount";
 
