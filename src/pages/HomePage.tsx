@@ -648,4 +648,3 @@ export function HomePage() {
     </div>
   );
 }
-in popular game key add real product price display.
