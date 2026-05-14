@@ -91,7 +91,11 @@ async function callProxy<T>(action: string, params?: Record<string, unknown>): P
   return data as T;
 }
 
-// ─── Backend Health Check (Race-Safe) ────────────────────────────────────────
+// ─── Backend Health Check (Lazy — only called explicitly, never on import) ───
+// IMPORTANT: Do NOT call isBackendAvailable() at module level.
+// It must only be called from pages that actually need the Lootbar API
+// (GameDetailPage, AdminApiStatusPage, AdminDashboardPage).
+// All other pages use Supabase directly and must never import lootbar-api.
 let _backendAvailable: boolean | null = null;
 let _healthCheckPromise: Promise<boolean> | null = null;
 
@@ -108,7 +112,7 @@ async function isBackendAvailable(): Promise<boolean> {
       console.warn("[LootbarAPI] Backend not available:", e);
       _backendAvailable = false;
     }
-    return _backendAvailable;
+    return _backendAvailable as boolean;
   })();
 
   const result = await _healthCheckPromise;

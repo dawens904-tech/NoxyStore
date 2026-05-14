@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  DollarSign, Package, TrendingUp, Activity, RefreshCw, Shield, Zap
+  DollarSign, Package, TrendingUp, Activity, RefreshCw
 } from "lucide-react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { useAuthStore } from "@/stores/authStore";
@@ -37,8 +37,10 @@ export function AdminDashboardPage() {
 
   const checkApi = async () => {
     try {
-      await lootbarApi.getGames(1, 1);
-      setApiConnected(true);
+      const { data, error } = await supabase.functions.invoke("lootbar-proxy", {
+        body: { action: "check_token" },
+      });
+      setApiConnected(!error && data?.status === "ok");
     } catch { setApiConnected(false); }
   };
 
@@ -149,4 +151,4 @@ export function AdminDashboardPage() {
     </AdminLayout>
   );
 }
-fix error other page yo pa dwe rele api lootbar san epa lootbar page function cause lot yo load slow make them separate and better fast.
+
