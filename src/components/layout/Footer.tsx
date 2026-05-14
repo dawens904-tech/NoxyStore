@@ -192,4 +192,4 @@ function DesktopFooter() {
     </footer>
   );
 }
-
+please ai Make the payment/partner logo cards in the footer carousel larger — increase the height from h-10 to h-12 and add a subtle drop shadow on hover so they stand out more on both desktop and mobile footers.
