@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { AdminLayout } from "@/components/layout/AdminLayout";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { Plus, Trash2, RefreshCw, Tag, KeyRound, Copy, ToggleLeft, ToggleRight } from "lucide-react";
+import { Plus, Trash2, RefreshCw, Tag, KeyRound, Copy, ToggleLeft, ToggleRight, X } from "lucide-react";
 
 interface Coupon {
   id: string;

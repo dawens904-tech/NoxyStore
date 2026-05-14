@@ -695,7 +695,7 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
       const typeMap: Record<string, { label: string; icon: string; color: string }> = {
         daily_login: { label: "Daily login bonus earned (+2 pts)", icon: "🎯", color: "text-green-600 bg-green-50" },
         page_view: { label: `Visited ${ev.page || "a page"}`, icon: "👁️", color: "text-gray-500 bg-gray-50" },
-        search: { label: `Searched for "${ev.extra_data?.query || ""}"", icon: "🔍", color: "text-blue-600 bg-blue-50" },
+        search: { label: `Searched for "${ev.extra_data?.query || ""}"`, icon: "🔍", color: "text-blue-600 bg-blue-50" },
         game_view: { label: `Viewed game${ev.game_id ? " #" + ev.game_id : ""}`, icon: "🎮", color: "text-purple-600 bg-purple-50" },
         checkout_started: { label: "Started checkout", icon: "🛒", color: "text-orange-600 bg-orange-50" },
         order_placed: { label: "Order placed", icon: "✅", color: "text-green-600 bg-green-50" },
