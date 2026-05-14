@@ -1096,4 +1096,4 @@ export function AccountPage() {
     </>
   );
 }
-
+fix affiliate page display in desktop like other coupons etc and on coupon settings all page the left panel stay fixed only right can scroll.
