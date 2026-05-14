@@ -192,4 +192,4 @@ function DesktopFooter() {
     </footer>
   );
 }
-
+please ai make the logo more small and also add it for mobile footer.
