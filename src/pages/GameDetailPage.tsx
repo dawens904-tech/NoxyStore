@@ -1029,3 +1029,4 @@ export function GameDetailPage() {
     </>
   );
 }
+remove short and longue descripton funcion fetch from lootbar function.
