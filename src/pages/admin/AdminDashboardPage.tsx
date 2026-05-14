@@ -149,4 +149,4 @@ export function AdminDashboardPage() {
     </AdminLayout>
   );
 }
-
+fix error other page yo pa dwe rele api lootbar san epa lootbar page function cause lot yo load slow make them separate and better fast.
