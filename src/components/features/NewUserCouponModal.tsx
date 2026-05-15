@@ -203,3 +203,4 @@ export function NewUserCouponModal({ isAuthenticated }: NewUserCouponModalProps)
     </div>
   );
 }
+fix this page when user refuse the modal and after 14 days its must never show its expiry and wait 14 days again to show it and if refuse before 14 days expiry show chak 1 hours.
