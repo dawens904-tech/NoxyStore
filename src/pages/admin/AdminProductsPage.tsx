@@ -4,7 +4,7 @@ import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
 import {
   Plus, Trash2, RefreshCw, Upload, Search, Edit2,
-  X, Check, Star, EyeOff, Save
+  X, Check, Star, EyeOff, Save, ChevronLeft, ChevronRight
 } from "lucide-react";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -64,6 +64,7 @@ interface SkuCacheRow {
 }
 
 const CATEGORIES = ["Top Up", "Gift Card", "Game Pass", "CD Key", "Voucher", "Subscription", "Other"];
+const LOOTBAR_PAGE_SIZE = 50;
 
 const EMPTY_PRODUCT = {
   product_name: "", game_category: "Top Up", photo_url: "", is_active: true, is_featured: false,
@@ -107,6 +108,7 @@ export function AdminProductsPage() {
   // ── Lootbar state ──────────────────────────────────────────────────────────
   const [lootbarGames, setLootbarGames] = useState<LootbarGame[]>([]);
   const [lootbarSearch, setLootbarSearch] = useState("");
+  const [lootbarPage, setLootbarPage] = useState(1);
   const [loadingLootbar, setLoadingLootbar] = useState(false);
   const [selectedLootbarGame, setSelectedLootbarGame] = useState<LootbarGame | null>(null);
   const [overrideForm, setOverrideForm] = useState({
@@ -144,7 +146,7 @@ export function AdminProductsPage() {
 
   async function uploadImage(file: File, folder: string): Promise<string | null> {
     const ext = file.name.split(".").pop();
-    const path = `${folder}/${Date.now()}.${ext}`;
+    const path = `${folder}/${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
     const { error } = await supabase.storage.from("store-assets").upload(path, file);
     if (error) { toast.error("Upload failed: " + error.message); return null; }
     const { data: url } = supabase.storage.from("store-assets").getPublicUrl(path);
@@ -314,7 +316,14 @@ export function AdminProductsPage() {
     const overrideMap = new Map((overrides || []).map(o => [o.game_id, o]));
     setLootbarGames((games || []).map(g => {
       const ov = overrideMap.get(g.game_id);
-      return { ...g, is_featured: ov?.is_featured ?? false, is_hidden: ov?.is_hidden ?? false, sort_order: ov?.sort_order ?? g.sort_order ?? 0 };
+      return {
+        ...g,
+        // Each game gets its own unique photo — prefer custom override image
+        game_image: ov?.custom_image_url || g.game_image || null,
+        is_featured: ov?.is_featured ?? false,
+        is_hidden: ov?.is_hidden ?? false,
+        sort_order: ov?.sort_order ?? g.sort_order ?? 0,
+      };
     }));
     setLoadingLootbar(false);
   }
@@ -327,16 +336,23 @@ export function AdminProductsPage() {
       supabase.from("game_overrides").select("*").eq("game_id", game.game_id).single(),
       supabase.from("sku_cache").select("sku_id, sku_name, price, original_price, image").eq("game_id", game.game_id).order("price"),
     ]);
+    // Always reset override form to this specific game's data — prevents photo bleed between games
     if (ov) {
       setOverrideForm({
-        custom_image_url: ov.custom_image_url || game.game_image || "",
+        custom_image_url: ov.custom_image_url || "",
         category_override: ov.category_override || "",
         sort_order: String(ov.sort_order || 0),
         is_featured: ov.is_featured || false,
         is_hidden: ov.is_hidden || false,
       });
     } else {
-      setOverrideForm({ custom_image_url: game.game_image || "", category_override: game.category || "", sort_order: "0", is_featured: false, is_hidden: false });
+      setOverrideForm({
+        custom_image_url: "",
+        category_override: game.category || "",
+        sort_order: "0",
+        is_featured: false,
+        is_hidden: false,
+      });
     }
     setLootbarSkus((skuData || []) as SkuCacheRow[]);
   }
@@ -394,14 +410,14 @@ export function AdminProductsPage() {
   // ── Derived data ───────────────────────────────────────────────────────────
   const filteredProducts = products.filter(p => !productSearch || p.product_name.toLowerCase().includes(productSearch.toLowerCase()));
   const filteredLootbar = lootbarGames.filter(g => !lootbarSearch || g.game_name.toLowerCase().includes(lootbarSearch.toLowerCase()));
+  const lootbarTotalPages = Math.max(1, Math.ceil(filteredLootbar.length / LOOTBAR_PAGE_SIZE));
+  const paginatedLootbar = filteredLootbar.slice((lootbarPage - 1) * LOOTBAR_PAGE_SIZE, lootbarPage * LOOTBAR_PAGE_SIZE);
+
   const productRegions = selectedProduct ? regions.filter(r => r.product_id === selectedProduct.id) : [];
   const relevantSkus = selectedProduct
     ? skus.filter(s => s.product_id === selectedProduct.id &&
         (!selectedProduct.requires_server || !selectedRegion || s.region_id === selectedRegion.id))
     : [];
-
-  // Panel height constant
-  const PANEL_H = "calc(100vh - 160px)";
 
   // ── Render ─────────────────────────────────────────────────────────────────
   return (
@@ -782,7 +798,7 @@ export function AdminProductsPage() {
         {tab === "lootbar" && (
           <div className="grid grid-cols-12 gap-4 flex-1 overflow-hidden">
 
-            {/* Left: Games list — scrollable */}
+            {/* Left: Games list — scrollable with pagination */}
             <div className="col-span-4 bg-white rounded-xl border border-gray-200 flex flex-col overflow-hidden">
               <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 flex-shrink-0">
                 <h3 className="text-sm font-bold text-gray-900">Lootbar Games ({lootbarGames.length})</h3>
@@ -795,50 +811,103 @@ export function AdminProductsPage() {
               <div className="px-4 py-2 border-b border-gray-100 flex-shrink-0">
                 <div className="relative">
                   <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
-                  <input value={lootbarSearch} onChange={e => setLootbarSearch(e.target.value)} placeholder="Search games…"
-                    className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none" />
+                  <input
+                    value={lootbarSearch}
+                    onChange={e => { setLootbarSearch(e.target.value); setLootbarPage(1); }}
+                    placeholder="Search games…"
+                    className="w-full pl-7 pr-3 py-1.5 bg-gray-50 border border-gray-200 rounded-lg text-xs outline-none"
+                  />
                 </div>
               </div>
-              {/* Scrollable game list */}
+
+              {/* Scrollable game list — paginated 50 per page */}
               <div className="flex-1 overflow-y-auto divide-y divide-gray-100" style={{ minHeight: 0 }}>
                 {loadingLootbar ? (
                   <div className="p-4 text-center text-xs text-gray-400">Loading…</div>
-                ) : filteredLootbar.map(game => (
+                ) : paginatedLootbar.length === 0 ? (
+                  <div className="p-6 text-center text-xs text-gray-400">No games found.</div>
+                ) : paginatedLootbar.map(game => (
                   <button key={game.game_id} onClick={() => selectLootbarGame(game)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 text-left hover:bg-gray-50 transition-colors ${selectedLootbarGame?.game_id === game.game_id ? "bg-yellow-50 border-l-2 border-yellow-400" : ""} ${game.is_hidden ? "opacity-40" : ""}`}>
-                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100">
-                      {game.game_image
-                        ? <img src={game.game_image} className="w-full h-full object-cover" onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
-                        : null}
+                    <div className="w-8 h-8 rounded-lg overflow-hidden flex-shrink-0 bg-gray-100 border border-gray-100">
+                      {game.game_image ? (
+                        /* key forces React to create a new img element for each game — prevents same-photo glitch */
+                        <img
+                          key={`${game.game_id}-${game.game_image}`}
+                          src={game.game_image}
+                          className="w-full h-full object-cover"
+                          onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300 text-[9px] font-black">
+                          {game.game_name.charAt(0)}
+                        </div>
+                      )}
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-xs font-bold text-gray-900 truncate">{game.game_name}</p>
                       <p className="text-[10px] text-gray-400">{game.category || "Top Up"}</p>
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex gap-1 flex-shrink-0">
                       {game.is_featured && <Star size={10} fill="#FFD200" stroke="none" />}
                       {game.is_hidden && <EyeOff size={10} className="text-gray-300" />}
                     </div>
                   </button>
                 ))}
               </div>
+
+              {/* Pagination controls */}
+              {lootbarTotalPages > 1 && (
+                <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 flex-shrink-0 bg-gray-50">
+                  <button
+                    onClick={() => setLootbarPage(p => Math.max(1, p - 1))}
+                    disabled={lootbarPage === 1}
+                    className="flex items-center gap-0.5 px-2.5 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    <ChevronLeft size={12} /> Prev
+                  </button>
+                  <div className="text-center">
+                    <p className="text-[10px] font-bold text-gray-700">{lootbarPage} / {lootbarTotalPages}</p>
+                    <p className="text-[9px] text-gray-400">{filteredLootbar.length} games</p>
+                  </div>
+                  <button
+                    onClick={() => setLootbarPage(p => Math.min(lootbarTotalPages, p + 1))}
+                    disabled={lootbarPage === lootbarTotalPages}
+                    className="flex items-center gap-0.5 px-2.5 py-1.5 text-xs font-bold text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed"
+                  >
+                    Next <ChevronRight size={12} />
+                  </button>
+                </div>
+              )}
             </div>
 
-            {/* Right: Override + SKU panel — non-scrolling outer, each inner section scrolls */}
+            {/* Right: Override + SKU panel */}
             <div className="col-span-8 flex flex-col gap-3 overflow-hidden">
               {selectedLootbarGame ? (
                 <>
-                  {/* Game override card — fixed height, no scroll */}
+                  {/* Game override card */}
                   <div className="bg-white rounded-xl border border-gray-200 p-4 flex-shrink-0">
                     <div className="flex items-start gap-4 mb-3">
-                      {/* Live preview — updates as URL is typed or file uploaded */}
+                      {/* Live preview — shows game-specific override image, not shared across games */}
                       <div className="w-16 h-16 rounded-xl overflow-hidden bg-gray-100 flex-shrink-0 border border-gray-200">
                         {overrideForm.custom_image_url ? (
-                          <img src={overrideForm.custom_image_url} className="w-full h-full object-cover"
-                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }} />
+                          <img
+                            key={overrideForm.custom_image_url}
+                            src={overrideForm.custom_image_url}
+                            className="w-full h-full object-cover"
+                            onError={e => { (e.target as HTMLImageElement).style.display = "none"; }}
+                          />
                         ) : selectedLootbarGame.game_image ? (
-                          <img src={selectedLootbarGame.game_image} className="w-full h-full object-cover" />
-                        ) : <div className="w-full h-full bg-gray-200" />}
+                          <img
+                            key={selectedLootbarGame.game_id}
+                            src={selectedLootbarGame.game_image}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-gray-200 flex items-center justify-center text-gray-400 text-xs font-bold">
+                            {selectedLootbarGame.game_name.charAt(0)}
+                          </div>
+                        )}
                       </div>
                       <div className="flex-1 min-w-0">
                         <h3 className="font-bold text-gray-900 text-sm truncate">{selectedLootbarGame.game_name}</h3>
@@ -848,7 +917,7 @@ export function AdminProductsPage() {
                     </div>
 
                     <div className="grid grid-cols-2 gap-3">
-                      {/* Image — auto-previews when URL typed */}
+                      {/* Image URL — auto-previews when typed */}
                       <div className="col-span-2">
                         <label className="text-[10px] font-bold text-gray-500 uppercase mb-1.5 block">Game Image (preview updates live)</label>
                         <div className="flex gap-2">
@@ -995,4 +1064,3 @@ export function AdminProductsPage() {
     </AdminLayout>
   );
 }
-please Add client-side pagination to the Lootbar tab in AdminProductsPage — show 50 games per page with prev/next buttons and a page indicator, so the list is easier to navigate when there are hundreds of games and chak game must have their photo when i upload a phoot and go to other game i see the same fix all must have their photo different.
