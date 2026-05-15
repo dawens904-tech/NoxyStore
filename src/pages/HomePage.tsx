@@ -649,3 +649,4 @@ export function HomePage() {
     </div>
   );
 }
+for now close all api searcch game photo and fix edit game photo in admin section real no demo and if the product have region click manage region and nn chak region gen manage products and example clicl usa-manage product map we list 100 diamant and i will edit phtoo name price and product by region must have photo different example 100 diamnt photo different 200diamant photo diffrenet in game detail for all game if no region manage products list.
