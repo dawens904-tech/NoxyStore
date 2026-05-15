@@ -6,7 +6,9 @@ import coupon10off from "@/assets/coupon-10off.png";
 import coupon6off from "@/assets/coupon-6off.png";
 
 const MODAL_KEY = "noxy_coupon_modal_dismissed";
-const COOLDOWN_DAYS = 3;
+const MODAL_FIRST_SHOWN_KEY = "noxy_coupon_modal_first_shown";
+const REFUSE_COOLDOWN_MS   = 1 * 60 * 60 * 1000;  // 1 hour after refuse
+const EXPIRY_CYCLE_MS      = 14 * 24 * 60 * 60 * 1000; // 14-day cycle
 
 function getCountdownToMidnight() {
   const now = new Date();
@@ -33,13 +35,32 @@ export function NewUserCouponModal({ isAuthenticated }: NewUserCouponModalProps)
 
   useEffect(() => {
     if (isAuthenticated) return;
-    const stored = localStorage.getItem(MODAL_KEY);
-    if (stored) {
-      const dismissedAt = parseInt(stored, 10);
-      const elapsed = (Date.now() - dismissedAt) / (1000 * 60 * 60 * 24);
-      if (elapsed < COOLDOWN_DAYS) return;
+
+    const now = Date.now();
+    const dismissedAt = parseInt(localStorage.getItem(MODAL_KEY) || "0", 10);
+    const firstShownAt = parseInt(localStorage.getItem(MODAL_FIRST_SHOWN_KEY) || "0", 10);
+
+    if (dismissedAt) {
+      const elapsed = now - dismissedAt;
+
+      if (firstShownAt && (now - firstShownAt) >= EXPIRY_CYCLE_MS) {
+        // Coupons expired (14-day cycle done) — reset and start a new 14-day cycle
+        localStorage.removeItem(MODAL_KEY);
+        localStorage.removeItem(MODAL_FIRST_SHOWN_KEY);
+        // Fall through: will show after delay
+      } else if (elapsed < REFUSE_COOLDOWN_MS) {
+        // Refused within the 14-day window — wait 1 hour
+        return;
+      }
+      // else: 1-hour cooldown passed but still within 14-day cycle — show again
     }
-    const timer = setTimeout(() => setShow(true), 1500);
+
+    const timer = setTimeout(() => {
+      setShow(true);
+      if (!localStorage.getItem(MODAL_FIRST_SHOWN_KEY)) {
+        localStorage.setItem(MODAL_FIRST_SHOWN_KEY, String(Date.now()));
+      }
+    }, 1500);
     return () => clearTimeout(timer);
   }, [isAuthenticated]);
 
@@ -203,4 +224,4 @@ export function NewUserCouponModal({ isAuthenticated }: NewUserCouponModalProps)
     </div>
   );
 }
-fix this page when user refuse the modal and after 14 days its must never show its expiry and wait 14 days again to show it and if refuse before 14 days expiry show chak 1 hours.
+
