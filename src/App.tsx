@@ -214,9 +214,6 @@ function App() {
           <Route path="/contact" element={<ContactPage />} />
           <Route path="/messages" element={<MessagesPage />} />
 
-          {/* Legacy admin route redirect compatibility */}
-          <Route path="/secure-dashboard-92x2011" element={<AdminDashboardPage />} />
-
           <Route path="*" element={<NotFoundPage />} />
         </Routes>
       </div>
@@ -235,4 +232,3 @@ function App() {
 }
 
 export default App;
-remove all admin pages no admin needed for now.
