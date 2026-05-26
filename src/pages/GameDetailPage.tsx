@@ -1266,5 +1266,5 @@ export function GameDetailPage() {
     </>
   );
 }
-
+also fix vip page left panel stay fix and right can scroll.
 
