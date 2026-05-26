@@ -712,4 +712,3 @@ export default function EditProductPage() {
     </div>
   );
 }
-

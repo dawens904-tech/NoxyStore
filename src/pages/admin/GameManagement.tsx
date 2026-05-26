@@ -626,3 +626,4 @@ export default function GameManagement() {
     </div>
   );
 }
+
