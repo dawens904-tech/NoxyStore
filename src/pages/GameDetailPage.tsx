@@ -768,6 +768,7 @@ export function GameDetailPage() {
         </div>
       </div>
     );
+  }
 
   // ─── Desktop Layout ─────────────────────────────────────────────────────────
   const DesktopLayout = () => (
@@ -1266,4 +1267,4 @@ export function GameDetailPage() {
   );
 }
 
-make this more fast remove fake things.
+
