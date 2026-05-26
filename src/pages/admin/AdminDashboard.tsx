@@ -261,3 +261,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+and please if user are not ogin its put the route admin page show a page error with a video set auto play and Create a reusable AdminRoute wrapper component that checks if the user's email is in the user_roles table with role='admin' before rendering any admin page, redirecting to /login if not authenticated or to / if not admin.
