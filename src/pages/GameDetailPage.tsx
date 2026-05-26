@@ -1267,3 +1267,4 @@ export function GameDetailPage() {
   );
 }
 
+please check the build error issue.
