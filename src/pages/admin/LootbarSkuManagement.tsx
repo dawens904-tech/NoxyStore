@@ -529,4 +529,4 @@ export default function LootbarSkuManagement() {
     </div>
   );
 }
-
+also fix if product example 100 diamant show after 200 diamant i want the 100 take place of 200 and 200 take after 100 i can just move the sku product and also when i do it like this its auto set in gamedetail page and if i save photo auto set in game detail never unsavee only if i delete or change.
