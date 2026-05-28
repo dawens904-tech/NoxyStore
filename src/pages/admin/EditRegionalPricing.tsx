@@ -403,4 +403,4 @@ export default function EditRegionalPricing() {
     </div>
   );
 }
-
+also create a version of this for lootbar example region malasya and all sku product 109diamond etc show all and make all admin page fast fast.
