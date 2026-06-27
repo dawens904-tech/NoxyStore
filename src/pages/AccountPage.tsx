@@ -63,7 +63,7 @@ function PasskeyModal({ onClose, onNavigate }: { onClose: () => void; onNavigate
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4" onClick={onClose}>
       <div className="absolute inset-0 bg-black/50" />
-      <div className="relative bg-white rounded-2xl w-full max-w-sm shadow-2xl overflow-hidden z-10" onClick={e => e.stopPropagation()}>
+      <div className="relative bg-white w-full max-w-sm shadow-2xl overflow-hidden z-10" onClick={e => e.stopPropagation()}>
         <div className="absolute top-4 right-4">
           <button onClick={onClose} className="w-8 h-8 flex items-center justify-center hover:bg-gray-100 rounded-full">
             <X size={18} className="text-gray-700" />
@@ -78,7 +78,7 @@ function PasskeyModal({ onClose, onNavigate }: { onClose: () => void; onNavigate
         </div>
         <div className="px-8 pb-4 flex justify-center">
           <div className="relative w-56 h-40 flex items-center justify-center">
-            <div className="w-20 h-24 border-4 border-gray-900 rounded-2xl flex items-center justify-center bg-white shadow-lg relative z-10">
+            <div className="w-20 h-24 border-4 border-gray-900 flex items-center justify-center bg-white shadow-lg relative z-10">
               <div className="flex flex-col items-center gap-1">
                 <div className="w-8 h-8 bg-gray-200 rounded-full flex items-center justify-center"><User size={16} className="text-gray-600" /></div>
                 <Key size={14} className="text-gray-700" />
@@ -86,19 +86,19 @@ function PasskeyModal({ onClose, onNavigate }: { onClose: () => void; onNavigate
               <div className="absolute -top-5 left-1/2 -translate-x-1/2 w-10 h-6 border-4 border-gray-900 border-b-0 rounded-t-full" />
             </div>
             <div className="absolute top-2 left-8 w-2.5 h-2.5 rounded-full bg-yellow-400" />
-            <div className="absolute left-2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-xl bg-teal-100 border-2 border-teal-300 flex items-center justify-center">
-              <div className="grid grid-cols-2 gap-0.5">{[...Array(4)].map((_, i) => <div key={i} className="w-2 h-2 rounded-sm bg-teal-500" />)}</div>
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 w-14 h-14 bg-teal-100 border-2 border-teal-300 flex items-center justify-center">
+              <div className="grid grid-cols-2 gap-0.5">{[...Array(4)].map((_, i) => <div key={i} className="w-2 h-2 bg-teal-500" />)}</div>
             </div>
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-14 h-14 rounded-xl bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center">
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 w-14 h-14 bg-yellow-100 border-2 border-yellow-300 flex items-center justify-center">
               <div className="w-8 h-8 rounded-full border-2 border-yellow-500 flex items-center justify-center"><div className="w-4 h-4 rounded-full border-2 border-yellow-500" /></div>
             </div>
-            <div className="absolute bottom-0 right-4 w-12 h-12 rounded-xl bg-purple-100 border-2 border-purple-300 flex items-center justify-center">
-              <div className="grid grid-cols-3 gap-0.5">{[...Array(9)].map((_, i) => <div key={i} className="w-1.5 h-1.5 rounded-sm bg-purple-400" />)}</div>
+            <div className="absolute bottom-0 right-4 w-12 h-12 bg-purple-100 border-2 border-purple-300 flex items-center justify-center">
+              <div className="grid grid-cols-3 gap-0.5">{[...Array(9)].map((_, i) => <div key={i} className="w-1.5 h-1.5 bg-purple-400" />)}</div>
             </div>
           </div>
         </div>
         <div className="px-6 pb-6">
-          <button onClick={onNavigate} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl flex items-center justify-center gap-2">
+          <button onClick={onNavigate} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 flex items-center justify-center gap-2">
             <User size={18} /> Create a Passkey
           </button>
         </div>
@@ -142,7 +142,7 @@ function MoreGamesSection() {
       <div className="grid grid-cols-3 gap-2">
         {games.slice(0, 6).map(g => (
           <button key={g.game_id} onClick={() => navigate(`/game/${g.game_id}`)} className="flex flex-col text-left">
-            <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-200 w-full">
+            <div className="relative aspect-square overflow-hidden bg-gray-200 w-full">
               <img
                 src={g.game_image || `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop`}
                 alt={g.game_name}
@@ -150,7 +150,7 @@ function MoreGamesSection() {
                 onError={(e) => { (e.target as HTMLImageElement).src = `https://images.unsplash.com/photo-1542751371-adc38448a05e?w=200&h=200&fit=crop`; }}
               />
               {g.discount > 0 && (
-                <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-black px-1 py-0.5 rounded">-{g.discount}%</div>
+                <div className="absolute top-1 left-1 bg-orange-500 text-white text-[9px] font-black px-1 py-0.5">-{g.discount}%</div>
               )}
             </div>
             <p className="text-xs font-semibold text-gray-900 mt-1 leading-tight line-clamp-1">{g.game_name}</p>
@@ -171,7 +171,7 @@ function BirthdayModal({ onClose, onSave, current }: { onClose: () => void; onSa
   const days = Array.from({ length: daysInMonth }, (_, i) => i + 1);
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-end">
-      <div className="bg-white rounded-t-3xl w-full">
+      <div className="bg-white w-full">
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           <button onClick={onClose}><X size={22} className="text-gray-700" /></button>
           <h2 className="font-bold text-gray-900">Birthday</h2>
@@ -192,7 +192,7 @@ function BirthdayModal({ onClose, onSave, current }: { onClose: () => void; onSa
         </div>
         <div className="px-4 py-5">
           <p className="text-xs text-gray-500 text-center mb-3">Birthday cannot be changed after saving</p>
-          <button onClick={() => onSave(`${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl">Confirm</button>
+          <button onClick={() => onSave(`${String(selectedMonth + 1).padStart(2, "0")}-${String(selectedDay).padStart(2, "0")}`)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4">Confirm</button>
         </div>
       </div>
     </div>
@@ -233,9 +233,9 @@ function BindEmailModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
       </div>
       <div className="flex-1 px-4 py-6 space-y-4 bg-gray-50">
         <p className="text-sm text-gray-700 font-medium">Please enter your email</p>
-        <div className="bg-white rounded-xl px-4 py-3.5"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your Email" className="w-full bg-transparent text-sm text-gray-800 outline-none" disabled={step === "otp"} /></div>
+        <div className="bg-white px-4 py-3.5"><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} placeholder="Your Email" className="w-full bg-transparent text-sm text-gray-800 outline-none" disabled={step === "otp"} /></div>
         {step === "otp" && (
-          <div className="bg-white rounded-xl px-4 py-3.5 flex items-center justify-between">
+          <div className="bg-white px-4 py-3.5 flex items-center justify-between">
             <input type="text" value={otp} onChange={(e) => setOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} placeholder="Verification code" className="flex-1 bg-transparent text-sm text-gray-800 outline-none" maxLength={6} />
             <button onClick={handleSend} disabled={countdown > 0} className={`text-sm font-semibold ${countdown > 0 ? "text-gray-400" : "text-yellow-600"}`}>{countdown > 0 ? `${countdown}s` : "Send"}</button>
           </div>
@@ -243,7 +243,7 @@ function BindEmailModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
         <p className="text-xs text-gray-500 leading-relaxed">Please verify your Email address before trading, we will send you trade related messages and other important notifications via Email.</p>
       </div>
       <div className="px-4 pb-8 pt-4">
-        <button onClick={step === "email" ? handleSend : handleVerify} disabled={isSending || isVerifying} className={`w-full font-bold py-4 rounded-2xl transition-colors ${email.trim() ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-yellow-200 text-yellow-600"}`}>
+        <button onClick={step === "email" ? handleSend : handleVerify} disabled={isSending || isVerifying} className={`w-full font-bold py-4 transition-colors ${email.trim() ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-yellow-200 text-yellow-600"}`}>
           {(isSending || isVerifying) ? <Loader2 className="animate-spin mx-auto" size={20} /> : step === "email" ? "Send" : "Save"}
         </button>
       </div>
@@ -255,15 +255,15 @@ function BindEmailModal({ onClose, onSuccess }: { onClose: () => void; onSuccess
 function BindEmailPrompt({ onClose, onConfirm }: { onClose: () => void; onConfirm: () => void }) {
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center px-6">
-      <div className="bg-white rounded-3xl p-6 max-w-sm w-full">
+      <div className="bg-white p-6 max-w-sm w-full">
         <div className="flex items-start gap-3 mb-4">
           <button onClick={onClose}><X size={20} className="text-gray-500" /></button>
           <h3 className="font-bold text-gray-900 text-lg leading-tight flex-1">Binding Email</h3>
         </div>
         <p className="text-gray-600 text-center text-sm mb-6">For your account security, please bind your email address first and then set your login password.</p>
         <div className="flex gap-3">
-          <button onClick={onClose} className="flex-1 border border-gray-300 rounded-2xl py-3 font-semibold text-gray-700">Cancel</button>
-          <button onClick={onConfirm} className="flex-1 bg-yellow-400 rounded-2xl py-3 font-bold text-black">Confirm</button>
+          <button onClick={onClose} className="flex-1 border border-gray-300 py-3 font-semibold text-gray-700">Cancel</button>
+          <button onClick={onConfirm} className="flex-1 bg-yellow-400 py-3 font-bold text-black">Confirm</button>
         </div>
       </div>
     </div>
@@ -309,7 +309,7 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Feedback</h2>
-        <button onClick={() => setShowModal(true)} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-sm px-5 py-2.5 rounded-xl">New Ticket</button>
+        <button onClick={() => setShowModal(true)} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-sm px-5 py-2.5">New Ticket</button>
       </div>
       {tickets.length === 0 ? (
         <div className="flex flex-col items-center justify-center py-20">
@@ -321,16 +321,16 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
       ) : (
         <div className="space-y-3">
           {tickets.map((t) => (
-            <div key={t.id} className="border border-gray-100 rounded-xl p-4 flex items-start justify-between">
+            <div key={t.id} className="border border-gray-100 p-4 flex items-start justify-between">
               <div><p className="font-bold text-gray-900 text-sm">{t.classification}</p><p className="text-sm text-gray-500 mt-1 line-clamp-2">{t.content}</p><p className="text-xs text-gray-400 mt-1">{new Date(t.created_at).toLocaleDateString()}</p></div>
-              <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5 rounded-full">Open</span>
+              <span className="bg-yellow-100 text-yellow-700 text-[10px] font-bold px-2 py-0.5">Open</span>
             </div>
           ))}
         </div>
       )}
       {showModal && (
         <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center px-4">
-          <div className="bg-white rounded-2xl w-full max-w-lg shadow-2xl overflow-hidden">
+          <div className="bg-white w-full max-w-lg shadow-2xl overflow-hidden">
             <div className="flex items-center justify-between px-5 py-4 border-b">
               <h3 className="font-bold text-gray-900">New Ticket</h3>
               <button onClick={() => setShowModal(false)}><X size={20} className="text-gray-500" /></button>
@@ -339,9 +339,9 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Classification</label>
                 <div className="relative">
-                  <button onClick={() => setShowClassDrop(!showClassDrop)} className="w-full bg-gray-100 rounded-xl px-4 py-3 text-left text-sm flex items-center justify-between">{classification}<ChevronDown size={16} /></button>
+                  <button onClick={() => setShowClassDrop(!showClassDrop)} className="w-full bg-gray-100 px-4 py-3 text-left text-sm flex items-center justify-between">{classification}<ChevronDown size={16} /></button>
                   {showClassDrop && (
-                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-xl shadow-lg z-10 mt-1 overflow-hidden">
+                    <div className="absolute top-full left-0 right-0 bg-white border border-gray-200 shadow-lg z-10 mt-1 overflow-hidden">
                       {CLASSIFICATIONS.map(c => <button key={c} onClick={() => { setClassification(c); setShowClassDrop(false); }} className={`w-full text-left px-4 py-3 text-sm hover:bg-gray-50 border-b last:border-0 ${classification === c ? "text-yellow-600 font-semibold" : "text-gray-700"}`}>{c}</button>)}
                     </div>
                   )}
@@ -350,7 +350,7 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Question content</label>
                 <div className="relative">
-                  <textarea value={content} onChange={(e) => setContent(e.target.value.slice(0, 400))} placeholder="Describe your issue..." rows={5} className="w-full bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none resize-none" />
+                  <textarea value={content} onChange={(e) => setContent(e.target.value.slice(0, 400))} placeholder="Describe your issue..." rows={5} className="w-full bg-gray-100 px-4 py-3 text-sm outline-none resize-none" />
                   <span className="absolute bottom-2 right-3 text-xs text-gray-400">{content.length}/400</span>
                 </div>
               </div>
@@ -359,21 +359,21 @@ function DesktopFeedback({ userEmail }: { userEmail: string }) {
                 <div className="flex gap-2 flex-wrap">
                   {screenshots.map((url, i) => (
                     <div key={i} className="relative w-16 h-16">
-                      <img src={url} alt="" className="w-full h-full object-cover rounded-xl" />
+                      <img src={url} alt="" className="w-full h-full object-cover" />
                       <button onClick={() => setScreenshots(p => p.filter((_, idx) => idx !== i))} className="absolute -top-1 -right-1 w-4 h-4 bg-gray-800 rounded-full flex items-center justify-center"><X size={9} className="text-white" /></button>
                     </div>
                   ))}
-                  {screenshots.length < 3 && <button onClick={() => fileRef.current?.click()} className="w-16 h-16 border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center hover:bg-gray-50"><Plus size={18} className="text-gray-400" /></button>}
+                  {screenshots.length < 3 && <button onClick={() => fileRef.current?.click()} className="w-16 h-16 border-2 border-dashed border-gray-300 flex items-center justify-center hover:bg-gray-50"><Plus size={18} className="text-gray-400" /></button>}
                 </div>
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handleImageUpload} />
               </div>
               <div>
                 <label className="block text-sm text-gray-500 mb-1">Contact email</label>
-                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="Your email" className="w-full bg-gray-100 rounded-xl px-4 py-3 text-sm outline-none" />
+                <input type="email" value={contactEmail} onChange={(e) => setContactEmail(e.target.value)} placeholder="Your email" className="w-full bg-gray-100 px-4 py-3 text-sm outline-none" />
               </div>
             </div>
             <div className="px-5 pb-5 pt-3 border-t">
-              <button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3 rounded-xl">{isSubmitting ? "Submitting..." : "Submit"}</button>
+              <button onClick={handleSubmit} disabled={isSubmitting} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3">{isSubmitting ? "Submitting..." : "Submit"}</button>
             </div>
           </div>
         </div>
@@ -419,7 +419,7 @@ function DesktopInvite({ user }: { user: any }) {
   return (
     <div>
       <h2 className="text-xl font-bold text-gray-900 mb-5">Invite for Coupons</h2>
-      <div className="bg-yellow-400 rounded-2xl p-6 mb-5 flex items-center justify-between">
+      <div className="bg-yellow-400 p-6 mb-5 flex items-center justify-between">
         <div className="flex-1">
           <h3 className="font-black text-gray-900 text-lg leading-tight mb-1">Invite new users to sign up and make orders to earn multiple rewards!</h3>
           <p className="text-gray-700 text-sm">The more users you invite the more rewards you could earn!</p>
@@ -427,7 +427,7 @@ function DesktopInvite({ user }: { user: any }) {
         </div>
         <img src={inviteReward} alt="" className="w-24 h-24 object-contain flex-shrink-0 ml-4" />
       </div>
-      <div className="bg-gray-50 rounded-2xl p-5 mb-5">
+      <div className="bg-gray-50 p-5 mb-5">
         <div className="flex items-center justify-center gap-10 mb-5">
           {[
             { key: "twitter", label: "X", bg: "#000", icon: <svg viewBox="0 0 24 24" fill="white" className="w-6 h-6"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.737-8.843L1.254 2.25H8.08l4.257 5.629L18.244 2.25z"/></svg> },
@@ -442,8 +442,8 @@ function DesktopInvite({ user }: { user: any }) {
           ))}
         </div>
         <div className="flex gap-2 mb-3">
-          <div className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-500 font-mono truncate">{inviteLink}</div>
-          <button onClick={handleCopy} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-3 rounded-xl flex items-center gap-2 transition-colors whitespace-nowrap">
+          <div className="flex-1 bg-white border border-gray-200 px-4 py-3 text-sm text-gray-500 font-mono truncate">{inviteLink}</div>
+          <button onClick={handleCopy} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-3 flex items-center gap-2 transition-colors whitespace-nowrap">
             {copied ? <Check size={16} /> : <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>}
             Copy Link
           </button>
@@ -453,7 +453,7 @@ function DesktopInvite({ user }: { user: any }) {
           Share with a shorter link
         </button>
       </div>
-      <div className="bg-gray-50 rounded-2xl p-5 mb-5">
+      <div className="bg-gray-50 p-5 mb-5">
         <h3 className="font-bold text-gray-900 text-base mb-4">Invite Progress Overview</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div><p className="text-2xl font-black text-orange-500">{usersInvited}</p><p className="text-xs text-gray-500 mt-0.5">Users Invited</p></div>
@@ -461,7 +461,7 @@ function DesktopInvite({ user }: { user: any }) {
           <div><p className="text-2xl font-black text-orange-500">${totalSpending.toFixed(2)}</p><p className="text-xs text-gray-500 mt-0.5">Total Spending</p></div>
         </div>
       </div>
-      <div className="bg-gray-50 rounded-2xl p-5">
+      <div className="bg-gray-50 p-5">
         <div className="flex items-center gap-2 mb-4"><div className="w-1 h-5 bg-yellow-400 rounded-full" /><h3 className="font-bold text-gray-900 text-base">Task &amp; Reward</h3></div>
         <div className="grid grid-cols-2 gap-3">
           {[
@@ -470,16 +470,16 @@ function DesktopInvite({ user }: { user: any }) {
             { title: "Slow and Steady Advanced", desc: "Unlock even more advanced rewards", progress: `${ordersCompleted} / 3`, img: couponSave5 },
             { title: "Big Spender", desc: "Invited users reach spending milestones", progress: `$${totalSpending.toFixed(0)} / $500`, img: couponSave5 },
           ].map((t, i) => (
-            <div key={i} className="border border-gray-200 rounded-2xl p-4 bg-white relative overflow-hidden">
+            <div key={i} className="border border-gray-200 p-4 bg-white relative overflow-hidden">
               <div className="flex items-start gap-3">
-                <div className="flex-1"><p className="font-bold text-gray-900 text-sm">{t.title}</p><p className="text-gray-500 text-xs mt-0.5">{t.desc}</p><button onClick={() => toast.info("Complete tasks to earn coupon rewards!")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5 rounded-xl">Claim</button></div>
+                <div className="flex-1"><p className="font-bold text-gray-900 text-sm">{t.title}</p><p className="text-gray-500 text-xs mt-0.5">{t.desc}</p><button onClick={() => toast.info("Complete tasks to earn coupon rewards!")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5">Claim</button></div>
                 <img src={t.img} alt="reward" className="w-12 h-12 object-contain flex-shrink-0" />
               </div>
               <div className="mt-3 pt-3 border-t border-gray-100 flex items-center justify-between"><span className="text-xs text-gray-500">Progress: {t.progress}</span><ChevronRight size={14} className="text-gray-400" /></div>
             </div>
           ))}
         </div>
-        <button onClick={() => navigate("/invite")} className="w-full mt-4 py-3 text-sm font-semibold text-gray-500 bg-white rounded-xl hover:bg-gray-100 border border-gray-200">View Full Invite Page</button>
+        <button onClick={() => navigate("/invite")} className="w-full mt-4 py-3 text-sm font-semibold text-gray-500 bg-white hover:bg-gray-100 border border-gray-200">View Full Invite Page</button>
       </div>
     </div>
   );
@@ -523,30 +523,30 @@ function DesktopCoupons({ user }: { user: any }) {
       <div className="flex items-center justify-between mb-5">
         <h2 className="text-xl font-bold text-gray-900">Coupon ({activeCoupons.length})</h2>
         <div className="flex gap-2">
-          <input type="text" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Please enter the redeem code." className="border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-yellow-400 w-56" />
-          <button onClick={handleRedeem} disabled={!redeemCode.trim() || isRedeeming} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-2.5 rounded-xl text-sm disabled:opacity-50 transition-colors">{isRedeeming ? <Loader2 size={16} className="animate-spin" /> : "Redeem"}</button>
+          <input type="text" value={redeemCode} onChange={(e) => setRedeemCode(e.target.value.toUpperCase())} placeholder="Please enter the redeem code." className="border border-gray-200 px-4 py-2.5 text-sm text-gray-700 outline-none focus:border-yellow-400 w-56" />
+          <button onClick={handleRedeem} disabled={!redeemCode.trim() || isRedeeming} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-2.5 text-sm disabled:opacity-50 transition-colors">{isRedeeming ? <Loader2 size={16} className="animate-spin" /> : "Redeem"}</button>
         </div>
       </div>
       {isLoading ? (
-        <div className="grid grid-cols-2 gap-4">{[1,2,3,4].map(i => <div key={i} className="bg-gray-100 rounded-2xl h-32 animate-pulse" />)}</div>
+        <div className="grid grid-cols-2 gap-4">{[1,2,3,4].map(i => <div key={i} className="bg-gray-100 h-32 animate-pulse" />)}</div>
       ) : activeCoupons.length === 0 ? (
-        <div className="text-center py-16"><Tag size={48} className="text-gray-200 mx-auto mb-4" /><p className="text-gray-500">No coupons yet</p><button onClick={() => navigate("/invite")} className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 rounded-xl text-sm">Invite Friends to Earn Coupons</button></div>
+        <div className="text-center py-16"><Tag size={48} className="text-gray-200 mx-auto mb-4" /><p className="text-gray-500">No coupons yet</p><button onClick={() => navigate("/invite")} className="mt-4 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 text-sm">Invite Friends to Earn Coupons</button></div>
       ) : (
         <div className="grid grid-cols-2 gap-4">
           {activeCoupons.map(c => {
             const days = daysUntil(c.expires_at);
             const img = c.discount_value >= 10 ? coupon10off : coupon6off;
             return (
-              <div key={c.id} className="bg-white border border-orange-100 rounded-2xl overflow-hidden shadow-sm">
+              <div key={c.id} className="bg-white border border-orange-100 overflow-hidden shadow-sm">
                 <div className="bg-gradient-to-r from-orange-50 to-yellow-50 p-4 flex items-center gap-3 relative overflow-hidden">
                   <div className="absolute right-2 top-0 bottom-0 w-20 opacity-20 flex items-center"><img src={img} alt="" className="w-full object-contain" /></div>
-                  <img src={img} alt="" className="w-16 h-16 rounded-xl object-cover flex-shrink-0" />
+                  <img src={img} alt="" className="w-16 h-16 object-cover flex-shrink-0" />
                   <div><p className="text-orange-500 font-black text-xl">{c.discount_value}% OFF</p>{c.max_discount && <p className="text-gray-500 text-xs">(Up to ${c.max_discount.toFixed(2)})</p>}<p className="text-gray-700 text-xs mt-0.5">{c.description || "Reseller Exclusive Coupon"}</p></div>
                 </div>
                 <div className="border-t border-dashed border-orange-100 mx-4" />
                 <div className="px-4 py-3 flex items-center justify-between">
                   <p className="text-gray-400 text-sm">Valid for orders over ${c.min_order?.toFixed(2) || "1.00"}</p>
-                  <button onClick={() => { sessionStorage.setItem("pending_coupon", JSON.stringify(c)); toast.success("Coupon selected for checkout!"); navigate("/"); }} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-xs px-4 py-2 rounded-xl">Use</button>
+                  <button onClick={() => { sessionStorage.setItem("pending_coupon", JSON.stringify(c)); toast.success("Coupon selected for checkout!"); navigate("/"); }} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-xs px-4 py-2">Use</button>
                 </div>
               </div>
             );
@@ -554,7 +554,7 @@ function DesktopCoupons({ user }: { user: any }) {
         </div>
       )}
       {coupons.filter(c => c.is_used || daysUntil(c.expires_at) === 0).length > 0 && (
-        <button onClick={() => navigate("/coupons")} className="w-full mt-4 py-3 text-sm font-semibold text-gray-500 bg-gray-50 rounded-xl hover:bg-gray-100 border border-gray-200">View All Coupons (incl. used/expired)</button>
+        <button onClick={() => navigate("/coupons")} className="w-full mt-4 py-3 text-sm font-semibold text-gray-500 bg-gray-50 hover:bg-gray-100 border border-gray-200">View All Coupons (incl. used/expired)</button>
       )}
     </div>
   );
@@ -581,19 +581,19 @@ function DesktopAffiliate({ user }: { user: any }) {
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-bold text-gray-900">Affiliate Program</h2>
-        <button onClick={() => navigate("/affiliate")} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-sm px-5 py-2.5 rounded-xl">
+        <button onClick={() => navigate("/affiliate")} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold text-sm px-5 py-2.5">
           Manage Store
         </button>
       </div>
 
       {/* Hero banner */}
-      <div className="bg-gradient-to-r from-yellow-400 to-orange-400 rounded-2xl p-6 mb-5 relative overflow-hidden">
+      <div className="bg-gradient-to-r from-yellow-400 to-orange-400 p-6 mb-5 relative overflow-hidden">
         <div className="absolute right-0 top-0 bottom-0 w-40 opacity-10">
           <DollarSign size={160} className="text-black" />
         </div>
         <h3 className="font-black text-gray-900 text-lg mb-1">Earn up to 10% Commission</h3>
         <p className="text-gray-800 text-sm mb-4">Create your affiliate store, share your link, and earn money every time someone buys through your store.</p>
-        <button onClick={() => navigate("/affiliate")} className="bg-black text-yellow-400 font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-gray-900 transition-colors">
+        <button onClick={() => navigate("/affiliate")} className="bg-black text-yellow-400 font-bold text-sm px-5 py-2.5 hover:bg-gray-900 transition-colors">
           Open My Store
         </button>
       </div>
@@ -601,7 +601,7 @@ function DesktopAffiliate({ user }: { user: any }) {
       {/* Stats */}
       {isLoading ? (
         <div className="grid grid-cols-3 gap-4 mb-5">
-          {[1,2,3].map(i => <div key={i} className="bg-gray-100 rounded-2xl h-24 animate-pulse" />)}
+          {[1,2,3].map(i => <div key={i} className="bg-gray-100 h-24 animate-pulse" />)}
         </div>
       ) : (
         <div className="grid grid-cols-3 gap-4 mb-5">
@@ -610,7 +610,7 @@ function DesktopAffiliate({ user }: { user: any }) {
             { label: "30-Day Income", value: `$${commission.toFixed(2)}`, suffix: "" },
             { label: "Commission Rate", value: "Up to 10", suffix: "%" },
           ].map((stat) => (
-            <div key={stat.label} className="bg-gray-50 rounded-2xl p-5 text-center border border-gray-100">
+            <div key={stat.label} className="bg-gray-50 p-5 text-center border border-gray-100">
               <p className="text-2xl font-black text-orange-500">{stat.value}<span className="text-lg">{stat.suffix}</span></p>
               <p className="text-xs text-gray-500 mt-1">{stat.label}</p>
             </div>
@@ -619,7 +619,7 @@ function DesktopAffiliate({ user }: { user: any }) {
       )}
 
       {/* How it works */}
-      <div className="bg-gray-50 rounded-2xl p-5 mb-5">
+      <div className="bg-gray-50 p-5 mb-5">
         <div className="flex items-center gap-2 mb-4"><div className="w-1 h-5 bg-yellow-400 rounded-full" /><h3 className="font-bold text-gray-900">How it works</h3></div>
         <div className="grid grid-cols-3 gap-4">
           {[
@@ -638,7 +638,7 @@ function DesktopAffiliate({ user }: { user: any }) {
 
       {/* Store info if exists */}
       {store && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5">
+        <div className="bg-white border border-gray-100 p-5">
           <div className="flex items-center gap-3 mb-3">
             {store.avatar_url ? (
               <img src={store.avatar_url} alt="store" className="w-12 h-12 rounded-full object-cover" />
@@ -650,7 +650,7 @@ function DesktopAffiliate({ user }: { user: any }) {
               <p className="text-xs text-gray-500 font-mono">{store.store_link}</p>
             </div>
           </div>
-          <button onClick={() => navigate("/affiliate")} className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold text-sm py-3 rounded-xl border border-gray-200 transition-colors">
+          <button onClick={() => navigate("/affiliate")} className="w-full bg-gray-50 hover:bg-gray-100 text-gray-700 font-semibold text-sm py-3 border border-gray-200 transition-colors">
             Edit Store Settings
           </button>
         </div>
@@ -659,7 +659,7 @@ function DesktopAffiliate({ user }: { user: any }) {
       {!store && !isLoading && (
         <div className="text-center py-8">
           <p className="text-gray-500 mb-4">You don't have an affiliate store yet.</p>
-          <button onClick={() => navigate("/affiliate")} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 py-3 rounded-xl">
+          <button onClick={() => navigate("/affiliate")} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-8 py-3">
             Create My Store
           </button>
         </div>
@@ -690,7 +690,6 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
 
     const merged: any[] = [];
 
-    // Analytics events → login, page_view, etc.
     for (const ev of analyticsRes.data || []) {
       const typeMap: Record<string, { label: string; icon: string; color: string }> = {
         daily_login: { label: "Daily login bonus earned (+2 pts)", icon: "🎯", color: "text-green-600 bg-green-50" },
@@ -707,7 +706,6 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
       merged.push({ id: "ev_" + ev.id, ts: ev.created_at, label: meta.label, icon: meta.icon, color: meta.color, type: "event" });
     }
 
-    // Wallet transactions
     for (const tx of walletRes.data || []) {
       const isCredit = ["points_earned", "top_up", "refund", "bonus"].includes(tx.type);
       merged.push({
@@ -721,7 +719,6 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
       });
     }
 
-    // Orders
     for (const order of ordersRes.data || []) {
       merged.push({
         id: "ord_" + order.id,
@@ -735,7 +732,6 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
       });
     }
 
-    // Coupon events
     for (const c of couponsRes.data || []) {
       merged.push({
         id: "cp_" + c.id,
@@ -747,7 +743,6 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
       });
     }
 
-    // Sort all by timestamp descending
     merged.sort((a, b) => new Date(b.ts).getTime() - new Date(a.ts).getTime());
     setActivities(merged.slice(0, 30));
     setLoading(false);
@@ -765,7 +760,7 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
     return (
       <div className="space-y-3">
         {Array.from({ length: 5 }).map((_, i) => (
-          <div key={i} className="bg-white rounded-2xl p-4 flex items-center gap-3 animate-pulse shadow-sm">
+          <div key={i} className="bg-white p-4 flex items-center gap-3 animate-pulse shadow-sm">
             <div className="w-10 h-10 bg-gray-100 rounded-full flex-shrink-0" />
             <div className="flex-1"><div className="h-3 bg-gray-100 rounded w-3/4 mb-2" /><div className="h-2.5 bg-gray-100 rounded w-1/3" /></div>
           </div>
@@ -780,7 +775,7 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
         <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">📋</div>
         <p className="text-gray-500 font-medium">No activity yet</p>
         <p className="text-gray-400 text-sm mt-1">Your actions like logins, orders, and wallet changes will appear here.</p>
-        <button onClick={() => navigate("/")} className="mt-5 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 rounded-xl text-sm">Browse Games</button>
+        <button onClick={() => navigate("/")} className="mt-5 bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-6 py-2.5 text-sm">Browse Games</button>
       </div>
     );
   }
@@ -795,7 +790,7 @@ function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: stri
         <button
           key={act.id}
           onClick={() => act.path && navigate(act.path)}
-          className={`w-full bg-white rounded-2xl p-3.5 flex items-center gap-3 shadow-sm text-left ${
+          className={`w-full bg-white p-3.5 flex items-center gap-3 shadow-sm text-left ${
             act.path ? "hover:shadow-md transition-shadow cursor-pointer" : "cursor-default"
           }`}
         >
@@ -965,9 +960,9 @@ export function AccountPage() {
       </div>
       <div className="max-w-[1280px] mx-auto px-6" style={{ height: "calc(100vh - 110px)" }}>
         <div className="flex gap-6 h-full">
-          {/* Sidebar — fixed height, no scroll */}
+          {/* Sidebar */}
           <div className="w-72 flex-shrink-0 overflow-hidden" style={{ position: "sticky", top: 0, alignSelf: "flex-start", maxHeight: "calc(100vh - 110px)", overflowY: "auto", scrollbarWidth: "none" } as React.CSSProperties}>
-            <div className="bg-white rounded-2xl shadow-sm p-5 mb-4">
+            <div className="bg-white shadow-sm p-5 mb-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
                   {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-14 h-14 rounded-full object-cover" /> : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>}
@@ -990,7 +985,7 @@ export function AccountPage() {
                 </button>
               </div>
             </div>
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white shadow-sm overflow-hidden">
               {sidebarItems.map((item) => (
                 <button key={item.key} onClick={() => {
                   if (item.key === "helpCenter") { navigate("/support"); return; }
@@ -1010,9 +1005,9 @@ export function AccountPage() {
             </div>
           </div>
 
-          {/* Content — only this side scrolls, scrollbar hidden */}
+          {/* Content */}
           <div className="flex-1 overflow-y-auto pb-12" style={{ scrollbarWidth: "none", msOverflowStyle: "none" } as React.CSSProperties}>
-            <div className="bg-white rounded-2xl shadow-sm p-8">
+            <div className="bg-white shadow-sm p-8">
               {desktopSection === "settings" && (
                 <>
                   <h2 className="text-xl font-bold text-gray-900 mb-6">{t("accountInfo")}</h2>
@@ -1021,8 +1016,8 @@ export function AccountPage() {
                       { label: "Avatar", render: () => <div className="relative group cursor-pointer ml-auto mr-4" onClick={() => avatarInputRef.current?.click()}>{isUploadingAvatar ? <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center"><Loader2 size={18} className="animate-spin text-gray-400" /></div> : avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-12 h-12 rounded-full object-cover" /> : <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-lg font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>}<div className="absolute inset-0 bg-black/40 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"><Camera size={14} className="text-white" /></div></div> },
                       { label: "Nickname", render: () => isEditingNickname ? (
                           <div className="flex items-center gap-2 flex-1">
-                            <input ref={nicknameInputRef} type="text" value={nicknameInput} onChange={(e) => setNicknameInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNickname(); if (e.key === "Escape") setIsEditingNickname(false); }} className="flex-1 border border-yellow-400 rounded-lg px-3 py-1.5 text-sm text-gray-800 outline-none" autoFocus />
-                            <button onClick={saveNickname} className="text-xs font-bold bg-yellow-400 hover:bg-yellow-300 text-black px-3 py-1.5 rounded-lg">Save</button>
+                            <input ref={nicknameInputRef} type="text" value={nicknameInput} onChange={(e) => setNicknameInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNickname(); if (e.key === "Escape") setIsEditingNickname(false); }} className="flex-1 border border-yellow-400 px-3 py-1.5 text-sm text-gray-800 outline-none" autoFocus />
+                            <button onClick={saveNickname} className="text-xs font-bold bg-yellow-400 hover:bg-yellow-300 text-black px-3 py-1.5">Save</button>
                             <button onClick={() => setIsEditingNickname(false)} className="text-xs text-gray-400 hover:text-gray-600 px-2 py-1.5">Cancel</button>
                           </div>
                         ) : (
@@ -1050,13 +1045,13 @@ export function AccountPage() {
                     <div className="space-y-4">
                       <div className="flex items-center gap-6 py-2">
                         <span className="w-36 text-sm text-gray-500 flex-shrink-0">Display Currency</span>
-                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
+                        <select value={currency} onChange={e => setCurrency(e.target.value)} className="border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
                           {["USD","EUR","GBP","IDR","MYR","SGD","THB","VND","PHP","BRL","AUD","CAD","JPY","KRW"].map(c => <option key={c} value={c}>{c}</option>)}
                         </select>
                       </div>
                       <div className="flex items-center gap-6 py-2">
                         <span className="w-36 text-sm text-gray-500 flex-shrink-0">Language</span>
-                        <select value={language} onChange={e => setLanguage(e.target.value as any)} className="border border-gray-200 rounded-lg px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
+                        <select value={language} onChange={e => setLanguage(e.target.value as any)} className="border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
                           {[{code:"en",label:"English"},{code:"es",label:"Español"},{code:"fr",label:"Français"},{code:"id",label:"Bahasa Indonesia"},{code:"ms",label:"Bahasa Melayu"},{code:"ja",label:"日本語"},{code:"zh-TW",label:"中文(繁體)"},{code:"ko",label:"한국어"},{code:"th",label:"ภาษาไทย"},{code:"vi",label:"Tiếng Việt"},{code:"ar",label:"العربية"}].map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
                         </select>
                       </div>
@@ -1075,7 +1070,7 @@ export function AccountPage() {
                       {orders.map(order => {
                         const si = ORDER_STATE_MAP[order.state] || ORDER_STATE_MAP[1];
                         return (
-                          <div key={order.id} className="flex items-center gap-4 p-4 border border-gray-100 rounded-xl hover:bg-gray-50 transition-colors">
+                          <div key={order.id} className="flex items-center gap-4 p-4 border border-gray-100 hover:bg-gray-50 transition-colors">
                             <div className="flex-1"><p className="font-semibold text-gray-900">{order.game_name}</p><p className="text-sm text-gray-500">{order.sku_name}</p><p className="text-xs text-gray-400 font-mono mt-1">{order.order_id}</p></div>
                             <span className="text-[10px] font-black bg-yellow-400 text-black px-1.5 py-0.5 rounded-sm border border-yellow-500">V{vipLevel}</span>
                             <span className={`tag-badge ${si.color} ${si.bg}`}>{si.label}</span>
@@ -1096,14 +1091,14 @@ export function AccountPage() {
 
             <div className="flex gap-4 mt-4">
               {user?.role === "admin" && (
-                <button onClick={() => navigate("/secure-dashboard-92x2011")} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl py-3 font-bold flex items-center justify-center gap-2">
+                <button onClick={() => navigate("/secure-dashboard-92x2011")} className="flex-1 bg-gradient-to-r from-purple-600 to-pink-600 text-white py-3 font-bold flex items-center justify-center gap-2">
                   <LayoutDashboard size={18} />{t("adminDashboard")}
                 </button>
               )}
-              <button onClick={() => navigate("/points")} className="flex-1 bg-yellow-400 text-black border border-yellow-400 rounded-xl py-3 font-bold flex items-center justify-center gap-2 hover:bg-yellow-300">
+              <button onClick={() => navigate("/points")} className="flex-1 bg-yellow-400 text-black border border-yellow-400 py-3 font-bold flex items-center justify-center gap-2 hover:bg-yellow-300">
                 <Star size={18} /> Points
               </button>
-              <button onClick={handleLogout} className="flex-1 bg-white text-red-500 border border-red-200 rounded-xl py-3 font-bold flex items-center justify-center gap-2 hover:bg-red-50">
+              <button onClick={handleLogout} className="flex-1 bg-white text-red-500 border border-red-200 py-3 font-bold flex items-center justify-center gap-2 hover:bg-red-50">
                 <LogOut size={18} />{t("logout")}
               </button>
             </div>
@@ -1127,13 +1122,13 @@ export function AccountPage() {
 
         {activeTab === "overview" && (
           <div className="space-y-4">
-            <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 rounded-3xl p-5 text-white relative overflow-hidden">
+            <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 p-5 text-white relative overflow-hidden">
               <div className="flex items-center gap-3 mb-5 mt-1">
-                <div className="w-14 h-14 rounded-2xl overflow-hidden border-2 border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-white">{user?.nickname?.[0]?.toUpperCase()}</span>}</div>
+                <div className="w-14 h-14 overflow-hidden border-2 border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-white">{user?.nickname?.[0]?.toUpperCase()}</span>}</div>
                 <div>
                   <h2 className="text-lg font-bold">{user?.nickname}</h2>
                   <p className="text-white/70 text-sm">ID: {user?.id?.slice(-12)}</p>
-                  <button onClick={() => navigate("/vip")} className="bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full mt-1 inline-flex items-center gap-1 hover:bg-white/30">
+                  <button onClick={() => navigate("/vip")} className="bg-white/20 text-white text-xs font-semibold px-2.5 py-0.5 mt-1 inline-flex items-center gap-1 hover:bg-white/30">
                     Check VIP Benefits <ChevronRight size={10} />
                   </button>
                 </div>
@@ -1144,7 +1139,7 @@ export function AccountPage() {
                   { label: t("points"), value: user?.points ?? 0, path: "/points" },
                   { label: t("coupons"), value: `${user?.coupons ?? 0}`, path: "/coupons" },
                 ].map(item => (
-                  <button key={item.label} onClick={() => (item as any).path && navigate((item as any).path)} className="bg-white/15 backdrop-blur-sm rounded-2xl p-3 text-center hover:bg-white/25 transition-colors">
+                  <button key={item.label} onClick={() => (item as any).path && navigate((item as any).path)} className="bg-white/15 backdrop-blur-sm p-3 text-center hover:bg-white/25 transition-colors">
                     <p className="text-lg font-bold">{item.value}</p><p className="text-white/70 text-xs">{item.label}</p>
                   </button>
                 ))}
@@ -1158,14 +1153,14 @@ export function AccountPage() {
                 { icon: Key, label: "Passkeys", value: "Manage passkeys", path: null, onTap: handlePasskeyAction },
                 { icon: Users, label: "Referrals", value: "Earn 10%", path: null },
               ].map(item => (
-                <button key={item.label} onClick={() => { if ((item as any).onTap) { (item as any).onTap(); return; } (item as any).path && navigate((item as any).path); }} className="bg-white rounded-2xl p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-all text-left">
+                <button key={item.label} onClick={() => { if ((item as any).onTap) { (item as any).onTap(); return; } (item as any).path && navigate((item as any).path); }} className="bg-white p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition-all text-left">
                   <item.icon size={22} className="text-blue-500 mt-0.5 flex-shrink-0" />
                   <div><p className="font-bold text-gray-900 text-sm">{item.label}</p><p className="text-xs text-gray-500 mt-0.5">{item.value}</p></div>
                 </button>
               ))}
             </div>
 
-            <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+            <div className="bg-white shadow-sm overflow-hidden">
               {[
                 { icon: Settings, label: t("settings"), path: null, onTap: () => setActiveTab("profile") },
                 { icon: Globe, label: t("languageAndCurrency"), sub: `${currency} | ${language.toUpperCase().slice(0,2)}`, path: "/language-currency" },
@@ -1187,10 +1182,10 @@ export function AccountPage() {
             </div>
 
             {user?.role === "admin" && (
-              <button onClick={() => navigate("/secure-dashboard-92x2011")} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-2xl py-4 font-bold flex items-center justify-center gap-2 shadow-md"><LayoutDashboard size={18} />{t("adminDashboard")}</button>
+              <button onClick={() => navigate("/secure-dashboard-92x2011")} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 font-bold flex items-center justify-center gap-2 shadow-md"><LayoutDashboard size={18} />{t("adminDashboard")}</button>
             )}
 
-            <button onClick={handleLogout} className="w-full py-4 border border-gray-200 bg-white rounded-2xl text-gray-700 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50">
+            <button onClick={handleLogout} className="w-full py-4 border border-gray-200 bg-white text-gray-700 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50">
               <LogOut size={18} className="text-gray-500" /> Log out
             </button>
           </div>
@@ -1203,7 +1198,7 @@ export function AccountPage() {
             ) : orders.map(order => {
               const si = ORDER_STATE_MAP[order.state] || ORDER_STATE_MAP[1];
               return (
-                <div key={order.id} className="bg-white rounded-2xl p-4 shadow-sm">
+                <div key={order.id} className="bg-white p-4 shadow-sm">
                   <div className="flex items-start justify-between mb-2">
                     <div><h3 className="font-bold text-gray-900 text-sm">{order.game_name}</h3><p className="text-xs text-gray-500">{order.sku_name}</p></div>
                     <div className="flex items-center gap-2">
@@ -1219,7 +1214,7 @@ export function AccountPage() {
         )}
 
         {activeTab === "profile" && (
-          <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+          <div className="bg-white shadow-sm overflow-hidden">
             <div className="flex items-center gap-3 px-4 py-4 border-b border-gray-100">
               <button onClick={() => setActiveTab("overview")}><ArrowLeft size={20} className="text-gray-700" /></button>
               <h2 className="font-bold text-gray-900 flex-1 text-center">Account Information</h2>
@@ -1238,8 +1233,8 @@ export function AccountPage() {
               <span className="text-sm font-medium text-gray-800">Nickname</span>
               {isEditingNickname ? (
                 <div className="flex items-center gap-2 flex-1 ml-4">
-                  <input type="text" value={nicknameInput} onChange={(e) => setNicknameInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNickname(); if (e.key === "Escape") setIsEditingNickname(false); }} className="flex-1 border border-yellow-400 rounded-lg px-3 py-1.5 text-sm text-gray-800 outline-none" autoFocus />
-                  <button onClick={saveNickname} className="text-xs font-bold bg-yellow-400 text-black px-3 py-1.5 rounded-lg">Save</button>
+                  <input type="text" value={nicknameInput} onChange={(e) => setNicknameInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") saveNickname(); if (e.key === "Escape") setIsEditingNickname(false); }} className="flex-1 border border-yellow-400 px-3 py-1.5 text-sm text-gray-800 outline-none" autoFocus />
+                  <button onClick={saveNickname} className="text-xs font-bold bg-yellow-400 text-black px-3 py-1.5">Save</button>
                   <button onClick={() => setIsEditingNickname(false)} className="text-xs text-gray-400 px-2 py-1.5"><X size={14} /></button>
                 </div>
               ) : (
@@ -1355,4 +1350,3 @@ export function AccountPage() {
     </>
   );
 }
-hello ai make all page square remove border only square.
