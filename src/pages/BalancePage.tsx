@@ -49,9 +49,9 @@ const PAYMENT_METHODS = [
     label: "JCB / Amex / Discover",
     icon: (
       <div className="flex items-center gap-1">
-        <div className="w-8 h-5 bg-[#003087] rounded text-white text-[8px] font-bold flex items-center justify-center">JCB</div>
-        <div className="w-8 h-5 bg-[#2E77BC] rounded text-white text-[8px] font-bold flex items-center justify-center">AMEX</div>
-        <div className="w-8 h-5 bg-orange-500 rounded text-white text-[8px] font-bold flex items-center justify-center">DISC</div>
+        <div className="w-8 h-5 bg-[#003087] text-white text-[8px] font-bold flex items-center justify-center">JCB</div>
+        <div className="w-8 h-5 bg-[#2E77BC] text-white text-[8px] font-bold flex items-center justify-center">AMEX</div>
+        <div className="w-8 h-5 bg-orange-500 text-white text-[8px] font-bold flex items-center justify-center">DISC</div>
       </div>
     ),
   },
@@ -66,7 +66,7 @@ const PAYMENT_METHODS = [
     icon: (
       <div className="flex items-center gap-1">
         {["#F7931A", "#627EEA", "#26A17B", "#00A3FF"].map((c, i) => (
-          <div key={i} className="w-5 h-5 rounded-full" style={{ backgroundColor: c }} />
+          <div key={i} className="w-5 h-5" style={{ backgroundColor: c }} />
         ))}
       </div>
     ),
@@ -133,7 +133,7 @@ function TabContent({
         <div className="space-y-5">
           <div>
             <h3 className="font-bold text-gray-900 mb-3">Top-up Amount</h3>
-            <div className="border border-gray-300 rounded-xl px-4 py-3 flex items-center gap-2 mb-3">
+            <div className="border border-gray-300 px-4 py-3 flex items-center gap-2 mb-3">
               <span className="text-gray-400 font-semibold">$</span>
               <input
                 type="number"
@@ -147,7 +147,7 @@ function TabContent({
                 <button
                   key={p}
                   onClick={() => setTopupAmount(p)}
-                  className={`flex-1 border rounded-full py-2 text-sm font-semibold transition-all ${
+                  className={`flex-1 border py-2 text-sm font-semibold transition-all ${
                     topupAmount === p ? "border-yellow-400 bg-yellow-50 text-yellow-700" : "border-gray-300 text-gray-600"
                   }`}
                 >
@@ -164,12 +164,12 @@ function TabContent({
                 <button
                   key={method.id}
                   onClick={() => setSelectedPayment(method.id)}
-                  className={`border-2 rounded-xl py-4 px-3 flex items-center justify-center relative transition-all ${
+                  className={`border-2 py-4 px-3 flex items-center justify-center relative transition-all ${
                     selectedPayment === method.id ? "border-yellow-400 bg-yellow-50" : "border-gray-200"
                   }`}
                 >
                   {selectedPayment === method.id && (
-                    <div className="absolute top-1 right-1 w-4 h-4 bg-yellow-400 rounded-full flex items-center justify-center">
+                    <div className="absolute top-1 right-1 w-4 h-4 bg-yellow-400 flex items-center justify-center">
                       <Check size={10} className="text-black" />
                     </div>
                   )}
@@ -184,17 +184,17 @@ function TabContent({
             {bankCards.length > 0 ? (
               <div className="space-y-2">
                 {bankCards.map((card) => (
-                  <div key={card.id} className="border border-gray-200 rounded-xl px-4 py-3 flex items-center gap-3">
+                  <div key={card.id} className="border border-gray-200 px-4 py-3 flex items-center gap-3">
                     {getCardLogo(card.card_type)}
                     <span className="text-sm font-semibold text-gray-700">{card.card_number_masked}</span>
-                    {card.is_default && <span className="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-semibold">Default</span>}
+                    {card.is_default && <span className="ml-auto text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 font-semibold">Default</span>}
                   </div>
                 ))}
               </div>
             ) : (
               <button
                 onClick={onAddCard}
-                className="w-full border border-dashed border-gray-300 rounded-xl py-4 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
+                className="w-full border border-dashed border-gray-300 py-4 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
               >
                 <Plus size={18} />
                 <span className="font-semibold">Add a bank card</span>
@@ -202,7 +202,7 @@ function TabContent({
             )}
           </div>
 
-          <div className="bg-yellow-50 border border-yellow-200 rounded-xl px-4 py-3">
+          <div className="bg-yellow-50 border border-yellow-200 px-4 py-3">
             <p className="text-xs text-gray-600 leading-relaxed">
               Payment processing fees: <span className="text-orange-500 font-semibold">3.5% + $0.15</span>, Actual payment amount:{" "}
               <span className="text-orange-500 font-semibold">${totalAmount.toFixed(2)}, processing fee: ${processingFee.toFixed(2)}</span>.
@@ -212,7 +212,7 @@ function TabContent({
 
           <button
             onClick={() => toast.info("Balance top-up coming soon. Please purchase directly from the game catalog.")}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition-colors"
+            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 transition-colors"
           >
             Top Up
           </button>
@@ -228,7 +228,7 @@ function TabContent({
           </div>
           <div>
             <h3 className="font-bold text-gray-900 mb-3">Amount</h3>
-            <div className="border border-gray-300 rounded-xl px-4 py-3 flex items-center gap-2">
+            <div className="border border-gray-300 px-4 py-3 flex items-center gap-2">
               <span className="text-gray-400 font-semibold">$</span>
               <input
                 type="number"
@@ -246,19 +246,19 @@ function TabContent({
                 <button
                   key={m.id}
                   onClick={() => setSelectedWithdrawMethod(m.id)}
-                  className={`w-full border-2 rounded-xl px-4 py-3.5 flex items-center justify-between transition-all ${
+                  className={`w-full border-2 px-4 py-3.5 flex items-center justify-between transition-all ${
                     selectedWithdrawMethod === m.id ? "border-yellow-400 bg-yellow-50" : "border-gray-200"
                   }`}
                 >
                   <span className="font-semibold text-gray-800 text-sm">{m.label}</span>
                   <div className="flex items-center gap-1">
                     <span className="text-xs text-gray-400">Powered by</span>
-                    <div className={`w-5 h-5 rounded-full ${m.powered === "Payoneer" ? "bg-orange-500" : "bg-red-500"} flex items-center justify-center`}>
+                    <div className={`w-5 h-5 ${m.powered === "Payoneer" ? "bg-orange-500" : "bg-red-500"} flex items-center justify-center`}>
                       <span className="text-white text-[7px] font-bold">P</span>
                     </div>
                     <span className="text-xs font-semibold text-gray-600">{m.powered}</span>
                     {selectedWithdrawMethod === m.id && (
-                      <div className="w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center ml-2">
+                      <div className="w-5 h-5 bg-yellow-400 flex items-center justify-center ml-2">
                         <Check size={10} className="text-black" />
                       </div>
                     )}
@@ -271,7 +271,7 @@ function TabContent({
             <h3 className="font-bold text-gray-900 mb-3">Account</h3>
             <button
               onClick={() => toast.info("Please link a Payoneer or Airwallex account first.")}
-              className="w-full border border-dashed border-gray-300 rounded-xl py-4 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
+              className="w-full border border-dashed border-gray-300 py-4 flex items-center justify-center gap-2 text-gray-500 hover:bg-gray-50 transition-colors"
             >
               <Plus size={18} />
               <span className="font-semibold">Add A Payoneer Account</span>
@@ -280,7 +280,7 @@ function TabContent({
           <button
             disabled={!withdrawAmount || parseFloat(withdrawAmount) <= 0}
             onClick={() => toast.info("Withdrawal request submitted. Processing takes 3-5 business days.")}
-            className={`w-full font-bold py-4 rounded-2xl transition-colors ${
+            className={`w-full font-bold py-4 transition-colors ${
               withdrawAmount && parseFloat(withdrawAmount) > 0
                 ? "bg-yellow-400 hover:bg-yellow-300 text-black"
                 : "bg-yellow-200 text-yellow-600 cursor-not-allowed"
@@ -298,7 +298,7 @@ function TabContent({
             <select
               value={cashflowFilter}
               onChange={(e) => setCashflowFilter(e.target.value)}
-              className="border border-gray-300 rounded-xl px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white outline-none"
+              className="border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 bg-white outline-none"
             >
               {["All", "Top Up", "Withdraw", "Purchase", "Refund"].map((f) => (
                 <option key={f}>{f}</option>
@@ -307,7 +307,7 @@ function TabContent({
           </div>
           {transactions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-16">
-              <div className="w-24 h-24 bg-gray-100 rounded-2xl flex items-center justify-center mb-4">
+              <div className="w-24 h-24 bg-gray-100 flex items-center justify-center mb-4">
                 <svg viewBox="0 0 80 80" className="w-16 h-16">
                   <rect x="10" y="5" width="60" height="70" rx="6" fill="#e5e7eb"/>
                   <rect x="20" y="18" width="40" height="4" rx="2" fill="#d1d5db"/>
@@ -460,37 +460,39 @@ export function BalancePage() {
         </div>
         <div className="max-w-[1280px] mx-auto px-6 pb-12">
           <div className="flex gap-6">
-            {/* Sidebar */}
-            <div className="w-72 flex-shrink-0">
-              <div className="bg-white rounded-2xl shadow-sm p-5 mb-4">
-                <div className="flex items-center gap-3">
+            {/* Sidebar — AccountPage style */}
+            <div className="w-72 flex-shrink-0 sticky top-6 self-start h-fit">
+              <div className="bg-white shadow-sm p-5 mb-4">
+                <div className="flex items-center gap-3 mb-4">
                   <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
                     {user?.nickname?.[0]?.toUpperCase()}
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{user?.email}</p>
+                    <button onClick={() => navigate("/vip")} className="text-xs text-yellow-600 font-medium flex items-center gap-1 hover:underline">Check VIP Benefits <ChevronRight size={12} /></button>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
-                  <div>
-                    <p className="text-lg font-black text-gray-900">${balance.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400">Balance</p>
-                  </div>
+                <div className="flex items-center gap-4 py-3 border-y border-gray-100">
+                  <button onClick={() => navigate("/balance")} className="hover:opacity-80 transition-opacity">
+                    <p className="text-lg font-bold text-gray-900">${balance.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Balance</p>
+                  </button>
                   <div className="h-8 w-px bg-gray-200" />
-                  <div>
-                    <p className="text-lg font-black text-gray-900">{user?.points ?? 0}</p>
-                    <p className="text-xs text-gray-400">Points</p>
-                  </div>
+                  <button onClick={() => navigate("/points")} className="hover:opacity-80 transition-opacity">
+                    <p className="text-lg font-bold text-gray-900 flex items-center gap-1"><span className="text-yellow-500">●</span> {user?.points ?? 0}</p>
+                    <p className="text-xs text-gray-500">Points</p>
+                  </button>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white shadow-sm overflow-hidden">
                 {[
-                  { label: "Account Settings", path: "/account", active: false },
                   { label: "Buy History", path: "/account", active: false },
-                  { label: "Coupons", path: "/coupons", active: false },
+                  { label: "Coupon", path: "/coupons", active: false },
+                  { label: "Settings", path: "/account", active: false },
+                  { label: "Help Center", path: "/support", active: false },
+                  { label: "Feedback", path: "/feedback", active: false },
                   { label: "Balance", path: "/balance", active: true },
-                  { label: "Invite Friends", path: "/invite", active: false },
+                  { label: "Invite for Coupons", path: "/invite", active: false },
                   { label: "Affiliate Program", path: "/affiliate", active: false, highlight: true },
                 ].map((item) => (
                   <button
@@ -513,7 +515,7 @@ export function BalancePage() {
 
             {/* Content */}
             <div className="flex-1">
-              <div className="bg-gradient-to-r from-yellow-400 to-amber-400 rounded-2xl p-6 mb-6 flex items-center justify-between shadow-sm">
+              <div className="bg-gradient-to-r from-yellow-400 to-amber-400 p-6 mb-6 flex items-center justify-between">
                 <div>
                   <p className="text-sm font-semibold text-yellow-900 opacity-75">Current Balance</p>
                   <p className="text-5xl font-black text-black mt-1">
@@ -522,7 +524,7 @@ export function BalancePage() {
                 </div>
                 <div className="w-24 h-24 opacity-70">
                   <svg viewBox="0 0 100 100" fill="none">
-                    <rect x="10" y="20" width="80" height="60" rx="8" fill="rgba(0,0,0,0.15)" stroke="rgba(0,0,0,0.2)" strokeWidth="2"/>
+                    <rect x="10" y="20" width="80" height="60" rx="0" fill="rgba(0,0,0,0.15)" stroke="rgba(0,0,0,0.2)" strokeWidth="2"/>
                     <rect x="10" y="30" width="80" height="15" fill="rgba(0,0,0,0.1)"/>
                     <circle cx="75" cy="65" r="10" fill="rgba(255,255,255,0.4)"/>
                     <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
@@ -530,7 +532,7 @@ export function BalancePage() {
                   </svg>
                 </div>
               </div>
-              <div className="bg-white rounded-2xl shadow-sm overflow-hidden">
+              <div className="bg-white overflow-hidden">
                 <div className="flex border-b border-gray-200">
                   {TABS.map(([tab, label]) => (
                     <button
@@ -572,7 +574,7 @@ export function BalancePage() {
           </div>
           <div className="w-20 h-20 opacity-80">
             <svg viewBox="0 0 100 100" fill="none">
-              <rect x="10" y="20" width="80" height="60" rx="8" fill="#FFD200" stroke="#F0A000" strokeWidth="2"/>
+              <rect x="10" y="20" width="80" height="60" rx="0" fill="#FFD200" stroke="#F0A000" strokeWidth="2"/>
               <rect x="10" y="30" width="80" height="15" fill="#F0A000"/>
               <circle cx="75" cy="65" r="10" fill="#FFE066"/>
               <path d="M20 55 L40 55" stroke="white" strokeWidth="3" strokeLinecap="round"/>
@@ -671,7 +673,7 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
 
   return (
     <div className="fixed inset-0 bg-black/50 z-50 flex flex-col">
-      <div className="bg-white flex-1 flex flex-col max-w-lg mx-auto w-full mt-auto rounded-t-3xl lg:rounded-3xl lg:my-auto lg:max-h-[90vh] overflow-y-auto">
+      <div className="bg-white flex-1 flex flex-col max-w-lg mx-auto w-full mt-auto lg:my-auto lg:max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between px-4 py-4 border-b border-gray-100">
           <button onClick={onClose}><X size={22} className="text-gray-700" /></button>
           <h2 className="font-bold text-gray-900">Payment Information</h2>
@@ -680,24 +682,24 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
 
         <div className="flex-1 px-4 py-5 space-y-5">
           <div className="flex items-center gap-2 text-green-600 text-sm font-semibold">
-            <div className="w-5 h-5 bg-green-600 rounded-full flex items-center justify-center">
+            <div className="w-5 h-5 bg-green-600 flex items-center justify-center">
               <Check size={12} className="text-white" />
             </div>
             Your payment information are encrypted
           </div>
 
           <div className="flex items-center gap-3">
-            <div className={`border-2 rounded-lg px-3 py-1.5 transition-all ${cardType === "visa" ? "border-blue-500" : "border-gray-200"}`}>
+            <div className={`border-2 px-3 py-1.5 transition-all ${cardType === "visa" ? "border-blue-500" : "border-gray-200"}`}>
               <img src="https://upload.wikimedia.org/wikipedia/commons/5/5e/Visa_Inc._logo.svg" alt="Visa" className="h-4" />
             </div>
-            <div className={`border-2 rounded-lg px-3 py-1.5 transition-all ${cardType === "mastercard" ? "border-red-500" : "border-gray-200"}`}>
+            <div className={`border-2 px-3 py-1.5 transition-all ${cardType === "mastercard" ? "border-red-500" : "border-gray-200"}`}>
               <img src="https://upload.wikimedia.org/wikipedia/commons/b/b7/MasterCard_Logo.svg" alt="MC" className="h-5" />
             </div>
           </div>
 
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-2">*Bank card number</label>
-            <div className="bg-gray-100 rounded-xl px-4 py-3.5 flex items-center gap-3">
+            <div className="bg-gray-100 px-4 py-3.5 flex items-center gap-3">
               <CreditCard size={18} className="text-gray-400 flex-shrink-0" />
               <input
                 type="text"
@@ -713,7 +715,7 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
 
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-2">*Expiry date</label>
-            <div className="bg-gray-100 rounded-xl px-4 py-3.5">
+            <div className="bg-gray-100 px-4 py-3.5">
               <input
                 type="text"
                 value={expiry}
@@ -728,7 +730,7 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
 
           <div>
             <label className="block text-sm font-bold text-gray-800 mb-2">*CVV</label>
-            <div className="bg-gray-100 rounded-xl px-4 py-3.5">
+            <div className="bg-gray-100 px-4 py-3.5">
               <input
                 type="password"
                 value={cvv}
@@ -746,7 +748,7 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
           <button
             onClick={handleSave}
             disabled={isSaving}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl transition-colors"
+            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 transition-colors"
           >
             {isSaving ? "Saving..." : "Submit"}
           </button>
@@ -755,4 +757,3 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
-
