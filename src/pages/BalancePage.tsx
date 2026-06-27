@@ -460,37 +460,39 @@ export function BalancePage() {
         </div>
         <div className="max-w-[1280px] mx-auto px-6 pb-12">
           <div className="flex gap-6">
-            {/* Sidebar — STICKY */}
+            {/* Sidebar — AccountPage style */}
             <div className="w-72 flex-shrink-0 sticky top-6 self-start h-fit">
-              <div className="bg-white p-5 mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
+              <div className="bg-white shadow-sm p-5 mb-4">
+                <div className="flex items-center gap-3 mb-4">
+                  <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">
                     {user?.nickname?.[0]?.toUpperCase()}
                   </div>
                   <div>
                     <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
-                    <p className="text-xs text-gray-400 truncate max-w-[140px]">{user?.email}</p>
+                    <button onClick={() => navigate("/vip")} className="text-xs text-yellow-600 font-medium flex items-center gap-1 hover:underline">Check VIP Benefits <ChevronRight size={12} /></button>
                   </div>
                 </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-4">
-                  <div>
-                    <p className="text-lg font-black text-gray-900">${balance.toFixed(2)}</p>
-                    <p className="text-xs text-gray-400">Balance</p>
-                  </div>
+                <div className="flex items-center gap-4 py-3 border-y border-gray-100">
+                  <button onClick={() => navigate("/balance")} className="hover:opacity-80 transition-opacity">
+                    <p className="text-lg font-bold text-gray-900">${balance.toFixed(2)}</p>
+                    <p className="text-xs text-gray-500">Balance</p>
+                  </button>
                   <div className="h-8 w-px bg-gray-200" />
-                  <div>
-                    <p className="text-lg font-black text-gray-900">{user?.points ?? 0}</p>
-                    <p className="text-xs text-gray-400">Points</p>
-                  </div>
+                  <button onClick={() => navigate("/points")} className="hover:opacity-80 transition-opacity">
+                    <p className="text-lg font-bold text-gray-900 flex items-center gap-1"><span className="text-yellow-500">●</span> {user?.points ?? 0}</p>
+                    <p className="text-xs text-gray-500">Points</p>
+                  </button>
                 </div>
               </div>
-              <div className="bg-white overflow-hidden">
+              <div className="bg-white shadow-sm overflow-hidden">
                 {[
-                  { label: "Account Settings", path: "/account", active: false },
                   { label: "Buy History", path: "/account", active: false },
-                  { label: "Coupons", path: "/coupons", active: false },
+                  { label: "Coupon", path: "/coupons", active: false },
+                  { label: "Settings", path: "/account", active: false },
+                  { label: "Help Center", path: "/support", active: false },
+                  { label: "Feedback", path: "/feedback", active: false },
                   { label: "Balance", path: "/balance", active: true },
-                  { label: "Invite Friends", path: "/invite", active: false },
+                  { label: "Invite for Coupons", path: "/invite", active: false },
                   { label: "Affiliate Program", path: "/affiliate", active: false, highlight: true },
                 ].map((item) => (
                   <button

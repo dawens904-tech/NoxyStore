@@ -1349,4 +1349,3 @@ export function AccountPage() {
     </>
   );
 }
-hello ai use only Sidebar account page in balance,vipbenefit,point page dont remove their Sidebar  add only Sidebar from accountpage.
