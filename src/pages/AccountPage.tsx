@@ -965,7 +965,7 @@ export function AccountPage() {
             <div className="bg-white shadow-sm p-5 mb-4">
               <div className="flex items-center gap-3 mb-4">
                 <div className="relative">
-                  {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-14 h-14 rounded-full object-cover" /> : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>
+                  {avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-14 h-14 rounded-full object-cover" /> : <div className="w-14 h-14 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-xl font-bold">{user?.nickname?.[0]?.toUpperCase()}</div>}
                 </div>
                 <div>
                   <p className="font-bold text-gray-900 text-sm">{user?.nickname}</p>
