@@ -1063,7 +1063,7 @@ export function AccountPage() {
                       <div className="flex items-center gap-6 py-2">
                         <span className="w-36 text-sm text-gray-500 flex-shrink-0">Language</span>
                         <select value={language} onChange={e => setLanguage(e.target.value as any)} className="border border-gray-200 px-3 py-2 text-sm text-gray-800 outline-none focus:border-yellow-400 bg-white">
-                          {[{code:"en",label:"English"},{code:"id",label:"Bahasa Indonesia"},{code:"ms",label:"Bahasa Melayu"},{code:"th",label:"ภาษาไทย"},{code:"vi",label:"Tiếng Việt"},{code:"zh-TW",label:"中文(繁體)"},{code:"ko",label:"한국어"},{code:"ja",label:"日本語"}].map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
+                          {[{code:"en",label:"English 🇺🇸"},{code:"es",label:"Spanish 🇪🇸"},{code:"fr",label:"French 🇫🇷"},{code:"id",label:"Bahasa Indonesia 🇮🇩"}].map(l => <option key={l.code} value={l.code}>{l.label}</option>)}
                         </select>
                       </div>
                     </div>
@@ -1361,5 +1361,5 @@ export function AccountPage() {
     </>
   );
 }
-fucking read language constants/translationsand add all language from constants/translations.
+
 
