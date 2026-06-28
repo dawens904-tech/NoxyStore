@@ -94,4 +94,4 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
     </div>
   );
 }
-hello ai please let coupons page use same sidebar with account page.
+

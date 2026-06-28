@@ -1,6 +1,7 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Tag, ChevronRight, Loader2, Check, X, Plus, ChevronDown } from "lucide-react";
+import { AccountSidebar } from "@/components/features/AccountSidebar";
 import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/lib/supabase";
 import { DesktopHeader } from "@/components/layout/DesktopHeader";
@@ -119,69 +120,7 @@ function MobileCouponCard({ coupon, onUse }: { coupon: Coupon; onUse: (c: Coupon
   );
 }
 
-// ─── Desktop Sidebar ──────────────────────────────────────────────────────────
-function DesktopSidebar({ user, activeCouponCount }: { user: any; activeCouponCount: number }) {
-  const navigate = useNavigate();
-  const sidebarItems = [
-    { label: "Buy History", path: "/account", active: false },
-    { label: "Coupon", path: "/coupons", active: true, badge: activeCouponCount > 0 ? String(activeCouponCount) : undefined },
-    { label: "Settings", path: "/account", active: false },
-    { label: "Help Center", path: "/support", active: false },
-    { label: "Feedback", path: "/feedback", active: false },
-    { label: "Invite for Coupons", path: "/invite", active: false },
-    { label: "Affiliate Program", path: "/affiliate", active: false, highlight: true },
-  ];
 
-  return (
-    <div className="w-72 flex-shrink-0 sticky top-[72px] self-start">
-      <div className="bg-white shadow-sm p-5 mb-4">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl font-bold">
-            {user?.nickname?.[0]?.toUpperCase() || "U"}
-          </div>
-          <div>
-            <p className="font-bold text-gray-900 text-sm">{user?.nickname || user?.email?.split("@")[0]}</p>
-            <button onClick={() => navigate("/vip")} className="text-xs text-yellow-600 font-medium flex items-center gap-1 hover:underline">
-              Check VIP Benefits <ChevronRight size={12} />
-            </button>
-          </div>
-        </div>
-        <div className="flex items-center gap-4 py-3 border-y border-gray-100">
-          <button onClick={() => navigate("/balance")} className="hover:opacity-80 transition-opacity">
-            <p className="text-lg font-bold text-gray-900">${(user?.balance ?? 0).toFixed(2)}</p>
-            <p className="text-xs text-gray-500">Balance</p>
-          </button>
-          <div className="h-8 w-px bg-gray-200" />
-          <button onClick={() => navigate("/points")} className="hover:opacity-80 transition-opacity">
-            <p className="text-lg font-bold text-gray-900 flex items-center gap-1">
-              <span className="text-yellow-500">●</span> {user?.points ?? 0}
-            </p>
-            <p className="text-xs text-gray-500">Points</p>
-          </button>
-        </div>
-      </div>
-      <div className="bg-white shadow-sm overflow-hidden">
-        {sidebarItems.map(item => (
-          <button key={item.label} onClick={() => navigate(item.path)}
-            className={`w-full flex items-center justify-between px-4 py-3.5 text-sm font-medium transition-colors border-b border-gray-50 last:border-0 ${
-              item.active ? "bg-yellow-50 text-yellow-700 border-l-4 border-l-yellow-400"
-              : (item as any).highlight ? "text-yellow-500 hover:bg-yellow-50"
-              : "text-gray-700 hover:bg-gray-50"
-            }`}>
-            <span className="flex items-center gap-2">
-              {item.label}
-              {item.active && <Tag size={14} className="text-yellow-600" />}
-            </span>
-            <span className="flex items-center gap-2">
-              {item.badge && <span className="text-gray-500 text-xs font-semibold">{item.badge}</span>}
-              <ChevronRight size={14} className="text-gray-400" />
-            </span>
-          </button>
-        ))}
-      </div>
-    </div>
-  );
-}
 
 export function CouponsPage() {
   const navigate = useNavigate();
@@ -259,7 +198,7 @@ export function CouponsPage() {
           <span className="text-gray-800 font-medium">Coupon</span>
         </div>
         <div className="flex gap-6 items-start">
-          <DesktopSidebar user={user} activeCouponCount={activeCoupons.length} />
+          <AccountSidebar activePage="coupon" className="sticky top-[72px] self-start" />
 
           {/* Main content */}
           <div className="flex-1">
