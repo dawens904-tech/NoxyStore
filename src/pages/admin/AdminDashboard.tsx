@@ -513,3 +513,4 @@ export default function AdminDashboard() {
     </div>
   );
 }
+hello ai please Create admin orders management page at /secure-dashboard-92x2011/orders with filterable tabs (All, Pending, Processing, Completed, Failed), order table with reference_id, game_name, sku_name, user_email, price, state, created_at columns, and a manual state-update dropdown per row add route to App tsx and link in AdminSidebar.
