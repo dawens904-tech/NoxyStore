@@ -196,3 +196,4 @@ export function CategoriesPage() {
     </div>
   );
 }
+fetch game img like home page in this and in gameloobar allow i can edit the name of game and auto set to home,categories,gamedetail.
