@@ -1,7 +1,7 @@
 /**
  * AccountSidebar — Shared desktop sidebar used across Account, Balance, Points, VipBenefits pages.
  * Pass `activePage` to highlight the current section.
- * Auto-fetches real wallet balance from wallet_transactions on mount.
+ * Auto-fetches real wallet balance and points from wallet_transactions on mount.
  */
 import { useNavigate } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -34,10 +34,11 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
   const navigate = useNavigate();
   const { user } = useAuthStore();
   const [fetchedBalance, setFetchedBalance] = useState<number | null>(null);
+  const [fetchedPoints, setFetchedPoints] = useState<number | null>(null);
 
-  // Auto-fetch real wallet balance unless a manual override is provided
+  // Auto-fetch real wallet balance and points from wallet_transactions
   useEffect(() => {
-    if (balanceOverride !== undefined || !user?.email) return;
+    if (!user?.email) return;
     supabase
       .from("wallet_transactions")
       .select("type, amount, status")
@@ -45,21 +46,35 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
       .eq("status", "completed")
       .then(({ data }) => {
         if (!data) return;
-        const CREDIT = ["topup", "refund", "bonus", "points_earned"];
-        const DEBIT  = ["purchase", "withdraw", "points_redeemed"];
-        const bal = data.reduce((acc, tx) => {
-          if (CREDIT.includes(tx.type)) return acc + Math.abs(tx.amount);
-          if (DEBIT.includes(tx.type))  return acc - Math.abs(tx.amount);
-          return acc;
-        }, 0);
-        setFetchedBalance(Math.max(0, parseFloat(bal.toFixed(2))));
+        // Balance calculation
+        if (balanceOverride === undefined) {
+          const CREDIT = ["topup", "refund", "bonus"];
+          const DEBIT  = ["purchase", "withdraw"];
+          const bal = data.reduce((acc, tx) => {
+            if (CREDIT.includes(tx.type)) return acc + Math.abs(tx.amount);
+            if (DEBIT.includes(tx.type))  return acc - Math.abs(tx.amount);
+            return acc;
+          }, 0);
+          setFetchedBalance(Math.max(0, parseFloat(bal.toFixed(2))));
+        }
+        // Points calculation
+        if (pointsOverride === undefined) {
+          const pts = data.reduce((acc, tx) => {
+            if (tx.type === "points_earned")   return acc + Math.abs(tx.amount);
+            if (tx.type === "points_redeemed") return acc - Math.abs(tx.amount);
+            return acc;
+          }, 0);
+          setFetchedPoints(Math.max(0, Math.round(pts)));
+        }
       });
-  }, [user?.email, balanceOverride]);
+  }, [user?.email, balanceOverride, pointsOverride]);
 
   const displayBalance = balanceOverride !== undefined
     ? balanceOverride
     : (fetchedBalance !== null ? fetchedBalance : (user?.balance ?? 0));
-  const displayPoints = pointsOverride !== undefined ? pointsOverride : (user?.points ?? 0);
+  const displayPoints = pointsOverride !== undefined
+    ? pointsOverride
+    : (fetchedPoints !== null ? fetchedPoints : (user?.points ?? 0));
 
   return (
     <div className={`w-72 flex-shrink-0 ${className}`}>
@@ -122,4 +137,4 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
   );
 }
 
-fetch real point please and in account page the logout button make it border for mobile desktop.
+

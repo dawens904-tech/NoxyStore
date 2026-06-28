@@ -1057,7 +1057,7 @@ export function AccountPage() {
               <button onClick={() => navigate("/points")} className="flex-1 bg-yellow-400 text-black border border-yellow-400 py-3 font-bold flex items-center justify-center gap-2 hover:bg-yellow-300">
                 <Star size={18} /> Points
               </button>
-              <button onClick={handleLogout} className="flex-1 bg-white text-red-500 border border-red-200 py-3 font-bold flex items-center justify-center gap-2 hover:bg-red-50">
+              <button onClick={handleLogout} className="flex-1 bg-white text-red-500 border-2 border-red-400 py-3 font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-500 transition-colors">
                 <LogOut size={18} />{t("logout")}
               </button>
             </div>
@@ -1144,8 +1144,8 @@ export function AccountPage() {
               <button onClick={() => navigate("/secure-dashboard-92x2011")} className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-4 font-bold flex items-center justify-center gap-2 shadow-md"><LayoutDashboard size={18} />{t("adminDashboard")}</button>
             )}
 
-            <button onClick={handleLogout} className="w-full py-4 border border-gray-200 bg-white text-gray-700 font-semibold flex items-center justify-center gap-2 hover:bg-gray-50">
-              <LogOut size={18} className="text-gray-500" /> Log out
+            <button onClick={handleLogout} className="w-full py-4 border-2 border-red-400 bg-white text-red-500 font-bold flex items-center justify-center gap-2 hover:bg-red-50 hover:border-red-500 transition-colors">
+              <LogOut size={18} /> Log out
             </button>
           </div>
         )}
