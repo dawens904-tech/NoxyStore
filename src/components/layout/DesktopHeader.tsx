@@ -441,11 +441,12 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
               </button>
             </div>
           ) : (
-            <button onClick={() => navigate("/login")} className="flex items-center gap-2 group">
-              <div className="w-9 h-9 rounded-full bg-gray-700 border border-gray-600 flex items-center justify-center text-gray-400 group-hover:bg-gray-600 group-hover:text-white transition-colors">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+            <button onClick={() => navigate("/login")}
+              className="flex items-center gap-2 border border-gray-600 hover:border-yellow-400 bg-transparent hover:bg-yellow-400/10 text-gray-300 hover:text-white px-3 py-1.5 rounded transition-all group">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
               </div>
-              <span className="text-gray-400 text-sm font-medium group-hover:text-white transition-colors">{t("loginSignup")}</span>
+              <span className="text-sm font-semibold whitespace-nowrap">{t("loginSignup")}</span>
             </button>
           )}
         </div>

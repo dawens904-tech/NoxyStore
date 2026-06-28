@@ -1083,7 +1083,7 @@ export function AccountPage() {
           <div className="space-y-4">
             <div className="bg-gradient-to-br from-blue-500 via-purple-600 to-pink-500 p-5 text-white relative overflow-hidden">
               <div className="flex items-center gap-3 mb-5 mt-1">
-                <div className="w-14 h-14 overflow-hidden border-2 border-white/30 bg-white/20 backdrop-blur-sm flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-white">{user?.nickname?.[0]?.toUpperCase()}</span>}</div>
+                        <div className="w-14 h-14 overflow-hidden border-2 border-white/30 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">{avatarUrl ? <img src={avatarUrl} alt="avatar" className="w-full h-full object-cover" /> : <span className="text-2xl font-bold text-white">{user?.nickname?.[0]?.toUpperCase()}</span>}</div>
                 <div>
                   <h2 className="text-lg font-bold">{user?.nickname}</h2>
                   <p className="text-white/70 text-sm">ID: {user?.id?.slice(-12)}</p>

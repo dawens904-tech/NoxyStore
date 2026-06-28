@@ -1,10 +1,13 @@
 /**
  * AccountSidebar — Shared desktop sidebar used across Account, Balance, Points, VipBenefits pages.
  * Pass `activePage` to highlight the current section.
+ * Auto-fetches real wallet balance from wallet_transactions on mount.
  */
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
 import { ChevronRight } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
+import { supabase } from "@/lib/supabase";
 
 type ActivePage = "buyHistory" | "coupon" | "settings" | "balance" | "points" | "vip" | "invite" | "affiliate" | "feedback" | "helpCenter";
 
@@ -30,8 +33,32 @@ const NAV_ITEMS: { label: string; path: string; key: ActivePage; highlight?: boo
 export function AccountSidebar({ activePage, balanceOverride, pointsOverride, className = "" }: AccountSidebarProps) {
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const [fetchedBalance, setFetchedBalance] = useState<number | null>(null);
 
-  const displayBalance = balanceOverride !== undefined ? balanceOverride : (user?.balance ?? 0);
+  // Auto-fetch real wallet balance unless a manual override is provided
+  useEffect(() => {
+    if (balanceOverride !== undefined || !user?.email) return;
+    supabase
+      .from("wallet_transactions")
+      .select("type, amount, status")
+      .eq("user_email", user.email)
+      .eq("status", "completed")
+      .then(({ data }) => {
+        if (!data) return;
+        const CREDIT = ["topup", "refund", "bonus", "points_earned"];
+        const DEBIT  = ["purchase", "withdraw", "points_redeemed"];
+        const bal = data.reduce((acc, tx) => {
+          if (CREDIT.includes(tx.type)) return acc + Math.abs(tx.amount);
+          if (DEBIT.includes(tx.type))  return acc - Math.abs(tx.amount);
+          return acc;
+        }, 0);
+        setFetchedBalance(Math.max(0, parseFloat(bal.toFixed(2))));
+      });
+  }, [user?.email, balanceOverride]);
+
+  const displayBalance = balanceOverride !== undefined
+    ? balanceOverride
+    : (fetchedBalance !== null ? fetchedBalance : (user?.balance ?? 0));
   const displayPoints = pointsOverride !== undefined ? pointsOverride : (user?.points ?? 0);
 
   return (
@@ -40,10 +67,10 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
       <div className="bg-white shadow-sm p-5 mb-4">
         <div className="flex items-center gap-3 mb-4">
           {user?.avatar ? (
-            <img src={user.avatar} alt="avatar" className="w-14 h-14 rounded-full object-cover" />
+            <img src={user.avatar} alt="avatar" className="w-14 h-14 rounded-full object-cover border-2 border-gray-100" />
           ) : (
-            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl font-bold">
-              {user?.nickname?.[0]?.toUpperCase() || "U"}
+            <div className="w-14 h-14 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+              {user?.nickname?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
             </div>
           )}
           <div>
@@ -94,5 +121,5 @@ export function AccountSidebar({ activePage, balanceOverride, pointsOverride, cl
     </div>
   );
 }
-hello ai auto load user money from balance also in account page the user photo make it round and the login button make it border  and for all user new+exist  auto set a avatar logo create a logo avatar people and auto set from people who dont have and fetch their google avatar when their login.
+
 
