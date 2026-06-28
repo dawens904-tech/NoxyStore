@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { Search, X, ChevronDown, Mail } from "lucide-react";
+import { Search, X, ChevronDown, Mail, ShoppingBag, Tag, Settings, HelpCircle, MessageSquare, Gift, DollarSign, LogOut } from "lucide-react";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useTranslation } from "@/hooks/useTranslation";
@@ -117,17 +117,17 @@ function HelpDropdown({ onClose }: { onClose: () => void }) {
   );
 }
 
-// User Dropdown (photo 10)
+// User Dropdown — lucide icons only, no emojis
 function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => void; onLogout: () => void }) {
   const navigate = useNavigate();
   const items = [
-    { icon: "🛍️", label: "Buy History", path: "/account", section: "buyHistory" },
-    { icon: "🎟️", label: "Coupon", path: "/coupons" },
-    { icon: "⚙️", label: "Settings", path: "/account", section: "settings" },
-    { icon: "❓", label: "Help Center", path: "/support" },
-    { icon: "💬", label: "Feedback", path: "/feedback" },
-    { icon: "🎁", label: "Invite for Coupons", path: "/invite", sub: "Unlock rich coupon rewards", orange: true },
-    { icon: "💰", label: "Affiliate Program", path: "/affiliate", sub: "Earn up to 10% money", orange: true },
+    { Icon: ShoppingBag, label: "Buy History", path: "/buy-history", orange: false },
+    { Icon: Tag, label: "Coupon", path: "/coupons", orange: false },
+    { Icon: Settings, label: "Settings", path: "/account", orange: false },
+    { Icon: HelpCircle, label: "Help Center", path: "/support", orange: false },
+    { Icon: MessageSquare, label: "Feedback", path: "/feedback", orange: false },
+    { Icon: Gift, label: "Invite for Coupons", path: "/invite", sub: "Unlock rich coupon rewards", orange: true },
+    { Icon: DollarSign, label: "Affiliate Program", path: "/affiliate", sub: "Earn up to 10% money", orange: true },
   ];
 
   return (
@@ -135,13 +135,17 @@ function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => v
       {/* User info header */}
       <div className="px-4 py-4 border-b border-gray-100">
         <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
-            {user?.nickname?.[0]?.toUpperCase() || "U"}
-          </div>
+          {user?.avatar ? (
+            <img src={user.avatar} alt="avatar" className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+          ) : (
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white text-xl font-bold flex-shrink-0">
+              {user?.nickname?.[0]?.toUpperCase() || "U"}
+            </div>
+          )}
           <div className="flex-1 min-w-0">
             <p className="font-bold text-gray-900 text-sm truncate">{user?.nickname || user?.email?.split("@")[0]}</p>
             <button onClick={() => { navigate("/vip"); onClose(); }} className="text-xs text-gray-500 flex items-center gap-1 hover:text-yellow-600 mt-0.5">
-              Check VIP Benefits <span className="w-2 h-2 bg-red-500 rounded-full" /> <ChevronDown size={10} className="-rotate-90" />
+              Check VIP Benefits <ChevronDown size={10} className="-rotate-90" />
             </button>
           </div>
         </div>
@@ -167,7 +171,7 @@ function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => v
           <button key={item.label} onClick={() => { navigate(item.path); onClose(); }}
             className="w-full flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors border-b border-gray-50 last:border-0">
             <div className="flex items-center gap-3">
-              <span className="text-base">{item.icon}</span>
+              <item.Icon size={16} className={item.orange ? "text-orange-400" : "text-gray-500"} />
               <div className="text-left">
                 <p className={`text-sm font-medium ${item.orange ? "text-orange-500" : "text-gray-800"}`}>{item.label}</p>
                 {item.sub && <p className="text-xs text-orange-400">{item.sub}</p>}
@@ -178,7 +182,7 @@ function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => v
         ))}
         <button onClick={onLogout}
           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-red-50 text-red-500 transition-colors">
-          <span className="text-base">🚪</span>
+          <LogOut size={16} />
           <span className="text-sm font-medium">Log out</span>
         </button>
       </div>
@@ -432,7 +436,7 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
           {/* Auth */}
           {isAuthenticated ? (
             <div className="relative">
-              <button onClick={() => navigate("/account")}
+              <button onClick={() => setShowUserMenu(v => !v)}
                 className="flex items-center gap-2 group">
                 <div className="relative w-9 h-9 flex-shrink-0">
                   {user?.avatar ? (
@@ -445,6 +449,13 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
                   <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 bg-red-500 rounded-full border-2 border-[#0a0a0a]" />
                 </div>
               </button>
+              {showUserMenu && (
+                <UserDropdown
+                  user={user}
+                  onClose={() => setShowUserMenu(false)}
+                  onLogout={handleLogout}
+                />
+              )}
             </div>
           ) : (
             <button onClick={() => navigate("/login")}
@@ -460,5 +471,4 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
     </>
   );
 }
-hello ai when you fe komsi u pral tap avatr profile show User Dropdown (photo 10) but remove fake emoji add only icon from accountpage.
 
