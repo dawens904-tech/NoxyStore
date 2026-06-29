@@ -10,6 +10,7 @@ import AdminSidebar from "./AdminSidebar";
 import {
   ArrowLeft, Search, Edit2, Save, X, Loader2, RefreshCw,
   EyeOff, Eye, ChevronUp, ChevronDown, Globe, Package, DollarSign, Image,
+  Database,
 } from "lucide-react";
 import { toast } from "sonner";
 import { FunctionsHttpError } from "@supabase/supabase-js";
@@ -211,23 +212,81 @@ export default function LootbarSkuManagement() {
   const [selectedRegion, setSelectedRegion] = useState<string>("");
   const [search, setSearch] = useState("");
   const [editSku, setEditSku] = useState<MergedSku | null>(null);
+  const [cacheTimestamp, setCacheTimestamp] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "admin") { navigate("/"); return; }
-    if (gameId) loadData();
+    if (gameId) loadFromDB();
   }, [user, gameId]);
 
-  const loadData = useCallback(async () => {
+  // ── Build merged SKUs from raw array + override map ───────────────────────
+  const buildMerged = (rawSkus: RawSku[], overrideMap: Map<string, SkuOverride>): MergedSku[] =>
+    rawSkus.map((s) => {
+      const attrs = s.attribute || [];
+      const regionVal = attrs[0]?.value || "global";
+      const regionLabel = attrs[0]?.value_text || attrs[0]?.value || "Global";
+      return {
+        ...s,
+        override: overrideMap.get(String(s.sku_id)),
+        _region: regionVal,
+        _regionLabel: regionLabel,
+      };
+    });
+
+  // ── Load from sku_cache (permanent DB) ───────────────────────────────────
+  const loadFromDB = useCallback(async () => {
     if (!gameId) return;
     setIsLoading(true);
 
-    // Load game name from cache
     supabase.from("games_cache").select("game_name").eq("game_id", gameId).single()
       .then(({ data }) => { if (data) setGameName(data.game_name); });
 
     try {
-      // Fetch SKUs and overrides in parallel
+      const [{ data: cachedSkus }, { data: overridesData }] = await Promise.all([
+        supabase.from("sku_cache").select("*").eq("game_id", gameId).order("sku_id"),
+        supabase.from("sku_overrides").select("*").eq("game_id", gameId),
+      ]);
+
+      const overrideMap = new Map<string, SkuOverride>();
+      (overridesData || []).forEach((o: SkuOverride) => overrideMap.set(String(o.sku_id), o));
+
+      if (cachedSkus && cachedSkus.length > 0) {
+        // Set cache timestamp from first row
+        setCacheTimestamp(cachedSkus[0].cached_at || null);
+
+        const rawSkus: RawSku[] = cachedSkus.map((s: any) => ({
+          sku_id: s.sku_id,
+          sku_name: s.sku_name,
+          price: Number(s.price || 0),
+          original_price: s.original_price ? Number(s.original_price) : undefined,
+          discount_amount: s.discount_amount ? Number(s.discount_amount) : undefined,
+          image: s.image || undefined,
+          attribute: Array.isArray(s.attributes) ? s.attributes :
+            (s.attributes ? (typeof s.attributes === "string" ? JSON.parse(s.attributes) : s.attributes) : []),
+        }));
+
+        const merged = buildMerged(rawSkus, overrideMap);
+        setSkus(merged);
+        if (merged.length > 0) setSelectedRegion(merged[0]._region);
+      } else {
+        // No cache — trigger live sync automatically
+        await syncFromLootbar(true);
+      }
+    } catch (err: any) {
+      toast.error("Failed to load SKUs: " + (err.message || "Unknown error"));
+    } finally {
+      setIsLoading(false);
+    }
+  }, [gameId]);
+
+  // ── Sync live from Lootbar API and persist to sku_cache ──────────────────
+  const syncFromLootbar = useCallback(async (silent = false) => {
+    if (!gameId) return;
+    setIsSyncing(true);
+    if (!silent) toast.info("Fetching latest SKUs from Lootbar…");
+
+    try {
       const [skuRes, { data: overridesData }] = await Promise.all([
         supabase.functions.invoke("lootbar-proxy", {
           body: { action: "get_skus", params: { game_id: gameId } },
@@ -244,36 +303,54 @@ export default function LootbarSkuManagement() {
       }
 
       const rawSkus: RawSku[] = Array.isArray(skuRes.data) ? skuRes.data : (skuRes.data?.skus || []);
+
+      if (rawSkus.length === 0) {
+        toast.warning("No SKUs returned from Lootbar for this game.");
+        setIsSyncing(false);
+        return;
+      }
+
+      // Persist to sku_cache permanently
+      const now = new Date().toISOString();
+      const rows = rawSkus.map(s => ({
+        game_id: gameId,
+        sku_id: String(s.sku_id),
+        sku_name: s.sku_name,
+        price: s.price || 0,
+        original_price: s.original_price || null,
+        discount_amount: s.discount_amount || null,
+        attributes: s.attribute || [],
+        extra_info: [],
+        image: s.image || null,
+        cached_at: now,
+      }));
+
+      const { error: upsertErr } = await supabase
+        .from("sku_cache")
+        .upsert(rows, { onConflict: "game_id,sku_id" });
+
+      if (upsertErr) {
+        console.error("[sku-sync] upsert error:", upsertErr.message);
+      }
+
       const overrideMap = new Map<string, SkuOverride>();
       (overridesData || []).forEach((o: SkuOverride) => overrideMap.set(String(o.sku_id), o));
 
-      const merged: MergedSku[] = rawSkus.map((s) => {
-        const regionVal = s.attribute?.[0]?.value || "global";
-        const regionLabel = s.attribute?.[0]?.value_text || s.attribute?.[0]?.value || "Global";
-        const ov = overrideMap.get(String(s.sku_id));
-        return {
-          ...s,
-          override: ov,
-          _region: regionVal,
-          _regionLabel: regionLabel,
-        };
-      });
-
+      const merged = buildMerged(rawSkus, overrideMap);
       setSkus(merged);
+      if (merged.length > 0 && !selectedRegion) setSelectedRegion(merged[0]._region);
+      setCacheTimestamp(now);
 
-      // Auto-select first region
-      if (merged.length > 0) {
-        const firstRegion = merged[0]._region;
-        setSelectedRegion(firstRegion);
-      }
+      if (!silent) toast.success(`${rawSkus.length} SKUs synced and saved to database.`);
     } catch (err: any) {
-      toast.error("Failed to load SKUs: " + (err.message || "Unknown error"));
+      toast.error("Sync failed: " + (err.message || "Unknown error"));
     } finally {
+      setIsSyncing(false);
       setIsLoading(false);
     }
-  }, [gameId]);
+  }, [gameId, selectedRegion]);
 
-  // ── Regions derived from SKUs ────────────────────────────────────────────
+  // ── Regions derived from SKUs ─────────────────────────────────────────────
   const regions = useMemo(() => {
     const seen = new Set<string>();
     const result: Array<{ value: string; label: string; count: number }> = [];
@@ -287,7 +364,7 @@ export default function LootbarSkuManagement() {
     return result;
   }, [skus]);
 
-  // ── Filtered SKUs for selected region ────────────────────────────────────
+  // ── Filtered SKUs for selected region ─────────────────────────────────────
   const regionSkus = useMemo(() => {
     let filtered = skus.filter(s => s._region === selectedRegion);
     if (search.trim()) {
@@ -296,7 +373,6 @@ export default function LootbarSkuManagement() {
         (s.override?.custom_name || s.sku_name).toLowerCase().includes(q)
       );
     }
-    // Sort by override sort_order then price
     return filtered.sort((a, b) => {
       const ao = a.override?.sort_order ?? 9999;
       const bo = b.override?.sort_order ?? 9999;
@@ -312,7 +388,7 @@ export default function LootbarSkuManagement() {
   }, []);
 
   const handleToggleHide = async (sku: MergedSku) => {
-    const newHidden = !( sku.override?.is_hidden ?? false);
+    const newHidden = !(sku.override?.is_hidden ?? false);
     const payload: SkuOverride = {
       game_id: gameId!,
       sku_id: String(sku.sku_id),
@@ -333,12 +409,13 @@ export default function LootbarSkuManagement() {
     const prev = regionSkus[idx - 1];
     const aOrder = sku.override?.sort_order ?? idx;
     const bOrder = prev.override?.sort_order ?? idx - 1;
+    const blank = (s: MergedSku) => ({ game_id: gameId!, sku_id: String(s.sku_id), custom_name: s.override?.custom_name ?? null, custom_price: s.override?.custom_price ?? null, custom_image_url: s.override?.custom_image_url ?? null, is_hidden: s.override?.is_hidden ?? false, sort_order: 0 });
     await Promise.all([
-      supabase.from("sku_overrides").upsert({ game_id: gameId!, sku_id: String(sku.sku_id), sort_order: bOrder, is_hidden: sku.override?.is_hidden ?? false, custom_name: sku.override?.custom_name ?? null, custom_price: sku.override?.custom_price ?? null, custom_image_url: sku.override?.custom_image_url ?? null }, { onConflict: "game_id,sku_id" }),
-      supabase.from("sku_overrides").upsert({ game_id: gameId!, sku_id: String(prev.sku_id), sort_order: aOrder, is_hidden: prev.override?.is_hidden ?? false, custom_name: prev.override?.custom_name ?? null, custom_price: prev.override?.custom_price ?? null, custom_image_url: prev.override?.custom_image_url ?? null }, { onConflict: "game_id,sku_id" }),
+      supabase.from("sku_overrides").upsert({ ...blank(sku), sort_order: bOrder }, { onConflict: "game_id,sku_id" }),
+      supabase.from("sku_overrides").upsert({ ...blank(prev), sort_order: aOrder }, { onConflict: "game_id,sku_id" }),
     ]);
     setSkus(old => old.map(s => {
-      if (String(s.sku_id) === String(sku.sku_id)) return { ...s, override: { ...( s.override ?? { game_id: gameId!, sku_id: String(s.sku_id), custom_name: null, custom_price: null, custom_image_url: null, is_hidden: false, sort_order: 9999 }), sort_order: bOrder } };
+      if (String(s.sku_id) === String(sku.sku_id)) return { ...s, override: { ...(s.override ?? { game_id: gameId!, sku_id: String(s.sku_id), custom_name: null, custom_price: null, custom_image_url: null, is_hidden: false, sort_order: 9999 }), sort_order: bOrder } };
       if (String(s.sku_id) === String(prev.sku_id)) return { ...s, override: { ...(s.override ?? { game_id: gameId!, sku_id: String(s.sku_id), custom_name: null, custom_price: null, custom_image_url: null, is_hidden: false, sort_order: 9999 }), sort_order: aOrder } };
       return s;
     }));
@@ -350,9 +427,10 @@ export default function LootbarSkuManagement() {
     const next = regionSkus[idx + 1];
     const aOrder = sku.override?.sort_order ?? idx;
     const bOrder = next.override?.sort_order ?? idx + 1;
+    const blank = (s: MergedSku) => ({ game_id: gameId!, sku_id: String(s.sku_id), custom_name: s.override?.custom_name ?? null, custom_price: s.override?.custom_price ?? null, custom_image_url: s.override?.custom_image_url ?? null, is_hidden: s.override?.is_hidden ?? false, sort_order: 0 });
     await Promise.all([
-      supabase.from("sku_overrides").upsert({ game_id: gameId!, sku_id: String(sku.sku_id), sort_order: bOrder, is_hidden: sku.override?.is_hidden ?? false, custom_name: sku.override?.custom_name ?? null, custom_price: sku.override?.custom_price ?? null, custom_image_url: sku.override?.custom_image_url ?? null }, { onConflict: "game_id,sku_id" }),
-      supabase.from("sku_overrides").upsert({ game_id: gameId!, sku_id: String(next.sku_id), sort_order: aOrder, is_hidden: next.override?.is_hidden ?? false, custom_name: next.override?.custom_name ?? null, custom_price: next.override?.custom_price ?? null, custom_image_url: next.override?.custom_image_url ?? null }, { onConflict: "game_id,sku_id" }),
+      supabase.from("sku_overrides").upsert({ ...blank(sku), sort_order: bOrder }, { onConflict: "game_id,sku_id" }),
+      supabase.from("sku_overrides").upsert({ ...blank(next), sort_order: aOrder }, { onConflict: "game_id,sku_id" }),
     ]);
     setSkus(old => old.map(s => {
       if (String(s.sku_id) === String(sku.sku_id)) return { ...s, override: { ...(s.override ?? { game_id: gameId!, sku_id: String(s.sku_id), custom_name: null, custom_price: null, custom_image_url: null, is_hidden: false, sort_order: 9999 }), sort_order: bOrder } };
@@ -371,7 +449,7 @@ export default function LootbarSkuManagement() {
         <div className="max-w-7xl mx-auto px-6">
 
           {/* Header */}
-          <div className="flex items-center gap-3 mb-6">
+          <div className="flex items-center gap-3 mb-6 flex-wrap">
             <button
               onClick={() => navigate("/secure-dashboard-92x2011/lootbar-games")}
               className="w-9 h-9 flex items-center justify-center rounded-xl bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
@@ -379,22 +457,48 @@ export default function LootbarSkuManagement() {
               <ArrowLeft size={16} />
             </button>
             <div className="flex-1">
-              <h1 className="text-2xl font-black text-gray-900">SKU Overrides</h1>
-              <p className="text-sm text-gray-500 mt-0.5">
-                {gameName ? `${gameName} · ` : ""}
-                {skus.length} total SKUs across {regions.length} regions
-              </p>
+              <h1 className="text-2xl font-black text-gray-900">SKU Management</h1>
+              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                <p className="text-sm text-gray-500">
+                  {gameName ? `${gameName} · ` : ""}
+                  {skus.length} SKUs across {regions.length} regions
+                </p>
+                {cacheTimestamp && (
+                  <span className="flex items-center gap-1 text-[10px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">
+                    <Database size={9} /> Cached {new Date(cacheTimestamp).toLocaleDateString()}
+                  </span>
+                )}
+              </div>
             </div>
             <Button
-              onClick={loadData}
-              disabled={isSyncing || isLoading}
+              onClick={() => loadFromDB()}
+              disabled={isLoading}
               variant="outline"
               className="gap-2 rounded-xl"
             >
               <RefreshCw size={14} className={isLoading ? "animate-spin" : ""} />
-              Refresh
+              Reload
+            </Button>
+            <Button
+              onClick={() => syncFromLootbar(false)}
+              disabled={isSyncing || isLoading}
+              className="gap-2 rounded-xl bg-yellow-400 hover:bg-yellow-300 text-black font-bold border-0"
+            >
+              <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+              {isSyncing ? "Syncing…" : "Sync from Lootbar"}
             </Button>
           </div>
+
+          {/* DB cache info banner */}
+          {!isLoading && skus.length > 0 && (
+            <div className="flex items-center gap-2 bg-green-50 border border-green-100 rounded-xl px-4 py-2.5 mb-5 text-xs text-green-700">
+              <Database size={13} className="text-green-500 flex-shrink-0" />
+              <span>
+                SKUs are loaded from the permanent database — no live API calls needed.
+                Click <strong>Sync from Lootbar</strong> to update to the latest prices.
+              </span>
+            </div>
+          )}
 
           {isLoading ? (
             <div className="flex gap-5">
@@ -408,8 +512,16 @@ export default function LootbarSkuManagement() {
           ) : skus.length === 0 ? (
             <div className="text-center py-20">
               <Package size={40} className="text-gray-200 mx-auto mb-3" />
-              <p className="text-gray-500 font-medium">No SKUs found for this game</p>
-              <p className="text-gray-400 text-sm mt-1">Make sure the game has SKUs in Lootbar API</p>
+              <p className="text-gray-500 font-medium">No SKUs cached for this game</p>
+              <p className="text-gray-400 text-sm mt-1 mb-4">Click "Sync from Lootbar" to fetch and save SKUs permanently</p>
+              <Button
+                onClick={() => syncFromLootbar(false)}
+                disabled={isSyncing}
+                className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold border-0 gap-2"
+              >
+                <RefreshCw size={14} className={isSyncing ? "animate-spin" : ""} />
+                {isSyncing ? "Syncing…" : "Sync from Lootbar"}
+              </Button>
             </div>
           ) : (
             <div className="flex gap-5 items-start">
@@ -450,7 +562,7 @@ export default function LootbarSkuManagement() {
               {/* ── SKU list ── */}
               <div className="flex-1">
                 {/* Region header */}
-                <div className="flex items-center gap-3 mb-4">
+                <div className="flex items-center gap-3 mb-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <span className="text-2xl leading-none">
                       {getFlag(regions.find(r => r.value === selectedRegion)?.label || selectedRegion)}

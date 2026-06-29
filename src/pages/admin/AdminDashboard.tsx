@@ -1,3 +1,4 @@
+
 import { useEffect, useState, useMemo, useCallback, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/stores/authStore";
@@ -7,11 +8,16 @@ import {
   ShoppingCart, Users, TrendingUp, DollarSign, Package,
   Activity, RefreshCw, Eye, CheckCircle, Clock, XCircle,
   BarChart2, Sun, Moon, Smartphone, Globe, MousePointer,
+  Gamepad2, Settings, PlusCircle, Trash2, Edit,
 } from "lucide-react";
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   BarChart, Bar, PieChart, Pie, Cell, Legend,
 } from "recharts";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogTrigger } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
 
 const ADMIN_DASHBOARD_PREFIX = "/secure-dashboard-92x2011";
 
@@ -43,6 +49,43 @@ interface AnalyticsRow {
   device_type: string | null;
   page: string | null;
 }
+
+// New interfaces for game/product management (simplified for example)
+interface Game {
+  id: string;
+  name: string;
+  requires_regions: boolean;
+  requires_servers: boolean;
+}
+
+interface GameRegion {
+  id: string;
+  game_id: string;
+  name: string;
+  lootbar_region_id?: number; // Optional LootBar ID
+}
+
+interface GameServer {
+  id: string;
+  game_id: string;
+  region_id?: string; // Optional, if servers are nested under regions
+  name: string;
+  lootbar_server_id?: number; // Optional LootBar ID
+}
+
+interface GameProduct {
+  id: string;
+  game_id: string;
+  region_id?: string; // Optional
+  server_id?: string; // Optional
+  name: string;
+  image_url: string | null;
+  selling_price: number;
+  original_price: number | null;
+  lootbar_sku_id?: number; // Optional LootBar ID
+  // Add more fields as needed, e.g., description, currency, etc.
+}
+
 
 const STATE_LABELS: Record<number, { label: string; color: string; icon: React.ReactNode }> = {
   1: { label: "Pending", color: "text-yellow-600 bg-yellow-50 border-yellow-200", icon: <Clock size={12} /> },
@@ -133,12 +176,23 @@ export default function AdminDashboard() {
   const [totalPageViews, setTotalPageViews] = useState(0);
   const [totalEvents, setTotalEvents] = useState(0);
 
+  // Game management state
+  const [games, setGames] = useState<Game[]>([]);
+  const [selectedGame, setSelectedGame] = useState<Game | null>(null);
+  const [gameRegions, setGameRegions] = useState<GameRegion[]>([]);
+  const [gameServers, setGameServers] = useState<GameServer[]>([]);
+  const [gameProducts, setGameProducts] = useState<GameProduct[]>([]);
+  const [showRegionsModal, setShowRegionsModal] = useState(false);
+  const [showSkusModal, setShowSkusModal] = useState(false);
+  const [currentRegionForSkus, setCurrentRegionForSkus] = useState<GameRegion | null>(null);
+
   useEffect(() => {
     if (!user) { navigate("/login"); return; }
     if (user.role !== "admin") { navigate("/"); return; }
-    // Fire both fetches in parallel for max speed
+    // Fire all fetches in parallel for max speed
     fetchDashboard();
     fetchAnalytics();
+    fetchGames();
   }, [user]);
 
   const fetchDashboard = useCallback(async () => {
@@ -154,20 +208,23 @@ export default function AdminDashboard() {
       ] = await Promise.all([
         supabase.from("orders").select("price, state").limit(10000),
         supabase.from("manual_products").select("id", { count: "exact", head: true }).eq("is_active", true),
-        supabase.from("user_roles").select("id", { count: "exact", head: true }),
+        supabase.from("user_roles").select("id", { count: "exact", head: true }), // Assuming user_roles table exists
         supabase.from("orders").select("id", { count: "exact", head: true }).gte("created_at", `${today}T00:00:00.000Z`),
       ]);
 
       const allOrders = orders || [];
+      const completedOrders = allOrders.filter(o => o.state === 3);
+      const totalRevenue = completedOrders.reduce((sum, o) => sum + Number(o.price || 0), 0);
+
       setStats({
         totalOrders: allOrders.length,
         pendingOrders: allOrders.filter(o => o.state === 1 || o.state === 2).length,
-        completedOrders: allOrders.filter(o => o.state === 3).length,
+        completedOrders: completedOrders.length,
         failedOrders: allOrders.filter(o => o.state === 4).length,
-        totalRevenue: allOrders.filter(o => o.state === 3).reduce((sum, o) => sum + Number(o.price || 0), 0),
-        totalUsers: (userRoles as any)?.length ?? 0,
-        activeProducts: (manualProds as any)?.length ?? 0,
-        todayOrders: (todayOrders as any)?.length ?? 0,
+        totalRevenue: totalRevenue,
+        totalUsers: (userRoles as any)?.count ?? 0, // Assuming count is directly on data if head:true
+        activeProducts: (manualProds as any)?.count ?? 0, // Assuming count is directly on data if head:true
+        todayOrders: (todayOrders as any)?.count ?? 0, // Assuming count is directly on data if head:true
       });
 
       const { data: recent } = await supabase
@@ -242,12 +299,178 @@ export default function AdminDashboard() {
     }
   }, []);
 
+  const fetchGames = useCallback(async () => {
+    // Assuming a 'games' table exists to manage game configurations
+    const { data, error } = await supabase.from("games").select("*");
+    if (error) {
+      console.error("Error fetching games:", error);
+    } else {
+      setGames(data || []);
+    }
+  }, []);
+
+  const fetchGameRegions = useCallback(async (gameId: string) => {
+    const { data, error } = await supabase.from("game_regions").select("*").eq("game_id", gameId);
+    if (error) {
+      console.error("Error fetching game regions:", error);
+      setGameRegions([]);
+    } else {
+      setGameRegions(data || []);
+    }
+  }, []);
+
+  const fetchGameServers = useCallback(async (gameId: string, regionId?: string) => {
+    let query = supabase.from("game_servers").select("*").eq("game_id", gameId);
+    if (regionId) {
+      query = query.eq("region_id", regionId);
+    } else {
+      query = query.is("region_id", null); // For games with servers but no regions
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error fetching game servers:", error);
+      setGameServers([]);
+    } else {
+      setGameServers(data || []);
+    }
+  }, []);
+
+  const fetchGameProducts = useCallback(async (gameId: string, regionId?: string, serverId?: string) => {
+    let query = supabase.from("game_products").select("*").eq("game_id", gameId);
+    if (regionId) {
+      query = query.eq("region_id", regionId);
+    } else {
+      query = query.is("region_id", null);
+    }
+    if (serverId) {
+      query = query.eq("server_id", serverId);
+    } else {
+      query = query.is("server_id", null);
+    }
+    const { data, error } = await query;
+    if (error) {
+      console.error("Error fetching game products:", error);
+      setGameProducts([]);
+    } else {
+      setGameProducts(data || []);
+    }
+  }, []);
+
+
   const handleRefresh = useCallback(() => {
     fetchDashboard();
     fetchAnalytics();
-  }, [fetchDashboard, fetchAnalytics]);
+    fetchGames(); // Also refresh games
+  }, [fetchDashboard, fetchAnalytics, fetchGames]);
 
   const handleViewOrder = useCallback((ref: string) => navigate(`/orders/${ref}`), [navigate]);
+
+  const handleManageGame = useCallback(async (game: Game) => {
+    setSelectedGame(game);
+    if (game.requires_regions) {
+      await fetchGameRegions(game.id);
+      setShowRegionsModal(true);
+      setShowSkusModal(false);
+      setCurrentRegionForSkus(null);
+    } else if (game.requires_servers) {
+      await fetchGameServers(game.id); // Servers not nested under regions
+      await fetchGameProducts(game.id, undefined, undefined); // Products directly under servers
+      setShowSkusModal(true);
+      setShowRegionsModal(false);
+      setCurrentRegionForSkus(null);
+    } else {
+      // Game without regions or servers, products directly under game
+      await fetchGameProducts(game.id);
+      setShowSkusModal(true);
+      setShowRegionsModal(false);
+      setCurrentRegionForSkus(null);
+    }
+  }, [fetchGameRegions, fetchGameServers, fetchGameProducts]);
+
+  const handleManageRegions = useCallback(async (game: Game) => {
+    setSelectedGame(game);
+    await fetchGameRegions(game.id);
+    setShowRegionsModal(true);
+    setShowSkusModal(false);
+    setCurrentRegionForSkus(null);
+  }, [fetchGameRegions]);
+
+  const handleManageSkusForRegion = useCallback(async (region: GameRegion) => {
+    if (!selectedGame) return;
+    setCurrentRegionForSkus(region);
+    await fetchGameProducts(selectedGame.id, region.id);
+    await fetchGameServers(selectedGame.id, region.id); // Fetch servers specific to this region
+    setShowSkusModal(true);
+  }, [selectedGame, fetchGameProducts, fetchGameServers]);
+
+  const handleProductUpdate = useCallback(async (product: GameProduct, field: keyof GameProduct, value: any) => {
+    const updatedProduct = { ...product, [field]: value };
+    const { error } = await supabase.from("game_products").update(updatedProduct).eq("id", product.id);
+    if (error) {
+      console.error("Error updating product:", error);
+      // Revert UI if update fails or show error
+    } else {
+      // Update local state to reflect change immediately
+      setGameProducts(prev => prev.map(p => p.id === product.id ? updatedProduct : p));
+    }
+  }, []);
+
+  const handleAddRegion = useCallback(async (gameId: string, name: string) => {
+    const { data, error } = await supabase.from("game_regions").insert({ game_id: gameId, name }).select();
+    if (error) {
+      console.error("Error adding region:", error);
+    } else if (data) {
+      setGameRegions(prev => [...prev, data[0]]);
+    }
+  }, []);
+
+  const handleEditRegion = useCallback(async (regionId: string, newName: string) => {
+    const { data, error } = await supabase.from("game_regions").update({ name: newName }).eq("id", regionId).select();
+    if (error) {
+      console.error("Error editing region:", error);
+    } else if (data) {
+      setGameRegions(prev => prev.map(r => r.id === regionId ? data[0] : r));
+    }
+  }, []);
+
+  const handleDeleteRegion = useCallback(async (regionId: string) => {
+    if (!window.confirm("Are you sure you want to delete this region and all its associated servers/products?")) return;
+    const { error } = await supabase.from("game_regions").delete().eq("id", regionId);
+    if (error) {
+      console.error("Error deleting region:", error);
+    } else {
+      setGameRegions(prev => prev.filter(r => r.id !== regionId));
+      // Optionally, trigger a refresh of products/servers if they were related
+    }
+  }, []);
+
+  const handleAddServer = useCallback(async (gameId: string, name: string, regionId?: string) => {
+    const { data, error } = await supabase.from("game_servers").insert({ game_id: gameId, name, region_id: regionId }).select();
+    if (error) {
+      console.error("Error adding server:", error);
+    } else if (data) {
+      setGameServers(prev => [...prev, data[0]]);
+    }
+  }, []);
+
+  const handleEditServer = useCallback(async (serverId: string, newName: string) => {
+    const { data, error } = await supabase.from("game_servers").update({ name: newName }).eq("id", serverId).select();
+    if (error) {
+      console.error("Error editing server:", error);
+    } else if (data) {
+      setGameServers(prev => prev.map(s => s.id === serverId ? data[0] : s));
+    }
+  }, []);
+
+  const handleDeleteServer = useCallback(async (serverId: string) => {
+    if (!window.confirm("Are you sure you want to delete this server and all its associated products?")) return;
+    const { error } = await supabase.from("game_servers").delete().eq("id", serverId);
+    if (error) {
+      console.error("Error deleting server:", error);
+    } else {
+      setGameServers(prev => prev.filter(s => s.id !== serverId));
+    }
+  }, []);
 
   // ── Theme tokens ─────────────────────────────────────────────────────────
   const theme = useMemo(() => ({
@@ -338,17 +561,20 @@ export default function AdminDashboard() {
         {/* Quick Actions */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4 mb-6 md:mb-8">
           {[
-            { label: "Manage Games", desc: "Add or edit games", path: `${ADMIN_DASHBOARD_PREFIX}/games`, color: "from-blue-500 to-blue-600" },
-            { label: "Manage Products", desc: "Edit products & pricing", path: `${ADMIN_DASHBOARD_PREFIX}/products`, color: "from-purple-500 to-purple-600" },
-            { label: "Add Product", desc: "Create new listing", path: `${ADMIN_DASHBOARD_PREFIX}/products/add`, color: "from-green-500 to-green-600" },
-            { label: "Lootbar Games", desc: "Override API games", path: `${ADMIN_DASHBOARD_PREFIX}/lootbar-games`, color: "from-orange-500 to-orange-600" },
+            { label: "Manage Games", desc: "Add or edit games", action: () => navigate(`${ADMIN_DASHBOARD_PREFIX}/games`), color: "from-blue-500 to-blue-600", icon: <Gamepad2 size={20} /> },
+            { label: "Manage Products", desc: "Edit products & pricing", action: () => navigate(`${ADMIN_DASHBOARD_PREFIX}/products`), color: "from-purple-500 to-purple-600", icon: <Package size={20} /> },
+            { label: "Add Product", desc: "Create new listing", action: () => navigate(`${ADMIN_DASHBOARD_PREFIX}/products/add`), color: "from-green-500 to-green-600", icon: <PlusCircle size={20} /> },
+            { label: "Lootbar Sync", desc: "Override API games", action: () => navigate(`${ADMIN_DASHBOARD_PREFIX}/lootbar-sync`), color: "from-orange-500 to-orange-600", icon: <RefreshCw size={20} /> },
           ].map(action => (
             <button
               key={action.label}
-              onClick={() => navigate(action.path)}
-              className={`bg-gradient-to-br ${action.color} rounded-2xl p-4 md:p-5 text-left text-white hover:opacity-90 transition shadow-sm`}
+              onClick={action.action}
+              className={`bg-gradient-to-br ${action.color} rounded-2xl p-4 md:p-5 text-left text-white hover:opacity-90 transition shadow-sm flex flex-col justify-between`}
             >
-              <p className="font-bold text-sm md:text-base mb-0.5">{action.label}</p>
+              <div className="flex items-center justify-between mb-2">
+                <p className="font-bold text-sm md:text-base">{action.label}</p>
+                {action.icon}
+              </div>
               <p className="text-white/80 text-[10px] md:text-xs hidden sm:block">{action.desc}</p>
             </button>
           ))}
@@ -509,76 +735,250 @@ export default function AdminDashboard() {
             </div>
           )}
         </div>
+
+        {/* Game Management Section (New) */}
+        <div className={`${theme.cardBg} rounded-2xl shadow-sm border overflow-hidden mt-8`}>
+          <div className={`flex items-center justify-between px-4 md:px-6 py-4 border-b ${theme.borderColor}`}>
+            <div className="flex items-center gap-2">
+              <Gamepad2 size={16} className="text-gray-600" />
+              <h2 className={`text-sm md:text-base font-bold ${theme.textPrimary}`}>Game & Product Management</h2>
+            </div>
+          </div>
+          <div className="p-4 md:p-6">
+            <h3 className={`text-md font-semibold ${theme.textPrimary} mb-4`}>Available Games</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {games.length === 0 ? (
+                <p className={`${theme.textSecondary}`}>No games found. Add games to manage them.</p>
+              ) : (
+                games.map(game => (
+                  <div key={game.id} className={`${theme.cardBg} p-4 rounded-lg border flex items-center justify-between`}>
+                    <span className={`${theme.textPrimary} font-medium`}>{game.name}</span>
+                    <button
+                      onClick={() => handleManageGame(game)}
+                      className={`inline-flex items-center gap-1.5 border rounded-lg px-3 py-1 text-sm font-semibold transition ${
+                        isDark ? "bg-gray-700 border-gray-600 text-gray-200 hover:bg-gray-600" : "bg-blue-50 border-blue-100 text-blue-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      <Settings size={14} />
+                      {game.requires_regions ? "Manage Regions" : "Manage SKUs"}
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Regions Management Modal */}
+        {selectedGame && (
+          <Dialog open={showRegionsModal} onOpenChange={setShowRegionsModal}>
+            <DialogContent className={`sm:max-w-[800px] ${theme.cardBg}`}>
+              <DialogHeader>
+                <DialogTitle className={theme.textPrimary}>Manage Regions for {selectedGame.name}</DialogTitle>
+                <DialogDescription className={theme.textSecondary}>
+                  Add, edit, or delete regions for this game. Products are nested under regions.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <div className="mb-4">
+                  <div className="flex gap-2 mb-2">
+                    <Input
+                      type="text"
+                      placeholder="New Region Name"
+                      className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor}`}
+                      onKeyDown={async (e) => {
+                        if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                          await handleAddRegion(selectedGame.id, e.currentTarget.value.trim());
+                          e.currentTarget.value = '';
+                        }
+                      }}
+                    />
+                    <Button onClick={async () => {
+                        const input = (document.querySelector('input[placeholder="New Region Name"]') as HTMLInputElement);
+                        if (input && input.value.trim()) {
+                          await handleAddRegion(selectedGame.id, input.value.trim());
+                          input.value = '';
+                        }
+                      }}>
+                      <PlusCircle size={16} className="mr-2" /> Add Region
+                    </Button>
+                  </div>
+                </div>
+                {gameRegions.length === 0 ? (
+                  <p className={`${theme.textSecondary} text-center py-4`}>No regions configured for this game.</p>
+                ) : (
+                  <ul className={`divide-y ${theme.divider}`}>
+                    {gameRegions.map(region => (
+                      <li key={region.id} className="flex items-center justify-between py-3">
+                        <span className={`${theme.textPrimary} font-medium`}>{region.name}</span>
+                        <div className="flex gap-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleManageSkusForRegion(region)}
+                            className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor} hover:${theme.rowHover}`}
+                          >
+                            <Package size={14} className="mr-2" /> Manage SKUs
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => {
+                              const newName = window.prompt(`Edit region name for "${region.name}":`, region.name);
+                              if (newName && newName.trim() !== region.name) {
+                                handleEditRegion(region.id, newName.trim());
+                              }
+                            }}
+                            className={`${theme.textSecondary} hover:${theme.textPrimary}`}
+                          >
+                            <Edit size={16} />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDeleteRegion(region.id)}
+                            className={`text-red-500 hover:bg-red-500/10`}
+                          >
+                            <Trash2 size={16} />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
+        {/* SKUs Management Modal (for game or region-specific) */}
+        {selectedGame && (
+          <Dialog open={showSkusModal} onOpenChange={(open) => {
+            setShowSkusModal(open);
+            // If closing SKU modal, and we were managing region-based SKUs, reopen region modal
+            if (!open && selectedGame.requires_regions && currentRegionForSkus) {
+              setShowRegionsModal(true);
+              setCurrentRegionForSkus(null);
+            }
+          }}>
+            <DialogContent className={`sm:max-w-[1000px] ${theme.cardBg}`}>
+              <DialogHeader>
+                <DialogTitle className={theme.textPrimary}>
+                  Manage Products for {selectedGame.name}
+                  {currentRegionForSkus ? ` (Region: ${currentRegionForSkus.name})` : ""}
+                </DialogTitle>
+                <DialogDescription className={theme.textSecondary}>
+                  Edit product details like name, image, selling price, and original price.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                 {/* Server management for this context (if applicable) */}
+                {selectedGame.requires_servers && (currentRegionForSkus || !selectedGame.requires_regions) && (
+                  <div className="mb-6">
+                    <h3 className={`text-md font-semibold ${theme.textPrimary} mb-2`}>
+                      Servers for {currentRegionForSkus?.name || selectedGame.name}
+                    </h3>
+                    <div className="flex gap-2 mb-2">
+                      <Input
+                        type="text"
+                        placeholder="New Server Name"
+                        className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor}`}
+                        onKeyDown={async (e) => {
+                          if (e.key === 'Enter' && e.currentTarget.value.trim()) {
+                            await handleAddServer(selectedGame.id, e.currentTarget.value.trim(), currentRegionForSkus?.id);
+                            e.currentTarget.value = '';
+                          }
+                        }}
+                      />
+                      <Button onClick={async () => {
+                          const input = (document.querySelector('input[placeholder="New Server Name"]') as HTMLInputElement);
+                          if (input && input.value.trim()) {
+                            await handleAddServer(selectedGame.id, input.value.trim(), currentRegionForSkus?.id);
+                            input.value = '';
+                          }
+                        }}>
+                        <PlusCircle size={16} className="mr-2" /> Add Server
+                      </Button>
+                    </div>
+                    {gameServers.length === 0 ? (
+                      <p className={`${theme.textSecondary} text-center py-2`}>No servers configured.</p>
+                    ) : (
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {gameServers.map(server => (
+                          <div key={server.id} className={`flex items-center gap-1 ${theme.cardBg} border ${theme.borderColor} rounded-full px-3 py-1 text-sm ${theme.textPrimary}`}>
+                            <span>{server.name}</span>
+                            <button
+                              onClick={() => {
+                                const newName = window.prompt(`Edit server name for "${server.name}":`, server.name);
+                                if (newName && newName.trim() !== server.name) {
+                                  handleEditServer(server.id, newName.trim());
+                                }
+                              }}
+                              className={`${theme.textSecondary} hover:${theme.textPrimary} ml-1`}
+                            >
+                              <Edit size={12} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteServer(server.id)}
+                              className={`text-red-400 hover:text-red-600 ml-1`}
+                            >
+                              <XCircle size={12} />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {gameProducts.length === 0 ? (
+                  <p className={`${theme.textSecondary} text-center py-8`}>No products found for this {currentRegionForSkus ? 'region' : 'game'}.</p>
+                ) : (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {gameProducts.map(product => (
+                      <div key={product.id} className={`${theme.cardBg} p-4 rounded-lg border shadow-sm`}>
+                        <img src={product.image_url || "/placeholder-product.png"} alt={product.name} className="w-full h-32 object-cover rounded-md mb-3" />
+                        <div className="grid gap-2">
+                          <div>
+                            <Label htmlFor={`name-${product.id}`} className={theme.textSecondary}>Product Name</Label>
+                            <Input
+                              id={`name-${product.id}`}
+                              value={product.name}
+                              onChange={(e) => handleProductUpdate(product, 'name', e.target.value)}
+                              className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor}`}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`sell-price-${product.id}`} className={theme.textSecondary}>Selling Price</Label>
+                            <Input
+                              id={`sell-price-${product.id}`}
+                              type="number"
+                              value={product.selling_price}
+                              onChange={(e) => handleProductUpdate(product, 'selling_price', parseFloat(e.target.value))}
+                              className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor}`}
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor={`original-price-${product.id}`} className={theme.textSecondary}>Original Price (Optional)</Label>
+                            <Input
+                              id={`original-price-${product.id}`}
+                              type="number"
+                              value={product.original_price ?? ''}
+                              onChange={(e) => handleProductUpdate(product, 'original_price', e.target.value ? parseFloat(e.target.value) : null)}
+                              className={`${theme.cardBg} ${theme.textPrimary} border ${theme.borderColor}`}
+                            />
+                          </div>
+                          {/* Add other fields here like image_url */}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+
       </main>
     </div>
   );
 }
-hello AI please read message and make change fix error sku fetch real time.
-
-Please fix and improve the LootBar integration and admin system with the following changes:
-
-### 1. Real Analytics
-
-* Replace all demo or fake analytics with real analytics.
-* Show actual sales, revenue, orders, customers, and product performance using real database data.
-* Analytics must update automatically in real time.
-
-### 2. Game Server, Region & SKU Management
-
-Please redesign the product management system.
-
-**If a game requires both servers and regions:**
-
-* Show a **Manage Regions** button instead of **Manage SKU**.
-* When the admin clicks **Manage Regions**, display all available regions for that game.
-* Under each region, show a **Manage SKU** button.
-* Clicking **Manage SKU** should display all products for that region (for example: 100 Diamonds, 310 Diamonds, Weekly Membership, etc.).
-* The admin must be able to edit:
-
-  * Product name
-  * Product image
-  * Selling price
-  * Original price (optional)
-* All changes must save automatically and appear immediately on the Game Detail page.
-
-**If a game only requires servers (no regions):**
-
-* Show only **Manage SKU**.
-* The admin should be able to edit all products directly.
-
-### 3. Add New Servers & Regions
-
-Allow the admin to:
-
-* Add new servers.
-* Add new regions.
-* Edit existing servers and regions.
-* Delete servers and regions if needed.
-
-The interface should automatically adapt:
-
-* Games with **Server + Region** → Show **Manage Regions**.
-* Games with **Server Only** → Show **Manage SKU** directly.
-* Games with neither → Show products normally.
-
-### 4. Permanent Product Storage
-
-Do **not** fetch products from the LootBar API every time someone opens the Game Detail page.
-
-Instead:
-
-* Save every fetched product permanently in the database.
-* The Game Detail page must always load products from the database.
-* Products should only be updated when the admin manually refreshes or syncs them from the LootBar API.
-* This prevents products from disappearing and improves loading speed.
-
-### 5. Reliable Checkout
-
-Fix the checkout system so it is fully reliable.
-
-* Orders must always be saved correctly.
-* Checkout data must never be lost.
-* Payment information and order details must remain consistent.
-* Eliminate any issues where orders are not saved or become unsynchronized.
-
-Overall, the system should be database-driven, stable, and production-ready, with no temporary data, no fake analytics, and no unnecessary API fetching after products have been synced.
