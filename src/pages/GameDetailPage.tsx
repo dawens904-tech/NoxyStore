@@ -1301,3 +1301,4 @@ export function GameDetailPage() {
     </>
   );
 }
+hello ai remove all game card in white background remove it just display in the page pa mete yon lot background again also the region section and make region square and order ingo right make it square and ceparate it to the quantity for desktop let them self and square.
