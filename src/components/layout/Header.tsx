@@ -85,7 +85,7 @@ export function Header({ showMenu, title, showBack }: HeaderProps) {
                   <img src={user.avatar} alt="avatar" className="w-10 h-10 rounded-full object-cover flex-shrink-0" />
                 ) : (
                   <div className="w-10 h-10 rounded-full bg-gradient-to-br from-purple-500 to-purple-700 flex items-center justify-center text-white font-bold text-base flex-shrink-0">
-                    {user?.nickname?.[0]?.toUpperCase() ?? "U"}
+                    {user?.nickname?.[0]?.toUpperCase() ?? ""}
                   </div>
                 )}
                 <span className="flex-1 text-left font-medium text-gray-900 text-sm truncate">
