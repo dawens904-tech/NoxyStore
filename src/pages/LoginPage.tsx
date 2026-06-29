@@ -459,4 +459,4 @@ export function LoginPage() {
     </div>
   );
 }
-
+please modal background must be white its not the modal must be blur the back background and when a user open login page let their see the back other page theior open the modal login and for mobile make login better full page.
