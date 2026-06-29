@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useEffect, useState, Component, ReactNode } from "react";
+import { Analytics } from "@vercel/analytics/next"
 import { Toaster } from "sonner";
 import { HomePage } from "@/pages/HomePage";
 import { CategoriesPage } from "@/pages/CategoriesPage";
