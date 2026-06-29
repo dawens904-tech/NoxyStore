@@ -1263,4 +1263,4 @@ export function CheckoutPage() {
     </>
   );
 }
-
+for balance when it admin email fetch from lootbar when it user fetch from their balancepage.
