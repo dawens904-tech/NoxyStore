@@ -459,3 +459,4 @@ export function LoginPage() {
     </div>
   );
 }
+hello ai make the login square and more large all must square and remove bvackground white lan show page li louvri an in blur make button line,apple login with photo i will replace.
