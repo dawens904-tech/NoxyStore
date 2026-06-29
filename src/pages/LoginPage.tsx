@@ -156,26 +156,40 @@ export function LoginPage() {
         </svg>
       </button>
 
-      {/* LINE (green chat bubble) */}
+      {/* LINE — photo placeholder (replace src with your LINE logo image) */}
       <button
         onClick={() => toast.info("LINE login coming soon!")}
-        className="w-11 h-11 rounded-full bg-[#00C300] flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-sm"
+        className="w-11 h-11 rounded-full overflow-hidden border border-gray-200 hover:scale-105 active:scale-95 transition-transform shadow-sm bg-[#00C300] flex items-center justify-center"
         title="LINE"
       >
-        <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-          <path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855-3.016c.26 0 .514.027.758.076.246.048.45.187.45.187s-.146.125-.24.203c-.094.078-.344.14-.344.14s-.14-.016-.26-.016c-.12 0-.36.047-.36.047v2.66c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.11c0-.345.28-.63.63-.63h.626zm-2.53 0c.348 0 .63.285.63.63v4.049c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.846 0c.349 0 .63.285.63.63v2.056l1.768-2.133c.17-.204.43-.33.71-.33.28 0 .54.126.71.33.17.205.19.48.05.71l-1.36 1.64 1.518 2.04c.14.19.12.465-.05.67-.17.205-.43.33-.71.33-.28 0-.54-.125-.71-.33L10.5 10.52V11.5c0 .345-.281.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.845 0c.348 0 .63.285.63.63v4.049c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.53 0c.348 0 .63.285.63.63v.397h.63c.349 0 .63.284.63.63 0 .344-.281.629-.63.629h-.63v1.393h1.26c.349 0 .63.284.63.63 0 .344-.281.629-.63.629H2.63c-.35 0-.63-.285-.63-.629V7.477c0-.345.28-.63.63-.63h1.63zm15.18 5.79c0 3.046-3.07 5.524-6.86 5.524-1.17 0-2.27-.255-3.23-.703l-2.36 1.42c-.2.12-.44.03-.5-.2-.06-.23.09-.47.31-.52l1.96-.5c-1.57-1.17-2.58-2.87-2.58-4.78 0-3.05 3.07-5.53 6.86-5.53 3.79 0 6.86 2.48 6.86 5.53z"/>
-        </svg>
+        {/* Replace this img src with your LINE logo photo */}
+        <img
+          src="/images/line-logo.png"
+          alt="LINE"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+            (e.target as HTMLImageElement).parentElement!.innerHTML += '<svg class="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M19.365 9.863c.349 0 .63.285.63.631 0 .345-.281.63-.63.63H17.61v1.125h1.755c.349 0 .63.283.63.63 0 .344-.281.629-.63.629h-2.386c-.345 0-.627-.285-.627-.629V8.108c0-.345.282-.63.63-.63h2.386c.349 0 .63.285.63.63 0 .349-.281.63-.63.63H17.61v1.125h1.755zm-3.855-3.016c.26 0 .514.027.758.076.246.048.45.187.45.187s-.146.125-.24.203c-.094.078-.344.14-.344.14s-.14-.016-.26-.016c-.12 0-.36.047-.36.047v2.66c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.11c0-.345.28-.63.63-.63h.626zm-2.53 0c.348 0 .63.285.63.63v4.049c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.846 0c.349 0 .63.285.63.63v2.056l1.768-2.133c.17-.204.43-.33.71-.33.28 0 .54.126.71.33.17.205.19.48.05.71l-1.36 1.64 1.518 2.04c.14.19.12.465-.05.67-.17.205-.43.33-.71.33-.28 0-.54-.125-.71-.33L10.5 10.52V11.5c0 .345-.281.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.845 0c.348 0 .63.285.63.63v4.049c0 .345-.282.63-.63.63-.35 0-.63-.285-.63-.63V7.477c0-.345.28-.63.63-.63zm-2.53 0c.348 0 .63.285.63.63v.397h.63c.349 0 .63.284.63.63 0 .344-.281.629-.63.629h-.63v1.393h1.26c.349 0 .63.284.63.63 0 .344-.281.629-.63.629H2.63c-.35 0-.63-.285-.63-.629V7.477c0-.345.28-.63.63-.63h1.63zm15.18 5.79c0 3.046-3.07 5.524-6.86 5.524-1.17 0-2.27-.255-3.23-.703l-2.36 1.42c-.2.12-.44.03-.5-.2-.06-.23.09-.47.31-.52l1.96-.5c-1.57-1.17-2.58-2.87-2.58-4.78 0-3.05 3.07-5.53 6.86-5.53 3.79 0 6.86 2.48 6.86 5.53z"/></svg>';
+          }}
+        />
       </button>
 
-      {/* Apple - opens left */}
+      {/* Apple — photo placeholder (replace src with your Apple logo image) */}
       <button
         onClick={() => toast.info("Apple login coming soon!")}
-        className="w-11 h-11 rounded-full bg-black flex items-center justify-center hover:scale-105 active:scale-95 transition-transform shadow-sm"
+        className="w-11 h-11 rounded-full overflow-hidden border border-gray-200 hover:scale-105 active:scale-95 transition-transform shadow-sm bg-black flex items-center justify-center"
         title="Apple"
       >
-        <svg className="w-5 h-5" fill="white" viewBox="0 0 24 24">
-          <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/>
-        </svg>
+        {/* Replace this img src with your Apple logo photo */}
+        <img
+          src="/images/apple-logo.png"
+          alt="Apple"
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = 'none';
+            (e.target as HTMLImageElement).parentElement!.innerHTML += '<svg class="w-5 h-5" fill="white" viewBox="0 0 24 24"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>';
+          }}
+        />
       </button>
     </div>
   );
@@ -409,8 +423,8 @@ export function LoginPage() {
       {/* Blurred backdrop - page behind is visible but blurred */}
       <div className="absolute inset-0 bg-black/30 backdrop-blur-sm" onClick={handleClose} />
       
-      {/* Modal container - square with rounded corners, little border */}
-      <div className="relative bg-white rounded-xl border border-gray-200 shadow-2xl w-full max-w-sm mx-4 p-6">
+      {/* Modal container — large square, glass frosted effect */}
+      <div className="relative bg-white/90 backdrop-blur-2xl rounded-2xl border border-white/60 shadow-2xl w-full max-w-md mx-4 p-8" style={{ minHeight: '440px' }}>
         {/* Close button */}
         <button
           onClick={handleClose}
@@ -459,4 +473,3 @@ export function LoginPage() {
     </div>
   );
 }
-hello ai make the login square and more large all must square and remove bvackground white lan show page li louvri an in blur make button line,apple login with photo i will replace.
