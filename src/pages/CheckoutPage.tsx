@@ -230,7 +230,7 @@ function HaitiPaymentModal({
 type PaymentMethod = {
   id: string;
   label: string;
-  renderLogo: () => React.ReactNode;
+  renderLogo?: () => React.ReactNode;
   fee: number;
   tag?: string;
   subCards?: Array<{ masked: string; tag?: string }>;
@@ -350,7 +350,7 @@ export function CheckoutPage() {
       id: "apple_pay" as PaymentMethodId,
       label: "Apple Pay",
       fee: 0,
-      renderLeft: () => (
+      renderLogo: () => (
         <div className="flex items-center gap-2">
           <ApplePayBadge />
           <p className="text-xs text-gray-400 ml-1">Touch / Face ID</p>
@@ -362,7 +362,7 @@ export function CheckoutPage() {
       id: "google_pay" as PaymentMethodId,
       label: "Google Pay",
       fee: 0,
-      renderLeft: () => (
+      renderLogo: () => (
         <div className="flex items-center gap-2">
           <GooglePayBadge />
           <p className="text-xs text-gray-400 ml-1">One-tap pay</p>
@@ -389,13 +389,13 @@ export function CheckoutPage() {
         id: "haiti_moncash" as PaymentMethodId,
         label: "MonCash",
         fee: 0,
-        renderLeft: () => <MoncashBadge />,
+        renderLogo: () => <MoncashBadge />,
       },
       {
         id: "haiti_natcash" as PaymentMethodId,
         label: "NatCash",
         fee: 0,
-        renderLeft: () => <NatcashBadge />,
+        renderLogo: () => <NatcashBadge />,
       },
     ] : []),
   ];
@@ -787,8 +787,8 @@ export function CheckoutPage() {
             <PayLaterLogo />
             <CashAppLogo />
             <CryptoLogo />
-            {isIOS && <ApplePayLogo />}
-            {isAndroid && <GooglePayLogo />}
+            {isIOS && <ApplePayBadge />}
+            {isAndroid && <GooglePayBadge />}
           </div>
           <div className="flex items-center justify-center gap-1.5 mt-2">
             <Shield size={12} className="text-green-500" />
@@ -832,7 +832,7 @@ export function CheckoutPage() {
                 </div>
               ) : (
                 <div className="flex items-center">
-                  {method.renderLogo()}
+                  {method.renderLogo ? method.renderLogo() : null}
                   {method.label && <span className="text-sm font-medium text-gray-700 ml-1">{method.label}</span>}
                 </div>
               )}
@@ -1263,4 +1263,4 @@ export function CheckoutPage() {
     </>
   );
 }
-hello ai please fix Y.renderLogo is not a function. (In 'Y.renderLogo()', 'Y.renderLogo' is undefined).
+
