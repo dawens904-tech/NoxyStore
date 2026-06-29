@@ -15,11 +15,12 @@ import { toast } from "sonner";
 import { FunctionsHttpError } from "@supabase/supabase-js";
 
 type CheckoutState = "review" | "processing" | "success" | "failed";
-type PaymentMethodId = string;
 
+// Detect platform for Apple Pay / Google Pay
 const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 const isAndroid = /Android/.test(navigator.userAgent);
 
+// ─── Haiti detection (timezone-based) ────────────────────────────────────────
 const isHaiti = (() => {
   try {
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -51,7 +52,10 @@ const isFrequentlyUsed = (methodId: string): boolean => {
   return (getPaymentUsage()[methodId] || 0) >= 3;
 };
 
-// ─── Logo Components ────────────────────────────────────────────────────────
+
+// ─── Inline Logo Components (no borders, no backgrounds, raw logos) ─────────
+
+// ─── Payment Photo Cards (placeholder — user will replace images later) ──────
 const PayCard = ({ src, alt, w = "w-12" }: { src: string; alt: string; w?: string }) => (
   <img src={src} alt={alt} className={`${w} h-8 object-contain rounded`}
     onError={(e) => { (e.target as HTMLImageElement).style.opacity = "0.3"; }} />
@@ -59,50 +63,46 @@ const PayCard = ({ src, alt, w = "w-12" }: { src: string; alt: string; w?: strin
 
 const VisaMasterLogo = () => (
   <div className="flex items-center gap-1.5">
-    <PayCard src="/images/IMG_8408.webp" alt="Visa/Mastercard" w="w-24" />
+    <PayCard src="/images/IMG_8408.webp" alt="Visa/Mastercard" w="w-20" />
   </div>
 );
 
 const JCBAmexDiscoverDinersLogo = () => (
   <div className="flex items-center gap-1.5">
-    <PayCard src="/images/IMG_8725.webp" alt="JCB / Amex / Discover / Diners" w="w-36" />
+    <PayCard src="/images/IMG_8725.webp" alt="JCB / Amex / Discover / Diners" w="w-28" />
   </div>
 );
 
 const PayPalLogo = () => (
   <div className="flex items-center gap-1.5">
-    <PayCard src="/images/IMG_8726.webp" alt="PayPal" w="w-16" />
+    <PayCard src="/images/IMG_8726.webp" alt="PayPal" />
   </div>
 );
 
 const PayLaterLogo = () => (
   <div className="flex items-center gap-1.5">
-    <PayCard src="/images/IMG_8729.webp" alt="Pay Later" w="w-16" />
+    <PayCard src="/images/IMG_8729.webp" alt="Pay Later" />
   </div>
 );
 
 const CashAppLogo = () => (
   <div className="flex items-center gap-1.5">
-    <PayCard src="/images/IMG_8727.webp" alt="Cash App" w="w-16" />
+    <PayCard src="/images/IMG_8727.webp" alt="Cash App" />
   </div>
 );
 
-const AppleLogo = () => (
-  <svg viewBox="0 0 170 170" className="h-6 w-6 flex-shrink-0" fill="currentColor">
-    <path d="M150.37 130.25c-2.45 5.66-5.35 10.87-8.71 15.66-4.58 6.53-8.33 11.05-11.22 13.56-4.48 4.12-9.28 6.23-14.42 6.35-3.69 0-8.14-1.05-13.32-3.18-5.197-2.12-9.973-3.17-14.34-3.17-4.58 0-9.492 1.05-14.746 3.17-5.262 2.13-9.501 3.24-12.742 3.35-4.929.21-9.842-1.96-14.746-6.52-3.13-2.73-7.045-7.41-11.735-14.04-5.032-7.08-9.169-15.29-12.41-24.65-3.471-10.11-5.211-19.9-5.211-29.378 0-10.857 2.346-20.221 7.045-28.1 4.693-7.88 10.941-13.675 18.741-17.4 7.802-3.725 16.21-5.578 25.218-5.578 3.215 0 7.496 1.194 12.847 3.566 5.35 2.373 9.027 3.566 11.03 3.566 1.576 0 5.566-1.366 11.961-4.096 6.395-2.73 11.779-4.096 16.151-4.096 11.229.21 21.198 4.515 29.906 12.918-9.908 6.016-14.862 14.44-14.862 25.27 0 8.48 3.135 15.53 9.406 21.14 5.498 4.896 12.13 7.607 19.898 8.133-1.576 6.88-3.913 13.28-7.012 19.19zM119.11 7.24c0 8.102-2.966 15.667-8.895 22.697-7.012 8.322-15.49 12.49-25.428 11.557-.107-1.12-.17-2.3-.17-3.54 0-7.778 3.386-16.102 9.406-23.228 3.01-3.458 6.82-6.32 11.43-8.59 4.6-2.24 8.96-3.46 13.08-3.65.11 1.56.16 3.12.16 4.68z"/>
-  </svg>
-);
-
 const ApplePayBadge = () => (
-  <div className="flex items-center gap-1.5">
-    <AppleLogo />
-    <span className="text-lg font-semibold tracking-tight">Pay</span>
+  <div className="flex items-center gap-1.5 bg-black text-white px-3 py-1 rounded-md">
+    <svg viewBox="0 0 24 24" className="h-4 w-4 fill-white flex-shrink-0">
+      <path d="M17.7 9.7c-.1-1.5 1.2-2.2 1.3-2.3-1.4-2-3.5-1.7-4.3-1.7-1.8 0-3.6 1.1-4 2.2-.4 1-.1 2.4.7 3.8.6.8 1.3 1.8 2.3 1.8.9 0 1.3-.6 2.4-.6 1.1 0 1.4.6 2.3.6 1 0 1.6-.9 2.2-1.7.7-1 .9-2 .9-2-.1 0-1.8-.7-1.8-2.1zm-2.1-3.8c.7-.9 1.2-2.1 1.1-3.3-1 .1-2.2.7-2.9 1.5-.7.8-1.2 2-1 3.2 1.1.1 2.1-.5 2.8-1.4z"/>
+    </svg>
+    <span className="text-sm font-semibold">Pay</span>
   </div>
 );
 
 const GooglePayBadge = () => (
-  <div className="flex items-center gap-1">
-    <span className="text-base font-bold">
+  <div className="flex items-center gap-1 border border-gray-300 px-3 py-1 rounded-md bg-white">
+    <span className="text-sm font-bold">
       <span className="text-[#4285F4]">G</span>
       <span className="text-[#EA4335]">o</span>
       <span className="text-[#FBBC05]">o</span>
@@ -115,23 +115,23 @@ const GooglePayBadge = () => (
 );
 
 const MoncashBadge = () => (
-  <div className="flex items-center gap-2">
-    <div className="w-9 h-9 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-sm flex-shrink-0">M</div>
-    <span className="text-base font-bold text-gray-800">MonCash</span>
+  <div className="flex items-center gap-1.5">
+    <div className="w-8 h-8 rounded-full bg-red-600 flex items-center justify-center text-white font-black text-xs flex-shrink-0">M</div>
+    <span className="text-sm font-bold text-gray-800">MonCash</span>
   </div>
 );
 
 const NatcashBadge = () => (
-  <div className="flex items-center gap-2">
-    <div className="w-9 h-9 rounded-full bg-blue-700 flex items-center justify-center text-white font-black text-sm flex-shrink-0">N</div>
-    <span className="text-base font-bold text-gray-800">NatCash</span>
+  <div className="flex items-center gap-1.5">
+    <div className="w-8 h-8 rounded-full bg-blue-700 flex items-center justify-center text-white font-black text-xs flex-shrink-0">N</div>
+    <span className="text-sm font-bold text-gray-800">NatCash</span>
   </div>
 );
 
 const CryptoLogo = () => (
-  <div className="flex items-center gap-2">
-    <PayCard src="/images/IMG_8728.webp" alt="Crypto" w="w-40" />
-    <span className="text-sm font-medium text-gray-500">and more</span>
+  <div className="flex items-center gap-1.5">
+    <PayCard src="/images/IMG_8728.webp" alt="Crypto" w="w-32" />
+    <span className="text-sm font-medium text-gray-700">and more</span>
   </div>
 );
 
@@ -167,15 +167,7 @@ const GiftIcon = () => (
   </svg>
 );
 
-const EmptyCouponIcon = () => (
-  <svg viewBox="0 0 64 64" className="w-16 h-16 text-gray-300" fill="none" stroke="currentColor" strokeWidth="1.5">
-    <rect x="8" y="12" width="48" height="40" rx="4" strokeDasharray="4 4"/>
-    <circle cx="32" cy="32" r="10"/>
-    <path d="M26 32l4 4 8-8"/>
-  </svg>
-);
-
-// ─── Haiti Payment Modal ────────────────────────────────────────────────────
+// ─── Haiti Payment Modal ──────────────────────────────────────────────────────
 function HaitiPaymentModal({
   selectedMethod,
   onClose,
@@ -193,6 +185,7 @@ function HaitiPaymentModal({
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
       <div className="relative bg-white w-full max-w-sm shadow-2xl rounded-2xl overflow-hidden">
+        {/* Header */}
         <div className={`px-6 pt-6 pb-4 ${selectedMethod === "moncash" ? "bg-red-600" : "bg-blue-700"}`}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -212,6 +205,7 @@ function HaitiPaymentModal({
           </div>
         </div>
 
+        {/* Body */}
         <div className="px-6 py-5 space-y-4">
           <div className="flex items-start gap-3 bg-gray-50 rounded-xl p-3">
             <Smartphone size={18} className="text-gray-500 flex-shrink-0 mt-0.5" />
@@ -262,7 +256,6 @@ type PaymentMethod = {
   renderLogo?: () => React.ReactNode;
   fee: number;
   tag?: string;
-  lastUsed?: boolean;
   subCards?: Array<{ masked: string; tag?: string }>;
   isBalance?: boolean;
   isCrypto?: boolean;
@@ -305,19 +298,11 @@ export function CheckoutPage() {
   const [modifyValues, setModifyValues] = useState<Record<string, string>>({});
   const [showHaitiModal, setShowHaitiModal] = useState(false);
   const [haitiMethod, setHaitiMethod] = useState<"moncash" | "natcash">("moncash");
-  const [productExpanded, setProductExpanded] = useState(false);
-  const [isMobileView, setIsMobileView] = useState(false);
 
-  useEffect(() => {
-    const checkMobile = () => setIsMobileView(window.innerWidth < 1024);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
+  // Auto-apply pending coupon from coupons page
   useEffect(() => {
     if (!state?.sku) return;
-    setModifyValues(state.extraInfo || {});
+    setModifyValues(extraInfo || {});
     const pending = sessionStorage.getItem("pending_coupon");
     if (pending) {
       const coupon = JSON.parse(pending);
@@ -369,86 +354,76 @@ export function CheckoutPage() {
   const { sku, game, extraInfo } = state;
   const basePrice = (sku.price || 0) * quantity;
 
-  const buildPaymentMethods = (): PaymentMethod[] => {
-    const methods: PaymentMethod[] = [
+  const PAYMENT_METHODS: PaymentMethod[] = [
+    {
+      id: "stripe_card",
+      label: "",
+      renderLogo: () => <VisaMasterLogo />,
+      fee: 0,
+      tag: "Secure",
+      subCards: savedCards.length > 0
+        ? savedCards.map((c, i) => ({ masked: `${c.card_type?.toUpperCase() || "Visa"} **** **** **** ${c.card_number_masked?.slice(-4) || "0000"}`, tag: c.is_default ? "Default" : undefined }))
+        : [{ masked: "Add an account for payment" }],
+    },
+    { id: "jcb_group", label: "", renderLogo: () => <JCBAmexDiscoverDinersLogo />, fee: -0.01 },
+    { id: "paypal", label: "", renderLogo: () => <PayPalLogo />, fee: 0.19 },
+    { id: "paylater", label: "", renderLogo: () => <PayLaterLogo />, fee: 0.19 },
+    { id: "cashapp", label: "", renderLogo: () => <CashAppLogo />, fee: 0.25 },
+  // Apple Pay (iOS only)
+    ...(isIOS ? [{
+      id: "apple_pay" as PaymentMethodId,
+      label: "Apple Pay",
+      fee: 0,
+      renderLogo: () => (
+        <div className="flex items-center gap-2">
+          <ApplePayBadge />
+          <p className="text-xs text-gray-400 ml-1">Touch / Face ID</p>
+        </div>
+      ),
+    }] : []),
+    // Google Pay (Android only)
+    ...(isAndroid ? [{
+      id: "google_pay" as PaymentMethodId,
+      label: "Google Pay",
+      fee: 0,
+      renderLogo: () => (
+        <div className="flex items-center gap-2">
+          <GooglePayBadge />
+          <p className="text-xs text-gray-400 ml-1">One-tap pay</p>
+        </div>
+      ),
+    }] : []),
+    {
+      id: "crypto",
+      label: "",
+      renderLogo: () => <CryptoLogo />,
+      fee: -0.57,
+      isCrypto: true,
+      isVIPOnly: true,
+    },
+    {
+      id: "balance",
+      label: "My Balance",
+      renderLogo: () => null,
+      fee: -0.70,
+      isBalance: true,
+    },
+ // Haiti local methods
+    ...(isHaiti ? [
       {
-        id: "stripe_card",
-        label: "",
-        renderLogo: () => <VisaMasterLogo />,
+        id: "haiti_moncash" as PaymentMethodId,
+        label: "MonCash",
         fee: 0,
-        tag: "Secure",
-        subCards: savedCards.length > 0
-          ? savedCards.map((c, i) => ({ masked: `${c.card_type?.toUpperCase() || "Visa"} **** **** **** ${c.card_number_masked?.slice(-4) || "0000"}`, tag: c.is_default ? "Default" : undefined }))
-          : [{ masked: "Add an account for payment" }],
-      },
-      { id: "jcb_group", label: "", renderLogo: () => <JCBAmexDiscoverDinersLogo />, fee: -0.01 },
-      { id: "paypal", label: "", renderLogo: () => <PayPalLogo />, fee: 0.19 },
-      { id: "paylater", label: "", renderLogo: () => <PayLaterLogo />, fee: 0.19 },
-      { id: "cashapp", label: "", renderLogo: () => <CashAppLogo />, fee: 0.25 },
-      ...(isIOS ? [{
-        id: "apple_pay" as PaymentMethodId,
-        label: "Apple Pay",
-        fee: 0,
-        renderLogo: () => (
-          <div className="flex items-center gap-2">
-            <ApplePayBadge />
-            <p className="text-xs text-gray-400 ml-1">Touch / Face ID</p>
-          </div>
-        ),
-      }] : []),
-      ...(isAndroid ? [{
-        id: "google_pay" as PaymentMethodId,
-        label: "Google Pay",
-        fee: 0,
-        renderLogo: () => (
-          <div className="flex items-center gap-2">
-            <GooglePayBadge />
-            <p className="text-xs text-gray-400 ml-1">One-tap pay</p>
-          </div>
-        ),
-      }] : []),
-      {
-        id: "crypto",
-        label: "",
-        renderLogo: () => <CryptoLogo />,
-        fee: -0.57,
-        isCrypto: true,
-        isVIPOnly: true,
+        renderLogo: () => <MoncashBadge />,
       },
       {
-        id: "balance",
-        label: "My Balance",
-        renderLogo: () => null,
-        fee: -0.70,
-        isBalance: true,
+        id: "haiti_natcash" as PaymentMethodId,
+        label: "NatCash",
+        fee: 0,
+        renderLogo: () => <NatcashBadge />,
       },
-      ...(isHaiti ? [
-        {
-          id: "haiti_moncash" as PaymentMethodId,
-          label: "MonCash",
-          fee: 0,
-          renderLogo: () => <MoncashBadge />,
-        },
-        {
-          id: "haiti_natcash" as PaymentMethodId,
-          label: "NatCash",
-          fee: 0,
-          renderLogo: () => <NatcashBadge />,
-        },
-      ] : []),
-    ];
-
-    return methods.map(m => ({
-      ...m,
-      lastUsed: isFrequentlyUsed(m.id),
-    })).sort((a, b) => {
-      const aUsed = isFrequentlyUsed(a.id) ? 1 : 0;
-      const bUsed = isFrequentlyUsed(b.id) ? 1 : 0;
-      return bUsed - aUsed;
-    });
-  };
-
-  const PAYMENT_METHODS = buildPaymentMethods();
+    ] : []),
+  ];
 
   const paymentMethod = PAYMENT_METHODS.find((m) => m.id === selectedPayment);
   const paymentFee = paymentMethod?.fee ?? 0;
@@ -503,9 +478,11 @@ export function CheckoutPage() {
     toast.success(`${coupon.discount_value}% coupon applied`);
   };
 
+  // Generate reference ID once
   const generateRefId = () =>
     `NOXY-${Date.now()}-${Math.random().toString(36).substr(2, 6).toUpperCase()}`;
 
+  // ── Stripe Checkout (card / Apple Pay / Google Pay) ─────────────────────
   const handleStripeCheckout = async () => {
     if (!isAuthenticated) { toast.error("Please login to continue"); navigate("/login"); return; }
     setIsProcessingPayment(true);
@@ -513,7 +490,6 @@ export function CheckoutPage() {
 
     const refId = generateRefId();
     setReferenceId(refId);
-    incrementPaymentUsage(selectedPayment);
 
     const { data, error } = await supabase.functions.invoke("stripe-checkout", {
       body: {
@@ -539,6 +515,7 @@ export function CheckoutPage() {
       return;
     }
 
+    // Save order locally as pending (state=1) before redirect
     const order: Order = {
       id: `local_${Date.now()}`,
       reference_id: refId,
@@ -554,6 +531,7 @@ export function CheckoutPage() {
     };
     addOrder(order);
 
+    // Redirect to Stripe Checkout
     if (data?.url) {
       window.location.href = data.url;
     } else {
@@ -563,6 +541,7 @@ export function CheckoutPage() {
     }
   };
 
+  // ── Haiti local payment ────────────────────────────────────────────────────
   const handleHaitiPayment = async (method: "moncash" | "natcash", phone: string) => {
     if (!isAuthenticated) { toast.error("Please login to continue"); navigate("/login"); return; }
     setIsProcessingPayment(true);
@@ -570,7 +549,6 @@ export function CheckoutPage() {
     const refId = generateRefId();
     setReferenceId(refId);
     const ordId = `ORD-${Date.now()}`;
-    incrementPaymentUsage(`haiti_${method}`);
 
     const fnName = method === "moncash" ? "moncash-payment" : "natcash-payment";
     const { data, error } = await supabase.functions.invoke(fnName, {
@@ -595,6 +573,7 @@ export function CheckoutPage() {
       return;
     }
 
+    // Save order locally as pending
     const order: Order = {
       id: `local_${Date.now()}`,
       reference_id: refId,
@@ -620,15 +599,18 @@ export function CheckoutPage() {
     setIsProcessingPayment(false);
   };
 
+  // ── Standard checkout (balance / crypto / etc.) ──────────────────────────
   const handlePayNow = async () => {
     if (!isAuthenticated) { toast.error("Please login to continue"); navigate("/login"); return; }
     if (isProcessingPayment) return;
 
+    // Route to Stripe for card / Apple Pay / Google Pay
     if (["stripe_card", "apple_pay", "google_pay"].includes(selectedPayment)) {
       await handleStripeCheckout();
       return;
     }
 
+    // Open Haiti modal
     if (selectedPayment === "haiti_moncash") {
       setHaitiMethod("moncash");
       setShowHaitiModal(true);
@@ -640,8 +622,7 @@ export function CheckoutPage() {
       return;
     }
 
-    incrementPaymentUsage(selectedPayment);
-
+    // Legacy / balance flow
     setIsProcessingPayment(true);
     setCheckoutState("processing");
     const refId = generateRefId();
@@ -726,7 +707,7 @@ export function CheckoutPage() {
     );
   }
 
-  // ─── Payment Details Panel (Desktop) ─────────────────────────────────────
+  // ─── Right Panel: Payment Details (FIXED - NO SCROLL) ───────────────────
   const PaymentDetailsPanel = () => (
     <div className="w-[360px] flex-shrink-0">
       <div className="sticky top-[100px] bg-white border border-gray-200">
@@ -735,6 +716,7 @@ export function CheckoutPage() {
         </div>
 
         <div className="border-b border-gray-200">
+          {/* Points row */}
           <div className="flex items-center justify-between px-5 py-3 border-b border-gray-200">
             <div className="flex items-center gap-2 text-gray-600">
               <PointsIcon />
@@ -745,6 +727,7 @@ export function CheckoutPage() {
             </span>
           </div>
 
+          {/* Coupon code row */}
           <div className="flex items-center border-b border-gray-200">
             <div className="flex items-center gap-2 flex-1 px-5 py-3">
               <CouponIcon />
@@ -765,6 +748,7 @@ export function CheckoutPage() {
             </button>
           </div>
 
+          {/* 5% OFF row */}
           <button
             onClick={() => setShowCouponModal(true)}
             className="flex items-center justify-between w-full px-5 py-3 hover:bg-gray-50 transition-colors"
@@ -784,6 +768,7 @@ export function CheckoutPage() {
           </button>
         </div>
 
+        {/* Price breakdown */}
         <div className="px-5 py-4 space-y-2.5 border-b border-gray-200">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Price</span>
@@ -810,6 +795,7 @@ export function CheckoutPage() {
           </div>
         </div>
 
+        {/* Pay Now */}
         <div className="px-5 py-4">
           <button
             onClick={handlePayNow}
@@ -818,6 +804,7 @@ export function CheckoutPage() {
           >
             {isProcessingPayment ? "Processing..." : "Pay Now"}
           </button>
+          {/* Accepted payment card strip */}
           <div className="flex items-center justify-center gap-2 mt-3 flex-wrap">
             <VisaMasterLogo />
             <JCBAmexDiscoverDinersLogo />
@@ -837,7 +824,7 @@ export function CheckoutPage() {
     </div>
   );
 
-  // ─── Payment Row Renderer (Photo 4 Style) ──────────────────────────────
+  // ─── Payment Row Renderer ──────────────────────────────────────────────────
   const renderPaymentRow = (method: PaymentMethod) => {
     const price = Math.max(0, basePrice - couponDiscount + method.fee);
     const isSelected = selectedPayment === method.id;
@@ -845,26 +832,26 @@ export function CheckoutPage() {
     const isDisabled = method.isVIPOnly && (user?.vip_level || 0) < 3;
 
     return (
-      <div key={method.id} className={`border border-gray-200 rounded-lg mb-3 overflow-hidden ${isSelected ? "ring-2 ring-yellow-400 border-yellow-400" : ""} ${isDisabled ? "opacity-50 bg-gray-100" : ""}`}>
+      <div key={method.id} className={`border border-gray-200 mb-2 ${isSelected ? "border-yellow-400" : ""}`}>
         <button
           onClick={() => {
             if (isDisabled) {
               toast.error("Only available for VIP3 and above");
               return;
-            }
-            if (isInsufficient) { navigate("/balance"); } else { setSelectedPayment(method.id); }
-          }}
-          className={`w-full flex items-center justify-between px-5 py-5 text-left transition-colors ${isSelected ? "bg-yellow-50/50" : "bg-white hover:bg-gray-50"} ${isInsufficient ? "opacity-60" : ""}`}
+            } if (isInsufficient) { navigate("/balance"); } else { setSelectedPayment(method.id); } }}
+          className={`w-full flex items-center justify-between px-5 py-4 text-left transition-colors ${isSelected ? "bg-yellow-50" : "bg-white hover:bg-gray-50"} ${isInsufficient ? "opacity-60" : ""}`}
         >
-          <div className="flex items-center gap-4">
-            <div className={`w-6 h-6 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-yellow-500" : "border-gray-300"}`}>
-              {isSelected && <div className="w-3 h-3 bg-yellow-500 rounded-full" />}
+          <div className="flex items-center gap-3">
+            {/* Radio */}
+            <div className={`w-5 h-5 border-2 rounded-full flex items-center justify-center flex-shrink-0 ${isSelected ? "border-yellow-500" : "border-gray-300"}`}>
+              {isSelected && <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full" />}
             </div>
-            <div className="flex items-center gap-2">
+            {/* Logo / Label */}
+            <div className="flex items-center gap-1">
               {method.isBalance ? (
                 <div className="flex flex-col">
                   <div className="flex items-center gap-1.5">
-                    <span className="text-base font-semibold text-gray-800">My Balance</span>
+                    <span className="text-sm font-semibold text-gray-800">My Balance</span>
                     <WalletIcon />
                   </div>
                   <div className="flex items-center gap-1.5 mt-0.5">
@@ -876,24 +863,22 @@ export function CheckoutPage() {
               ) : (
                 <div className="flex items-center">
                   {method.renderLogo ? method.renderLogo() : null}
-                  {method.label && <span className="text-base font-medium text-gray-700 ml-1">{method.label}</span>}
+                  {method.label && <span className="text-sm font-medium text-gray-700 ml-1">{method.label}</span>}
                 </div>
               )}
             </div>
           </div>
-          <div className="flex flex-col items-end gap-1">
-            {!method.isBalance && (
-              <span className="text-base font-semibold text-gray-700">USD ${price.toFixed(2)}</span>
-            )}
-            {method.isBalance && !isInsufficient && (
-              <span className="text-base font-semibold text-gray-700">USD ${price.toFixed(2)}</span>
-            )}
-            {method.lastUsed && (
-              <span className="text-xs text-orange-500 font-medium bg-orange-50 px-2 py-0.5 rounded">Last used</span>
-            )}
-            {method.tag && <span className="text-xs text-orange-500 font-semibold">{method.tag}</span>}
-            {method.fee < 0 && <span className="text-xs text-green-600 font-semibold">Save ${Math.abs(method.fee).toFixed(2)}</span>}
-            {method.isVIPOnly && (
+          {!method.isBalance && (
+            <div className="flex flex-col items-end">
+              <span className="text-sm font-semibold text-gray-700">USD ${price.toFixed(2)}</span>
+              {method.tag && <span className="text-[10px] text-orange-500 font-semibold">{method.tag}</span>}
+              {method.fee < 0 && <span className="text-[10px] text-green-600 font-semibold">Save ${Math.abs(method.fee).toFixed(2)}</span>}
+            </div>
+          )}
+          {method.isBalance && !isInsufficient && (
+            <span className="text-sm font-semibold text-gray-700">USD ${price.toFixed(2)}</span>
+          )}
+          {method.isVIPOnly && (
               <span className="text-xs text-orange-500 flex items-center gap-1">
                 <svg viewBox="0 0 24 24" className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
                 Only available for VIP3 and above
@@ -902,8 +887,9 @@ export function CheckoutPage() {
           </div>
         </button>
 
-        {method.id === "stripe_card" && isSelected && (
-          <div className="border-t border-gray-100 bg-yellow-50/30 px-5 py-3 space-y-2">
+        {/* Sub-cards for visa_mc */}
+        {method.id === "visa_mc" && isSelected && (
+          <div className="border-t border-gray-100 bg-yellow-50 px-5 py-3 space-y-2">
             {savedCards.length > 0 ? savedCards.map((card, i) => (
               <label key={i} className="flex items-center gap-3 cursor-pointer">
                 <div className={`w-4 h-4 border-2 rounded-full flex items-center justify-center ${selectedSubCard === `card_${i}` ? "border-yellow-500" : "border-gray-300"}`}>
@@ -932,14 +918,25 @@ export function CheckoutPage() {
         <DesktopHeader />
       </div>
 
+       <div className="bg-white sticky top-0 z-40 border-b border-gray-100">
+        <div className="flex items-center justify-between px-4 py-3">
+          <button onClick={() => navigate(-1)} className="p-1 -ml-1">
+            <ChevronRight size={24} className="text-gray-800 rotate-180" />
+          </button>
+          <h1 className="text-lg font-bold text-gray-900">Payment</h1>
+          <div className="w-8" />
+        </div>
+      </div>
+
       <div className="flex w-full pt-[100px] max-w-[1200px] mx-auto gap-6 px-6 pb-6 items-start">
         <div className="flex-1 min-w-0 overflow-y-auto" style={{ maxHeight: "calc(100vh - 80px)", scrollbarWidth: "none", msOverflowStyle: "none" }}>
+          {/* Product Card */}
           <div className="bg-white border border-gray-200 mb-3">
             <div className="px-6 py-5 flex items-start gap-4">
               <img
                 src={sku.image || game.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"}
                 alt={sku.sku_name}
-                className="w-16 h-16 object-cover flex-shrink-0 rounded-lg"
+                className="w-16 h-16 object-cover flex-shrink-0"
                 onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"; }}
               />
               <div className="flex-1">
@@ -947,14 +944,14 @@ export function CheckoutPage() {
                 <p className="text-gray-500 text-sm mt-0.5">{game.game_name}</p>
                 <p className="text-base font-bold text-gray-900 mt-1">USD ${basePrice.toFixed(2)}</p>
               </div>
-              <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+              <div className="flex items-center border border-gray-300">
                 <button 
                   onClick={() => handleQuantityChange(-1)}
                   className="px-3 py-2 text-gray-500 text-sm hover:bg-gray-50 flex items-center justify-center"
                 >
                   <Minus size={14} />
                 </button>
-                <span className="px-4 py-2 text-sm font-bold border-x border-gray-300 min-w-[40px] text-center bg-gray-50">{quantity}</span>
+                <span className="px-4 py-2 text-sm font-bold border-x border-gray-300 min-w-[40px] text-center">{quantity}</span>
                 <button 
                   onClick={() => handleQuantityChange(1)}
                   className="px-3 py-2 text-gray-500 text-sm hover:bg-gray-50 flex items-center justify-center"
@@ -980,11 +977,12 @@ export function CheckoutPage() {
             )}
           </div>
 
+          {/* Payment Method */}
           <div className="bg-white border border-gray-200 mb-3">
             <div className="px-6 py-4 border-b border-gray-100">
-              <h3 className="font-bold text-gray-900 text-lg">Payment Method</h3>
+              <h3 className="font-bold text-gray-900">Payment Method</h3>
             </div>
-            <div className="px-4 py-4">
+            <div className="divide-y divide-gray-100">
               {PAYMENT_METHODS.map((method) => renderPaymentRow(method))}
             </div>
             <div className="px-6 py-3 border-t border-gray-100">
@@ -1003,10 +1001,12 @@ export function CheckoutPage() {
     </div>
   );
 
-  // ─── Mobile Layout (Photo 2 Style) ────────────────────────────────────────
+  // ─── Mobile Layout ─────────────────────────────────────────────────────────
   const MobileCheckout = () => (
-    <div className="lg:hidden min-h-screen bg-gray-50 pb-40">
-      <div className="bg-white sticky top-0 z-40 border-b border-gray-100">
+    <div className="lg:hidden min-h-screen bg-gray-50 pb-32">
+      <Header showMenu />
+
+       <div className="bg-white sticky top-0 z-40 border-b border-gray-100">
         <div className="flex items-center justify-between px-4 py-3">
           <button onClick={() => navigate(-1)} className="p-1 -ml-1">
             <ChevronRight size={24} className="text-gray-800 rotate-180" />
@@ -1016,93 +1016,54 @@ export function CheckoutPage() {
         </div>
       </div>
 
-      <div className="bg-white px-4 py-3 border-b border-gray-200">
-        <p className="text-base font-medium text-gray-900">{game.game_name}</p>
-      </div>
-
-      <div className="bg-white px-4 py-4 border-b border-gray-200">
-        <div className="flex items-start gap-3">
-          <img 
-            src={sku.image || game.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"} 
-            alt={sku.sku_name}
-            className="w-16 h-16 object-cover flex-shrink-0 rounded-lg"
+      <div className="bg-white border-b border-gray-100 px-4 py-4">
+        <div className="flex items-center gap-3">
+          <img src={sku.image || game.game_image || "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"} alt={sku.sku_name}
+            className="w-14 h-14 object-cover flex-shrink-0"
             onError={(e) => { (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?w=80&h=80&fit=crop"; }}
           />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2">
-              <p className="font-bold text-gray-900 text-sm leading-tight">{sku.sku_name}</p>
-              <button onClick={() => setProductExpanded(!productExpanded)}>
-                <ChevronDown size={18} className={`text-gray-400 transition-transform ${productExpanded ? "rotate-180" : ""}`} />
-              </button>
-            </div>
+          <div className="flex-1">
+            <p className="font-bold text-gray-900 text-sm">{sku.sku_name}</p>
+            <p className="text-sm text-gray-500">{game.game_name}</p>
+            <p className="text-base font-bold mt-0.5">USD ${basePrice.toFixed(2)}</p>
           </div>
         </div>
-        <div className="flex items-center justify-between mt-3">
-          <p className="text-base font-bold text-gray-900">USD ${basePrice.toFixed(2)}</p>
-          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-            <button 
-              onClick={() => handleQuantityChange(-1)}
-              className="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50"
-            >
-              <Minus size={14} />
-            </button>
-            <span className="w-10 h-9 flex items-center justify-center text-sm font-bold border-x border-gray-300 bg-gray-50">{quantity}</span>
-            <button 
-              onClick={() => handleQuantityChange(1)}
-              className="w-10 h-9 flex items-center justify-center text-gray-500 hover:bg-gray-50"
-            >
-              <Plus size={14} />
-            </button>
-          </div>
-        </div>
-        {productExpanded && Object.entries(extraInfo).length > 0 && (
-          <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
-            {Object.entries(extraInfo).map(([k, v]) => (
-              <p key={k} className="text-xs text-gray-500">
-                <span className="capitalize font-medium">{k}</span>: <span className="text-gray-800">{v}</span>
-              </p>
-            ))}
+        {Object.entries(extraInfo).length > 0 && (
+          <div className="mt-3 pt-3 border-t border-gray-100 flex justify-between">
+            <div>{Object.entries(extraInfo).map(([k, v]) => <p key={k} className="text-xs text-gray-500"><span className="capitalize font-medium">{k}</span>: <span className="text-gray-800">{v}</span></p>)}</div>
+            <button onClick={() => navigate("/verify-player", { state: { sku: state.sku, game: state.game, quantity } })} className="flex items-center gap-1 text-blue-500 text-xs font-semibold"><Edit2 size={10} /> Modify</button>
           </div>
         )}
       </div>
 
-      <div className="bg-white px-4 py-4 mt-2">
-        <h3 className="font-bold text-gray-900 text-lg mb-4">Payment Details</h3>
-        <div className="space-y-3">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Price</span>
-            <span className="text-gray-900 font-medium">$ {basePrice.toFixed(2)}</span>
+      <div className="bg-white border-b border-gray-200 px-4 py-4 mt-2">
+        <h3 className="font-bold text-gray-900 mb-3">Payment Details</h3>
+        <div className="space-y-0">
+          <div className="flex items-center justify-between py-2.5 border-b border-gray-100">
+            <div className="flex items-center gap-2 text-gray-600"><PointsIcon /><span className="text-sm">{userRealPoints} Points</span></div>
+            <span className="text-xs text-gray-400">{userRealPoints < 100 ? "Unavailable" : `−$${(userRealPoints / 1000).toFixed(2)}`}</span>
           </div>
-          {couponDiscount > 0 && (
-            <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Coupon</span>
-              <span className="text-orange-500 font-semibold">−${couponDiscount.toFixed(2)}</span>
-            </div>
-          )}
-          <div className="flex justify-between text-sm items-center">
-            <span className="text-gray-600 flex items-center gap-1">
-              Payment Fee(3.5%+$0.15)
-              <HelpCircle size={14} className="text-gray-400" />
-            </span>
-            <span className="text-gray-900 font-medium">
-              {paymentFee >= 0 ? `+$${paymentFee.toFixed(2)}` : `−$${Math.abs(paymentFee).toFixed(2)}`}
-            </span>
+          <div className="flex items-center py-2.5 border-b border-gray-100 gap-2">
+            <CouponIcon />
+            <input type="text" value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Coupon Code" className="flex-1 text-sm outline-none" />
+            <button onClick={handleRedeemCoupon} disabled={isLoadingCoupon} className="text-sm text-gray-500 font-semibold">{isLoadingCoupon ? "..." : "Redeem"}</button>
           </div>
-          <div className="border-t border-gray-200 pt-3 mt-2">
-            <div className="flex justify-between items-center">
-              <span className="text-base font-bold text-gray-900">Total Amount</span>
-              <span className="text-xl font-black text-orange-500">USD $ {totalPrice.toFixed(2)}</span>
-            </div>
-          </div>
+          <button onClick={() => setShowCouponModal(true)} className="flex items-center justify-between w-full py-2.5">
+            <div className="flex items-center gap-2"><GiftIcon /><span className="text-sm font-medium text-gray-700">5% OFF</span></div>
+            <div className="flex items-center gap-1">{couponDiscount > 0 && <span className="text-sm text-orange-500 font-semibold">−${couponDiscount.toFixed(2)}</span>}<ChevronRight size={14} className="text-gray-400" /></div>
+          </button>
+        </div>
+        <div className="mt-3 pt-3 border-t border-gray-100 space-y-2">
+          <div className="flex justify-between text-sm"><span className="text-gray-600">Price</span><span>${basePrice.toFixed(2)}</span></div>
+          {couponDiscount > 0 && <div className="flex justify-between text-sm"><span className="text-gray-600">Coupon</span><span className="text-orange-500 font-semibold">−${couponDiscount.toFixed(2)}</span></div>}
+          <div className="flex justify-between text-sm"><span className="text-gray-600">Payment Fee</span><span>{paymentFee >= 0 ? `+$${paymentFee.toFixed(2)}` : `−$${Math.abs(paymentFee).toFixed(2)}`}</span></div>
         </div>
       </div>
 
       <div className="bg-white mt-2 px-4 py-4">
-        <h3 className="font-bold text-gray-900 text-lg mb-4">Payment Method</h3>
+        <h3 className="font-bold text-gray-900 mb-3">Payment Method</h3>
         {PAYMENT_METHODS.map((method) => renderPaymentRow(method))}
-        <button onClick={() => setShowTicketModal(true)} className="w-full text-center text-sm text-blue-500 font-medium py-3 mt-2">
-          Not the payment method you prefer? &gt;
-        </button>
+        <button onClick={() => setShowTicketModal(true)} className="w-full text-center text-sm text-blue-500 font-medium py-3">Not the payment method you prefer? &gt;</button>
       </div>
 
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-4 z-40">
@@ -1110,7 +1071,7 @@ export function CheckoutPage() {
           <div><span className="text-sm text-gray-500">Total Amount</span></div>
           <span className="text-xl font-black text-orange-500">USD ${totalPrice.toFixed(2)}</span>
         </div>
-        <button onClick={handlePayNow} disabled={isProcessingPayment} className="w-full bg-yellow-400 text-black font-bold py-4 disabled:opacity-70 rounded-none">
+        <button onClick={handlePayNow} disabled={isProcessingPayment} className="w-full bg-yellow-400 text-black font-bold py-4 disabled:opacity-70">
           {isProcessingPayment ? "Processing..." : "Pay Now"}
         </button>
       </div>
@@ -1186,104 +1147,90 @@ export function CheckoutPage() {
     );
   };
 
-  // ─── Product Coupons Modal (Full page mobile, Modal desktop) ────────────────
-  const CouponModal = () => {
-    return (
-      <div className={`fixed inset-0 z-50 ${isMobileView ? "" : "flex items-center justify-center"}`}>
-        <div className={`absolute inset-0 bg-black/40 ${isMobileView ? "" : ""}`} onClick={() => setShowCouponModal(false)} />
-        <div className={`relative bg-white shadow-2xl ${isMobileView ? "w-full h-full" : "w-full max-w-lg mx-4 rounded-lg overflow-hidden"}`}>
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
-            <button onClick={() => setShowCouponModal(false)} className="p-1">
-              <X size={24} className="text-gray-800" />
-            </button>
-            <h3 className="text-lg font-bold text-gray-900 absolute left-1/2 -translate-x-1/2">Product Coupons</h3>
-            <div className="w-8" />
-          </div>
+  // ─── Product Coupons Modal ────────────────────────────────────────────────
+  const CouponModal = () => (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div className="absolute inset-0 bg-black/40" onClick={() => setShowCouponModal(false)} />
+      <div className="relative bg-white w-full max-w-lg mx-4 shadow-2xl">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-bold text-gray-900">Product Coupons</h3>
+          <button onClick={() => setShowCouponModal(false)} className="text-gray-400 hover:text-gray-600"><X size={20} /></button>
+        </div>
 
-          <div className="flex border-b border-gray-200">
-            <button 
-              onClick={() => setCouponTab("valid")} 
-              className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors relative ${couponTab === "valid" ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-400"}`}
-            >
-              Valid ({validCoupons.length})
-              {couponTab === "valid" && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-yellow-400 rounded-full" />}
-            </button>
-            <button 
-              onClick={() => setCouponTab("invalid")} 
-              className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors relative ${couponTab === "invalid" ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-400"}`}
-            >
-              Invalid ({invalidCoupons.length})
-              {couponTab === "invalid" && <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-0.5 bg-yellow-400 rounded-full" />}
-            </button>
-          </div>
+        <div className="flex border-b border-gray-200">
+          <button onClick={() => setCouponTab("valid")} className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${couponTab === "valid" ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-400"}`}>
+            Valid ({validCoupons.length})
+          </button>
+          <button onClick={() => setCouponTab("invalid")} className={`flex-1 py-3 text-sm font-semibold border-b-2 transition-colors ${couponTab === "invalid" ? "border-yellow-400 text-gray-900" : "border-transparent text-gray-400"}`}>
+            Invalid ({invalidCoupons.length})
+          </button>
+        </div>
 
-          <div className="px-4 pt-4 pb-2">
-            <div className="flex gap-2">
-              <input
-                type="text"
-                value={couponCode}
-                onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
-                placeholder="Please enter the redeem code."
-                className="flex-1 border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-yellow-400 bg-gray-50 rounded-lg"
-              />
-              <button
-                onClick={handleRedeemCoupon}
-                disabled={isLoadingCoupon || !couponCode.trim()}
-                className="bg-yellow-400 text-black font-bold px-5 py-2.5 text-sm hover:bg-yellow-300 disabled:opacity-50 rounded-lg"
-              >
-                {isLoadingCoupon ? "..." : "Redeem"}
-              </button>
-            </div>
-          </div>
-
-          <div className={`px-4 py-3 space-y-3 ${isMobileView ? "pb-20" : "max-h-[320px] overflow-y-auto"}`}>
-            {(couponTab === "valid" ? validCoupons : invalidCoupons).length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-16">
-                <EmptyCouponIcon />
-                <p className="text-sm text-gray-400 mt-4">There are no eligible coupons.</p>
-              </div>
-            ) : (
-              (couponTab === "valid" ? validCoupons : invalidCoupons).map((coupon) => {
-                const isApplied = selectedCouponId === coupon.id;
-                return (
-                  <div
-                    key={coupon.id}
-                    onClick={() => couponTab === "valid" && handleApplyCouponFromModal(coupon)}
-                    className={`border-2 p-4 cursor-pointer transition-all relative overflow-hidden rounded-lg ${couponTab === "invalid" ? "border-gray-200 opacity-60 cursor-default" : isApplied ? "border-yellow-400 bg-yellow-50" : "border-gray-200 hover:border-yellow-300"}`}
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 mt-0.5 rounded ${isApplied ? "border-yellow-500 bg-yellow-400" : "border-gray-300"}`}>
-                        {isApplied && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
-                      </div>
-                      <div className="flex-1">
-                        <p className="text-orange-500 font-bold text-sm">{coupon.discount_value}% OFF <span className="text-gray-500 font-normal text-xs">(Up to ${coupon.max_discount || "∞"})</span></p>
-                        <p className="text-xs text-gray-500 mt-0.5">Valid for orders over ${coupon.min_order || 1.00}</p>
-                        {coupon.description && <p className="text-xs text-gray-400 mt-0.5">{coupon.description}</p>}
-                      </div>
-                      <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-yellow-100/40 to-transparent" />
-                    </div>
-                  </div>
-                );
-              })
-            )}
-          </div>
-
-          <div className="px-4 py-4 border-t border-gray-200">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-sm text-gray-600">Discount Amount</span>
-              <span className="text-base font-bold text-orange-500">USD ${couponDiscount.toFixed(2)}</span>
-            </div>
+        <div className="px-6 pt-4 pb-2">
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={couponCode}
+              onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+              placeholder="Please enter the redeem code."
+              className="flex-1 border border-gray-200 px-4 py-2.5 text-sm outline-none focus:border-yellow-400 bg-gray-50"
+            />
             <button
-              onClick={() => setShowCouponModal(false)}
-              className="w-full bg-yellow-400 text-black font-bold py-3.5 text-sm hover:bg-yellow-300 rounded-lg"
+              onClick={handleRedeemCoupon}
+              disabled={isLoadingCoupon || !couponCode.trim()}
+              className="bg-yellow-400 text-black font-bold px-5 py-2.5 text-sm hover:bg-yellow-300 disabled:opacity-50"
             >
-              Confirm
+              {isLoadingCoupon ? "..." : "Redeem"}
             </button>
           </div>
         </div>
+
+        <div className="px-6 py-3 max-h-[320px] overflow-y-auto space-y-3">
+          {(couponTab === "valid" ? validCoupons : invalidCoupons).length === 0 ? (
+            <div className="text-center py-8 text-gray-400">
+              <p className="text-sm">{couponTab === "valid" ? "No valid coupons available" : "No invalid coupons"}</p>
+            </div>
+          ) : (
+            (couponTab === "valid" ? validCoupons : invalidCoupons).map((coupon) => {
+              const isApplied = selectedCouponId === coupon.id;
+              return (
+                <div
+                  key={coupon.id}
+                  onClick={() => couponTab === "valid" && handleApplyCouponFromModal(coupon)}
+                  className={`border-2 p-4 cursor-pointer transition-all relative overflow-hidden ${couponTab === "invalid" ? "border-gray-200 opacity-60 cursor-default" : isApplied ? "border-yellow-400 bg-yellow-50" : "border-gray-200 hover:border-yellow-300"}`}
+                >
+                  <div className="flex items-start gap-3">
+                    <div className={`w-5 h-5 border-2 flex items-center justify-center flex-shrink-0 mt-0.5 ${isApplied ? "border-yellow-500 bg-yellow-400" : "border-gray-300"}`}>
+                      {isApplied && <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="black" strokeWidth="3"><path d="M20 6L9 17l-5-5"/></svg>}
+                    </div>
+                    <div className="flex-1">
+                      <p className="text-orange-500 font-bold text-sm">{coupon.discount_value}% OFF <span className="text-gray-500 font-normal text-xs">(Up to ${coupon.max_discount || "∞"})</span></p>
+                      <p className="text-xs text-gray-500 mt-0.5">Valid for orders over ${coupon.min_order || 1.00}</p>
+                      {coupon.description && <p className="text-xs text-gray-400 mt-0.5">{coupon.description}</p>}
+                    </div>
+                    <div className="absolute right-0 top-0 bottom-0 w-20 bg-gradient-to-l from-yellow-100/40 to-transparent" />
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        <div className="px-6 py-4 border-t border-gray-200">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm text-gray-600">Discount Amount</span>
+            <span className="text-base font-bold text-orange-500">USD ${couponDiscount.toFixed(2)}</span>
+          </div>
+          <button
+            onClick={() => setShowCouponModal(false)}
+            className="w-full bg-yellow-400 text-black font-bold py-3.5 text-sm hover:bg-yellow-300"
+          >
+            Confirm
+          </button>
+        </div>
       </div>
-    );
-  };
+    </div>
+  );
 
   // ─── New Ticket Modal ──────────────────────────────────────────────────────
   const TicketModal = () => (
@@ -1373,3 +1320,4 @@ export function CheckoutPage() {
     </>
   );
 }
+fix error in this page and please for normal user fetch balance from their balance and for admin email fetch from lootbar api.
