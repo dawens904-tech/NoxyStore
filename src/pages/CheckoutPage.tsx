@@ -1263,4 +1263,4 @@ export function CheckoutPage() {
     </>
   );
 }
-hello ai please Create an edge function that sends an order confirmation email when a payment is successful. The email should include order ID, game name, SKU, amount paid, and a support contact. Use SMTP or an email service. Trigger it after Stripe payment success and after Lootbar order creation Create a /checkout/success page that receives the Stripe redirect after payment (reads the ?ref= query param), verifies the order status, triggers Lootbar order creation via the lootbar-proxy edge function, and shows the final order confirmation to the user.
+

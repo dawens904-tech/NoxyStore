@@ -8,6 +8,7 @@ import { AllGamesPage } from "@/pages/AllGamesPage";
 import { GameDetailPage } from "@/pages/GameDetailPage";
 import { VerifyPlayerPage } from "@/pages/VerifyPlayerPage";
 import { CheckoutPage } from "@/pages/CheckoutPage";
+import { CheckoutSuccessPage } from "@/pages/CheckoutSuccessPage";
 import { AccountPage } from "@/pages/AccountPage";
 import { LoginPage } from "@/pages/LoginPage";
 import { OrderTrackingPage } from "@/pages/OrderTrackingPage";
@@ -205,6 +206,7 @@ function App() {
           <Route path="/game/:gameId" element={<GameDetailPage />} />
           <Route path="/verify-player" element={<VerifyPlayerPage />} />
           <Route path="/checkout" element={<CheckoutPage />} />
+          <Route path="/checkout/success" element={<CheckoutSuccessPage />} />
           <Route path="/orders/:referenceId" element={<OrderTrackingPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/login" element={<LoginPage />} />
