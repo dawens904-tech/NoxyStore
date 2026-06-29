@@ -473,3 +473,4 @@ export function LoginPage() {
     </div>
   );
 }
+remove back login background white make it blur let user see where their open the login page and fix login button yo more better bal li large and fix espas ant email ak login button yo dont kole yo pre make login better add real apple login real discord replace by line.
