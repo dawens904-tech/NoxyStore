@@ -120,37 +120,6 @@ function HelpDropdown({ onClose }: { onClose: () => void }) {
 // User Dropdown — lucide icons only, no emojis
 function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => void; onLogout: () => void }) {
   const navigate = useNavigate();
-  const [balance, setBalance] = useState<number>(user?.balance ?? 0);
-  const [points, setPoints] = useState<number>(user?.points ?? 0);
-
-  // Fetch real balance and points on mount
-  useEffect(() => {
-    if (!user?.email) return;
-    supabase
-      .from("wallet_transactions")
-      .select("amount")
-      .eq("user_email", user.email)
-      .eq("status", "completed")
-      .then(({ data }) => {
-        if (data) {
-          const total = data.reduce((sum: number, t: any) => sum + Number(t.amount), 0);
-          setBalance(Math.max(0, total));
-        }
-      });
-    supabase
-      .from("user_profiles")
-      .select("points_earned, points_redeemed")
-      .eq("id", user.id)
-      .single()
-      .then(({ data }) => {
-        if (data) {
-          const earned = Number(data.points_earned ?? 0);
-          const redeemed = Number(data.points_redeemed ?? 0);
-          setPoints(Math.max(0, earned - redeemed));
-        }
-      });
-  }, [user?.email, user?.id]);
-
   const items = [
     { Icon: ShoppingBag, label: "Buy History", path: "/buy-history", orange: false },
     { Icon: Tag, label: "Coupon", path: "/coupons", orange: false },
@@ -182,13 +151,13 @@ function UserDropdown({ user, onClose, onLogout }: { user: any; onClose: () => v
         </div>
         <div className="flex items-center gap-4 mt-3 pt-3 border-t border-gray-50">
           <button onClick={() => { navigate("/balance"); onClose(); }} className="flex-1 text-center hover:opacity-80">
-            <p className="text-base font-bold text-gray-900">${balance.toFixed(2)}</p>
+            <p className="text-base font-bold text-gray-900">${(user?.balance ?? 0).toFixed(2)}</p>
             <p className="text-xs text-gray-500">Balance</p>
           </button>
           <div className="h-8 w-px bg-gray-200" />
           <button onClick={() => { navigate("/points"); onClose(); }} className="flex-1 text-center hover:opacity-80">
             <p className="text-base font-bold text-gray-900 flex items-center justify-center gap-1">
-              <span className="text-yellow-500 text-sm">●</span> {points}
+              <span className="text-yellow-500 text-sm">●</span> {user?.points ?? 0}
               <span className="text-[9px] bg-red-500 text-white font-bold px-1 py-0.5 rounded ml-0.5">NEW</span>
             </p>
             <p className="text-xs text-gray-500">Points</p>
@@ -514,3 +483,4 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
     </>
   );
 }
+real fetch coin and real balance and fix invite for cupons page have sidebar  like other page coupon also affiliat.
