@@ -260,6 +260,8 @@ export function GameDetailPage() {
   const [useShorterInvite, setUseShorterInvite] = useState(true);
   const [extraInfoValues, setExtraInfoValues] = useState<Record<string, string>>({});
   const [showRegionSheet, setShowRegionSheet] = useState(false);
+  const [uid, setUid] = useState("");
+  const [uidError, setUidError] = useState(false);
 
   // Detect if this is a gift card product
   const isGiftCard = useMemo(() =>
@@ -482,6 +484,11 @@ export function GameDetailPage() {
 
   const handleManualTopUp = (isMobile = false) => {
     if (!selectedManualSku) { toast.error("Select a package first"); return; }
+      if (!uid.trim()) {
+    setUidError(true);
+    return;
+  }
+  setUidError(false);
     const productName = manualProduct?.product_name || "";
     const regionName = selectedManualRegion?.region_name || "";
     const skuData = {
@@ -623,51 +630,129 @@ export function GameDetailPage() {
             </div>
 
             {/* Right: Order panel */}
-            <div className="w-72 flex-shrink-0">
-              <div style={{ position: "sticky", top: "70px" } as React.CSSProperties}>
-                <div className="border border-gray-200 shadow-sm bg-white rounded-xl overflow-hidden">
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="font-bold text-gray-900 mb-1">Order Summary</h3>
-                    {selectedManualSku ? (
-                      <div className="flex items-center gap-3 mt-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
-                        <img src={selectedManualSku.photo_url || cover} className="w-10 h-10 rounded-lg object-cover flex-shrink-0" />
-                        <div>
-                          <p className="text-xs font-bold text-gray-900">{selectedManualSku.sku_name}</p>
-                          <p className="text-sm font-black text-orange-500">${applyMarkup(Number(selectedManualSku.original_price)).toFixed(2)}</p>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="bg-gray-50 p-3 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-xl mt-3">
-                        ← Select a package
-                      </div>
-                    )}
-                  </div>
-                  <div className="px-5 py-4 border-b border-gray-100">
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-semibold text-gray-700">Quantity</span>
-                      <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
-                        <button onClick={() => setQuantity(Math.max(1, quantity - 1))} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-r border-gray-300">−</button>
-                        <span className="text-sm font-bold w-10 text-center">{quantity}</span>
-                        <button onClick={() => setQuantity(quantity + 1)} className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-l border-gray-300">+</button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="px-5 py-4">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-sm text-gray-500">Total</span>
-                      <span className="text-xl font-black text-orange-500">{selectedManualSku ? `$${manualTotalPrice.toFixed(2)}` : "—"}</span>
-                    </div>
-                    <button onClick={() => handleManualTopUp(false)} disabled={!selectedManualSku}
-                      className={`w-full py-3.5 font-bold text-base transition-all mt-3 rounded-xl ${selectedManualSku ? "bg-yellow-400 hover:bg-yellow-300 text-black" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}>
-                      Top-up Now
-                    </button>
-                    <div className="flex items-center justify-center gap-1.5 mt-3">
-                      <Shield size={13} className="text-green-500" />
-                      <span className="text-xs text-gray-500">NoxyStore Security Guarantee</span>
-                    </div>
-                  </div>
-                </div>
+
+            
+<div className="w-72 flex-shrink-0">
+  <div style={{ position: "sticky", top: "70px" } as React.CSSProperties}>
+    <div className="border border-gray-200 shadow-sm bg-white rounded-xl overflow-hidden">
+      
+      {/* Order Information Header */}
+      <div className="px-5 py-4 border-b border-gray-100">
+        <h3 className="font-bold text-gray-900 text-base">Order Information</h3>
+        
+        {/* UID Input */}
+        <div className="mt-3">
+          <label className="text-sm text-gray-700 mb-1 block">
+            <span className="text-red-500">*</span>UID
+          </label>
+          <input
+            type="text"
+            value={uid}
+            onChange={(e) => setUid(e.target.value)}
+            placeholder="Please fill in the game UID"
+            className={`w-full px-3 py-2.5 text-sm bg-gray-50 border rounded-lg outline-none transition-all ${
+              uidError 
+                ? "border-red-400 focus:border-red-500" 
+                : "border-gray-200 focus:border-blue-400 focus:bg-white"
+            }`}
+          />
+          
+          {/* Success Message (shown when UID has value and no error) */}
+          {uid && !uidError && (
+            <div className="mt-2 flex items-start gap-2 bg-green-50 border border-green-100 rounded-lg p-2.5">
+              <div className="w-4 h-4 rounded-full bg-green-500 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+                  <path d="M2 5L4 7L8 3" stroke="white" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
               </div>
+              <p className="text-xs text-green-700 leading-relaxed">
+                The has successful top-ups before, feel free to continue your purchase
+              </p>
+            </div>
+          )}
+          
+          {/* Error Message */}
+          {uidError && (
+            <p className="mt-1.5 text-xs text-red-500">UID is required</p>
+          )}
+        </div>
+      </div>
+
+      {/* Selected Package Info */}
+      <div className="px-5 py-4 border-b border-gray-100">
+        {selectedManualSku ? (
+          <div className="flex items-center gap-3 bg-yellow-50 border border-yellow-200 rounded-xl p-3">
+            <img 
+              src={selectedManualSku.photo_url || cover} 
+              className="w-10 h-10 rounded-lg object-cover flex-shrink-0" 
+              alt=""
+            />
+            <div>
+              <p className="text-xs font-bold text-gray-900">{selectedManualSku.sku_name}</p>
+              <p className="text-sm font-black text-orange-500">
+                ${applyMarkup(Number(selectedManualSku.original_price)).toFixed(2)}
+              </p>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-gray-50 p-3 text-center text-sm text-gray-400 border border-dashed border-gray-200 rounded-xl">
+            ← Select a package
+          </div>
+        )}
+      </div>
+
+      {/* Quantity */}
+      <div className="px-5 py-4 border-b border-gray-100">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-semibold text-gray-700">Quantity</span>
+          <div className="flex items-center border border-gray-300 rounded-lg overflow-hidden">
+            <button 
+              onClick={() => setQuantity(Math.max(1, quantity - 1))} 
+              className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-r border-gray-300"
+            >
+              −
+            </button>
+            <span className="text-sm font-bold w-10 text-center">{quantity}</span>
+            <button 
+              onClick={() => setQuantity(quantity + 1)} 
+              className="w-8 h-8 flex items-center justify-center text-gray-600 hover:bg-gray-50 border-l border-gray-300"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Price & CTA */}
+      <div className="px-5 py-4">
+        <div className="flex items-center justify-between mb-1">
+          <span className="text-sm text-gray-500">Price</span>
+          <span className="text-xl font-black text-orange-500">
+            {selectedManualSku ? `$${manualTotalPrice.toFixed(2)}` : "—"}
+          </span>
+        </div>
+        
+        <button 
+          onClick={() => handleManualTopUp(false)} 
+          disabled={!selectedManualSku || !uid}
+          className={`w-full py-3.5 font-bold text-base transition-all mt-3 rounded-xl ${
+            selectedManualSku && uid
+              ? "bg-yellow-400 hover:bg-yellow-300 text-black" 
+              : "bg-gray-200 text-gray-400 cursor-not-allowed"
+          }`}
+        >
+          Top-up Now
+        </button>
+        
+        <div className="flex items-center justify-center gap-1.5 mt-3">
+          <Shield size={13} className="text-green-500" />
+          <span className="text-xs text-gray-500">NoxyStore Security Guarantee</span>
+        </div>
+      </div>
+      
+    </div>
+  </div>
+</div>
             </div>
           </div>
         </div>
