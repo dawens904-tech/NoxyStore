@@ -483,4 +483,4 @@ export function DesktopHeader({ showLoginModal }: DesktopHeaderProps) {
     </>
   );
 }
-
+real fetch coin and real balance and fix invite for cupons page have sidebar  like other page coupon also affiliat.
