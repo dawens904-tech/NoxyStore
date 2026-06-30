@@ -835,4 +835,4 @@ function AddBankCardModal({ onClose, onSave, userEmail, userId }: {
     </div>
   );
 }
-
+please ai add withdraw by stripe bank transfer instead of fake must real to user real add bank info routing etc via stripe secure and fix checkout show google pay in desktop and fix when user select visa payment and not have a card yet open a modal paymentcard and add name card,cvv,expiry and address for desktop and for mobile full page after confirm call stripe and real adding for payment also same things for JCBAmexDiscoverDinersLogo open bank number card cvv,expiry,and real calling.
