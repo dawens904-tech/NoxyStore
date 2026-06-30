@@ -852,5 +852,6 @@ export default function LootbarSkuManagement() {
     </div>
   );
 }
+Hello AI, please improve the Region Products reorder system. Instead of only using Up/Down buttons, allow admins to long-press and drag any product to move it anywhere in the list, then drop it above or below another product to instantly reorder and replace its position.
 
 
