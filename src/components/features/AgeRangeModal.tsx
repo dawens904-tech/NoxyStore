@@ -64,3 +64,4 @@ export function AgeRangeModal({ onClose, onSave }: {
     </div>
   );
 }
+hello ai make this square also create adminbanner age load all baner and allow admin can edit banner and add more banner and auto update home to fetch it real saved database and upload banner also support url to both please.
