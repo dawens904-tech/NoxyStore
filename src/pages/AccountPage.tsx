@@ -1388,5 +1388,5 @@ export function AccountPage() {
     </>
   );
 }
-hello ai fix all tex in this page use in constants/translations also the sidebar make them in the Language = "en" | "es" | "fr" | "id" all coupons page point,balance.
+
 
