@@ -165,7 +165,7 @@ function BannerModal({
 
   return (
     <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-lg relative overflow-hidden">
+      <DialogContent className="max-w-xl w-full mx-auto relative overflow-hidden fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <Image size={15} /> {banner ? "Edit Banner" : "Add Banner"}
@@ -574,4 +574,4 @@ export default function AdminBannersPage() {
   );
 }
 
-fix modal edit banner in desktop better center.
+
