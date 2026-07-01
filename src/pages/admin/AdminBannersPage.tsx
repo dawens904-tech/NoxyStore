@@ -515,9 +515,4 @@ export default function AdminBannersPage() {
     </div>
   );
 }
-hello ai fix upload policy and also fix {
-  "eventMessage": "Create | 0 | 71.199.93.2 | 8dbf574bff04c8cd:50d0c3c2ad99c198:14273f2828b357c5:1 | 500",
-  "id": "16372553",
-  "logLevel": "ERROR",
-  "timestamp": 1782891076
-}.
+
