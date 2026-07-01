@@ -810,4 +810,4 @@ export function HomePage() {
     </div>
   );
 }
-
+hello ai please The home_sections table currently only has service_role RLS policies. Add authenticated INSERT/UPDATE/DELETE policies so admin users can create, edit, and delete sections directly from the AdminSectionsPage without needing service role — run the SQL migration to add the missing policies and fetch section already here in homepage.
