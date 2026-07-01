@@ -93,7 +93,7 @@ function InviteBody({
   return (
     <>
       {/* Hero banner */}
-      <div className="bg-yellow-400 rounded-2xl p-5 mb-5 relative overflow-hidden">
+      <div className="bg-yellow-400 rounded-lg p-6 mb-5 relative overflow-hidden">
         <div className="flex items-start gap-4">
           <div className="flex-1">
             <h2 className="font-black text-gray-900 text-lg leading-tight mb-1">
@@ -109,18 +109,18 @@ function InviteBody({
       </div>
 
       {/* Social share */}
-      <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+      <div className="bg-white rounded-lg p-6 mb-4 shadow-sm">
         <div className="flex items-center justify-center gap-6 mb-5">
           {socialPlatforms.map((p: any) => (
             <button key={p.key} onClick={() => handleShare(p.key)} className="flex flex-col items-center gap-2">
-              <div className={`w-12 h-12 ${p.bg} rounded-full flex items-center justify-center ${p.text} shadow-md hover:scale-105 transition-transform`}>{p.icon}</div>
+              <div className={`w-12 h-12 ${p.bg} rounded-xl flex items-center justify-center ${p.text} shadow-md hover:scale-105 transition-transform`}>{p.icon}</div>
               <span className="text-xs text-gray-600 font-medium">{p.label}</span>
             </button>
           ))}
         </div>
         <div className="flex gap-2 mb-3">
-          <div className="flex-1 bg-gray-100 rounded-xl px-4 py-3 text-sm text-gray-500 font-mono truncate">{inviteLink}</div>
-          <button onClick={handleCopy} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-3 rounded-xl flex items-center gap-2 transition-colors whitespace-nowrap">
+          <div className="flex-1 bg-gray-100 rounded px-4 py-3 text-sm text-gray-500 font-mono truncate">{inviteLink}</div>
+          <button onClick={handleCopy} className="bg-yellow-400 hover:bg-yellow-300 text-black font-bold px-5 py-3 rounded flex items-center gap-2 transition-colors whitespace-nowrap">
             {copied ? <Check size={16} /> : (
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></svg>
             )}
@@ -128,7 +128,7 @@ function InviteBody({
           </button>
         </div>
         <button onClick={() => setUseShorter(!useShorter)} className="flex items-center gap-2 text-sm text-gray-600">
-          <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center ${useShorter ? "bg-yellow-400 border-yellow-400" : "border-gray-300"}`}>
+          <div className={`w-5 h-5 rounded border-2 flex items-center justify-center ${useShorter ? "bg-yellow-400 border-yellow-400" : "border-gray-300"}`}>
             {useShorter && <Check size={11} className="text-black" />}
           </div>
           Share with a shorter link
@@ -136,7 +136,7 @@ function InviteBody({
       </div>
 
       {/* Invite Progress */}
-      <div className="bg-white rounded-2xl p-5 mb-4 shadow-sm">
+      <div className="bg-white rounded-lg p-6 mb-4 shadow-sm">
         <h3 className="font-black text-gray-900 text-base mb-4">Invite Progress Overview</h3>
         <div className="grid grid-cols-3 gap-4 text-center">
           <div>
@@ -155,7 +155,7 @@ function InviteBody({
       </div>
 
       {/* Task & Reward */}
-      <div className="bg-white rounded-2xl p-5 shadow-sm">
+      <div className="bg-white rounded-lg p-6 shadow-sm">
         <div className="flex items-center gap-2 mb-4">
           <div className="w-1 h-5 bg-yellow-400 rounded-full" />
           <h3 className="font-black text-gray-900 text-base">Task &amp; Reward</h3>
@@ -163,13 +163,13 @@ function InviteBody({
         </div>
         <div className="space-y-3">
           {taskGroups.map((group: TaskGroup) => (
-            <div key={group.key} className="border border-gray-100 rounded-2xl p-4 relative overflow-hidden">
+            <div key={group.key} className="border border-gray-100 rounded-lg p-5 relative overflow-hidden">
               <div className="absolute right-0 top-0 w-24 h-24 opacity-5"><img src={couponSave5} alt="" className="w-full h-full object-cover" /></div>
               <div className="flex items-start gap-3">
                 <div className="flex-1">
                   <h4 className="font-black text-gray-900 text-sm">{group.title}</h4>
                   <p className="text-gray-500 text-xs mt-0.5 leading-relaxed">{group.description}</p>
-                  <button onClick={() => toast.info("Rewards will be sent to your coupon wallet after claiming.")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5 rounded-xl transition-colors">Claim</button>
+                  <button onClick={() => toast.info("Rewards will be sent to your coupon wallet after claiming.")} className="mt-2 bg-yellow-200 hover:bg-yellow-300 text-yellow-800 font-bold text-xs px-4 py-1.5 rounded transition-colors">Claim</button>
                 </div>
                 <img src={group.rewardImg} alt="reward" className="w-14 h-14 object-contain flex-shrink-0" />
               </div>
@@ -298,7 +298,7 @@ export function InvitePage() {
       {selectedTask && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setSelectedTask(null)} />
-          <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="relative bg-white rounded-t-xl sm:rounded-xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <button onClick={() => setSelectedTask(null)}><X size={20} className="text-gray-700" /></button>
               <h3 className="font-black text-gray-900 text-base">{selectedTask.title}</h3>
@@ -308,7 +308,7 @@ export function InvitePage() {
               <p className="text-sm text-gray-600 mb-4">Group Progress: {selectedTask.groupProgress.current} / {selectedTask.groupProgress.total}</p>
               <div className="space-y-3">
                 {selectedTask.milestones.map((m, idx) => (
-                  <div key={idx} className="flex items-center gap-3 border border-gray-100 rounded-2xl p-4">
+                  <div key={idx} className="flex items-center gap-3 border border-gray-100 rounded-lg p-4">
                     <img src={m.rewardImg} alt="coupon" className="w-14 h-14 object-contain rounded-xl flex-shrink-0" />
                     <div className="flex-1">
                       <p className="text-sm font-semibold text-gray-900 leading-snug">{m.label}</p>
@@ -326,7 +326,7 @@ export function InvitePage() {
       {showTaskInfo && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowTaskInfo(false)} />
-          <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="relative bg-white rounded-t-xl sm:rounded-xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <button onClick={() => setShowTaskInfo(false)}><X size={20} className="text-gray-700" /></button>
               <h3 className="font-black text-gray-900 text-base">Task &amp; Reward</h3>
@@ -339,7 +339,7 @@ export function InvitePage() {
               <p>Rewards are not automatically issued — we will send the rewards to your NoxyStore account in the form of coupons only after you click to claim them.</p>
             </div>
             <div className="px-5 pb-6">
-              <button onClick={() => setShowTaskInfo(false)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl">Ok</button>
+              <button onClick={() => setShowTaskInfo(false)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-lg">Ok</button>
             </div>
           </div>
         </div>
@@ -348,7 +348,7 @@ export function InvitePage() {
       {showRules && (
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
           <div className="absolute inset-0 bg-black/40" onClick={() => setShowRules(false)} />
-          <div className="relative bg-white rounded-t-3xl sm:rounded-3xl w-full max-w-md shadow-2xl max-h-[85vh] overflow-y-auto">
+          <div className="relative bg-white rounded-t-xl sm:rounded-xl w-full max-w-lg shadow-2xl max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
               <button onClick={() => setShowRules(false)}><X size={20} className="text-gray-700" /></button>
               <h3 className="font-black text-gray-900 text-base">Program Rules</h3>
@@ -366,7 +366,7 @@ export function InvitePage() {
               </div>
             </div>
             <div className="px-5 pb-6">
-              <button onClick={() => setShowRules(false)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-2xl">Ok</button>
+              <button onClick={() => setShowRules(false)} className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-lg">Ok</button>
             </div>
           </div>
         </div>
@@ -380,7 +380,7 @@ export function InvitePage() {
       <div className="lg:hidden"><Header showBack title="Invite for Coupons" /></div>
 
       {/* ── Desktop: sidebar + centered content ── */}
-      <div className="hidden lg:block max-w-[1280px] mx-auto px-6 py-6">
+      <div className="hidden lg:block max-w-[1440px] mx-auto px-8 py-8">
         <div className="flex items-center gap-2 text-sm text-gray-500 mb-6">
           <button onClick={() => navigate("/")} className="hover:text-gray-700">Home</button>
           <ChevronRight size={14} />
@@ -388,8 +388,8 @@ export function InvitePage() {
         </div>
         <div className="flex gap-6 items-start">
           <AccountSidebar activePage="invite" className="sticky top-[72px] self-start" />
-          <div className="flex-1 flex justify-center">
-            <div className="w-full max-w-[560px]">
+          <div className="flex-1">
+            <div className="w-full">
               <InviteBody {...bodyProps} />
             </div>
           </div>
@@ -406,4 +406,4 @@ export function InvitePage() {
     </div>
   );
 }
-make all this page square and more large space in desktop pa dwe kwense.
+
