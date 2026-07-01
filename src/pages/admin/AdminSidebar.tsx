@@ -160,7 +160,7 @@ export default function AdminSidebar({ collapsed: controlledCollapsed, onCollaps
 
       {/* Desktop sidebar */}
       <aside
-        className={`hidden md:flex fixed inset-y-0 left-0 flex-col border-r border-slate-200 bg-white shadow-sm z-40 transition-all duration-300 ${
+        className={`hidden md:flex fixed inset-y-0 left-0 flex-col border-r border-slate-200 bg-white shadow-sm z-40 transition-all duration-300 overflow-y-auto ${
           collapsed ? 'w-[60px] px-2 py-7' : 'w-64 px-5 py-7'
         }`}
       >
@@ -169,6 +169,4 @@ export default function AdminSidebar({ collapsed: controlledCollapsed, onCollaps
     </>
   );
 }
-hello ai allow admin sidebar can scroll and fix error API Error
 
-Item4Gamer: [403] {"error":"Item4Gamer API error: 403","details":"\r\n{\"code\":403,\"message\":\"Invalid API key\",\"data\":{\"status\":403}}","debug":{"endpointUsed":"get-balance","apiKeyLength":48,"apiKeyFirst4":"7cef****"}}.
