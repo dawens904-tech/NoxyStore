@@ -832,4 +832,12 @@ export function HomePage() {
     </div>
   );
 }
-
+hello ai please fix eror{
+  "eventMessage": "POST | 403 | http://lcfbkgryqwjlbtowlcfb.backend.onspace.ai/functions/v1/item4gamer-proxy | Forbidden",
+  "functionId": "item4gamer-proxy",
+  "id": "4776a98a-5ccf-4076-97de-23b42a9a7af8",
+  "logLevel": "ERROR",
+  "method": "POST",
+  "statusCode": 403,
+  "timestamp": 1782897924
+}.
