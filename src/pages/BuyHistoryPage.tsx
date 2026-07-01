@@ -12,6 +12,7 @@ import { DesktopHeader } from "@/components/layout/DesktopHeader";
 import { Header } from "@/components/layout/Header";
 import { BottomNav } from "@/components/layout/BottomNav";
 import { SupportChatButton } from "@/components/features/SupportChatButton";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 
 interface Order {
@@ -294,6 +295,7 @@ function OrderDetailPanel({ order, onBack, onCustomerService }: {
 export function BuyHistoryPage() {
   const navigate = useNavigate();
   const { user, isAuthenticated } = useAuthStore();
+  const { t } = useTranslation();
   const [orders, setOrders] = useState<Order[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeFilter, setActiveFilter] = useState<"all" | "needaction" | "processing" | "refund">("all");
@@ -331,10 +333,10 @@ export function BuyHistoryPage() {
   const filteredOrders = getFilteredOrders();
 
   const TABS = [
-    { key: "all" as const, label: "All" },
-    { key: "needaction" as const, label: "Need Action" },
-    { key: "processing" as const, label: "Processing" },
-    { key: "refund" as const, label: "Refund" },
+    { key: "all" as const, label: t("all") },
+    { key: "needaction" as const, label: t("needAction") },
+    { key: "processing" as const, label: t("processing") },
+    { key: "refund" as const, label: t("refundTab") },
   ];
 
   const OrderCard = ({ order }: { order: Order }) => {
@@ -394,7 +396,7 @@ export function BuyHistoryPage() {
       <div className="lg:hidden">
         <div className="bg-[#0a0a0a] sticky top-0 z-40 flex items-center gap-3 px-4 py-3">
           <button onClick={() => navigate(-1)} className="text-white"><ArrowLeft size={20} /></button>
-          <span className="text-white font-bold flex-1 text-center">Buy History</span>
+          <span className="text-white font-bold flex-1 text-center">{t("buyHistory")}</span>
           <div className="w-8" />
         </div>
       </div>
@@ -435,7 +437,7 @@ export function BuyHistoryPage() {
                     <div className="flex flex-col items-center justify-center py-20">
                       <div className="text-4xl mb-4 opacity-30">📦</div>
                       <p className="text-gray-400 font-medium">No orders yet</p>
-                      <button onClick={() => navigate("/")} className="mt-4 bg-yellow-400 text-black font-bold px-6 py-2.5 text-sm">Browse Games</button>
+                      <button onClick={() => navigate("/")} className="mt-4 bg-yellow-400 text-black font-bold px-6 py-2.5 text-sm">{t("browseGames")}</button>
                     </div>
                   ) : (
                     filteredOrders.map(order => (
@@ -479,7 +481,7 @@ export function BuyHistoryPage() {
               ) : filteredOrders.length === 0 ? (
                 <div className="text-center py-16">
                   <p className="text-gray-400">No orders found</p>
-                  <button onClick={() => navigate("/")} className="mt-4 bg-yellow-400 text-black font-bold px-6 py-2.5 text-sm">Browse Games</button>
+                  <button onClick={() => navigate("/")} className="mt-4 bg-yellow-400 text-black font-bold px-6 py-2.5 text-sm">{t("browseGames")}</button>
                 </div>
               ) : (
                 filteredOrders.map(order => (

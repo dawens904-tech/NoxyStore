@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "@/hooks/useTranslation";
 import { Footer } from "@/components/layout/Footer";
 import { MobileFooter } from "@/components/layout/MobileFooter";
 import { Star, Zap, Shield, Clock, ChevronRight, Info, AlertCircle, X, Check, ChevronDown } from "lucide-react";
@@ -232,6 +233,7 @@ const isManualProduct = (id: string) => UUID_RE.test(id);
 
 export function GameDetailPage() {
   const { gameId } = useParams<{ gameId: string }>();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const isManual = gameId ? isManualProduct(gameId) : false;
 
@@ -1292,7 +1294,7 @@ export function GameDetailPage() {
             disabled={!selectedSku}
             className={`px-8 py-3 font-bold text-base transition-all ${selectedSku ? "bg-yellow-400 text-black hover:bg-yellow-300" : "bg-gray-200 text-gray-400 cursor-not-allowed"}`}
           >
-            {needsVerification ? "Continue" : "Top-up Now"}
+            {needsVerification ? "Continue" : t("topupNow")}
           </button>
         </div>
       </div>

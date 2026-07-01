@@ -8,6 +8,7 @@ import { useState, useEffect, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft, Search, Camera, X, Star, TrendingUp, Zap } from "lucide-react";
 import { supabase } from "@/lib/supabase";
+import { useTranslation } from "@/hooks/useTranslation";
 import { toast } from "sonner";
 
 interface GameResult {
@@ -295,6 +296,7 @@ function GameCard({
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export function SearchPage() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const inputRef = useRef<HTMLInputElement>(null);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -373,7 +375,7 @@ export function SearchPage() {
               type="text"
               value={query}
               onChange={(e) => handleChange(e.target.value)}
-              placeholder="Search games or goods"
+              placeholder={t("searchGames")}
               className="flex-1 bg-transparent text-sm text-gray-800 outline-none placeholder-gray-400"
               autoComplete="off"
               autoCorrect="off"
@@ -408,7 +410,7 @@ export function SearchPage() {
             {/* Popular searches */}
             <div>
               <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-3">
-                Popular Searches
+                {t("popularSearches")}
               </p>
               <div className="flex flex-wrap gap-2">
                 {POPULAR.map((term) => (
@@ -430,7 +432,7 @@ export function SearchPage() {
                 <div className="flex items-center gap-1.5 mb-3">
                   <TrendingUp size={14} className="text-orange-500" />
                   <p className="text-xs font-bold text-gray-400 uppercase tracking-wide">
-                    Trending Now
+                    {t("trendingNow")}
                   </p>
                 </div>
                 <div className="space-y-2">
@@ -451,9 +453,9 @@ export function SearchPage() {
                 <Camera size={18} className="text-black" />
               </div>
               <div className="flex-1">
-                <p className="text-sm font-bold text-gray-900">Search by Camera</p>
+                <p className="text-sm font-bold text-gray-900">{t("searchByCamera")}</p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Point at a game logo or product image
+                  {t("searchByCameraDesc")}
                 </p>
               </div>
               <button
@@ -510,9 +512,9 @@ export function SearchPage() {
               <Search size={24} className="text-gray-300" />
             </div>
             <p className="text-gray-700 font-bold text-base">
-              No results for &quot;{query}&quot;
+              {t("noResultsFor")} &quot;{query}&quot;
             </p>
-            <p className="text-gray-400 text-sm mt-1">Try a different keyword</p>
+            <p className="text-gray-400 text-sm mt-1">{t("tryDifferentKeyword")}</p>
             <div className="mt-6 flex flex-wrap gap-2 justify-center">
               {POPULAR.slice(0, 4).map((term) => (
                 <button

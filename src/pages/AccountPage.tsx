@@ -672,6 +672,7 @@ function DesktopAffiliate({ user }: { user: any }) {
 // ─── Activity Feed ───────────────────────────────────────────────────────────
 function ActivityFeed({ userId, userEmail }: { userId?: string; userEmail?: string }) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -1388,6 +1389,6 @@ export function AccountPage() {
     </>
   );
 }
-hello ai Apply t() translation calls to BuyHistoryPage, CouponsPage, and SearchPage,gamedetail to replace all hardcoded English text with translation keys from constants/translations— covering page titles, empty states, filter labels, and action buttons in all 4 languages (en/es/fr/id) and Audit all pages for untranslated hardcoded strings and add the missing keys to constants/translations.— focus on checkout page labels (playerInfo, orderSummary, submitOrder), game detail page (selectSku, quantity, topupNow), and support page (sendMessageToUs, respondInMinutes) — with complete en/es/fr/id translations.
+
 
 

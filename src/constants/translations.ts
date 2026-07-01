@@ -76,6 +76,9 @@ export type TranslationKey =
   | "accountHolder" | "routingNumber" | "accountNumber" | "accountType"
   | "confirmWithdraw" | "noTransactions" | "creditCard" | "googlePay" | "applePay"
   // Points page
+  | "needAction" | "processing" | "refundTab"
+  | "popularSearches" | "trendingNow" | "searchByCamera" | "searchByCameraDesc"
+  | "noResultsFor" | "tryDifferentKeyword"
   | "myPointsTitle" | "availablePoints" | "pointsHistory" | "earnPoints"
   | "redeemPoints" | "pointsExpiry" | "howToEarnPoints" | "dailyLogin"
   | "purchasePoints" | "invitePoints" | "noPointsYet";
@@ -265,6 +268,15 @@ export const T: Record<Language, Translations> = {
     purchasePoints: "Purchase Bonus",
     invitePoints: "Invite Bonus",
     noPointsYet: "No points activity yet",
+    needAction: "Need Action",
+    processing: "Processing",
+    refundTab: "Refund",
+    popularSearches: "Popular Searches",
+    trendingNow: "Trending Now",
+    searchByCamera: "Search by Camera",
+    searchByCameraDesc: "Point at a game logo or product image",
+    noResultsFor: "No results for",
+    tryDifferentKeyword: "Try a different keyword",
   },
   es: {
     home: "Inicio",
@@ -448,6 +460,15 @@ export const T: Record<Language, Translations> = {
     purchasePoints: "Bono por Compra",
     invitePoints: "Bono por Invitación",
     noPointsYet: "Sin actividad de puntos aún",
+    needAction: "Acción Requerida",
+    processing: "Procesando",
+    refundTab: "Reembolso",
+    popularSearches: "Búsquedas Populares",
+    trendingNow: "Tendencias",
+    searchByCamera: "Buscar por Cámara",
+    searchByCameraDesc: "Apunta a un logo de juego o imagen de producto",
+    noResultsFor: "Sin resultados para",
+    tryDifferentKeyword: "Intenta con otra palabra clave",
   },
   fr: {
     home: "Accueil",
@@ -631,6 +652,15 @@ export const T: Record<Language, Translations> = {
     purchasePoints: "Bonus d'Achat",
     invitePoints: "Bonus d'Invitation",
     noPointsYet: "Aucune activité de points pour l'instant",
+    needAction: "Action Requise",
+    processing: "En Traitement",
+    refundTab: "Remboursement",
+    popularSearches: "Recherches Populaires",
+    trendingNow: "Tendances",
+    searchByCamera: "Recherche par Caméra",
+    searchByCameraDesc: "Pointez sur un logo de jeu ou une image de produit",
+    noResultsFor: "Aucun résultat pour",
+    tryDifferentKeyword: "Essayez un autre mot-clé",
   },
   id: {
     home: "Beranda",
@@ -814,5 +844,14 @@ export const T: Record<Language, Translations> = {
     purchasePoints: "Bonus Pembelian",
     invitePoints: "Bonus Undangan",
     noPointsYet: "Belum ada aktivitas poin",
+    needAction: "Perlu Tindakan",
+    processing: "Diproses",
+    refundTab: "Pengembalian Dana",
+    popularSearches: "Pencarian Populer",
+    trendingNow: "Sedang Tren",
+    searchByCamera: "Cari dengan Kamera",
+    searchByCameraDesc: "Arahkan ke logo game atau gambar produk",
+    noResultsFor: "Tidak ada hasil untuk",
+    tryDifferentKeyword: "Coba kata kunci lain",
   },
 };

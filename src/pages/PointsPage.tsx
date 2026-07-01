@@ -313,6 +313,7 @@ function RedeemTab({ points, vipLevel }: { points: number; vipLevel: number }) {
 
 // ─── Details Tab ───────────────────────────────────────────────────────────
 function DetailsTab({ userEmail }: { userEmail: string }) {
+  const { t } = useTranslation();
   const [history, setHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
