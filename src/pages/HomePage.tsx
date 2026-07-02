@@ -855,3 +855,4 @@ export function HomePage() {
   );
 }
 
+fix desktop fetch same banner has mobile and fix Popular Game Key background img full with poul pran all left/right and square.
