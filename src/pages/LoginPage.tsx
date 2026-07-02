@@ -459,3 +459,4 @@ export function LoginPage() {
     </div>
   );
 }
+hello ai please create admin-user page that fetch all user login and allow admin ca click user info and ban,logout and if ban never allow this user with the email ban to create account if delete auto delete all user data and if info open another modal allow admin can give user coin,poin,coupons,balance and add real discord login real auth id secret key and fetch user login with discord.
