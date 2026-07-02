@@ -106,4 +106,3 @@ export function HeroBanner() {
     </div>
   );
 }
-fetch new banners function instead old and in mobilefooter Add a mobile-friendly version of the Trustpilot reviews carousel to TrustpilotReviews— show 1 card at a time with swipe/tap navigation and dot indicators, visible on screens smaller than lg breakpoint.
